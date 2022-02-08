@@ -90,7 +90,7 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentCo
     for(const key in currentConfig) {
       let value = currentConfig[key];
       fretSet.add(value);
-      if(value < minIndex) {
+      if(value < minIndex && value !== 0) {
         minIndex = value;
       } 
       
