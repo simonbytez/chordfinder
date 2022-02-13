@@ -21,8 +21,8 @@ export default function Main() {
   return (
     <>
       <ChordSelector />
-      <button type="button" onClick={incArrIndex}>next</button>
       <button type="button" onClick={decArrIndex}>prev</button>
+      <button type="button" onClick={incArrIndex}>next</button>
       <Board board={board} />
     </>
   );

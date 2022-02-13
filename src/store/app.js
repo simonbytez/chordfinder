@@ -80,9 +80,15 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentCo
     let maxIndex = -1;
 
     let notesLeft = chordNotes.slice();
+    let prevNote = '';
     for(const key in currentConfig) {
       let entry = board[key][currentConfig[key]];
+      if(entry.note === prevNote) {
+        return false;
+      }
+
       notesLeft = notesLeft.filter(key => key != entry.note)
+      prevNote = entry.note;
     }
 
     let prevIndex = -1;
@@ -124,7 +130,6 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentCo
         let max = Math.max(...inverted[i]);
         for(let j = min + 1; j < max; j++) {
           if(currentConfig[j] < i && currentConfig[j] != 0 && maxInvertedIndex > i) {
-            console.log('false: ' + JSON.stringify(currentConfig));
             return false;
           }
         }
@@ -134,10 +139,8 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentCo
     let numFingers = fretSet.size;
 
     if(numFingers > 4) {
-      console.log('false: ' + JSON.stringify(currentConfig));
       return false;
     } else if(notesLeft.length > 0) {
-      console.log('false: ' + JSON.stringify(currentConfig));
       return false;
     }
 
