@@ -1,20 +1,20 @@
 import Board from './frets/Board';
 import ChordSelector from './ChordSelector';
-import { appActions } from '../store/app'
+import { guitarActions } from '../../store/guitar'
 import { useDispatch, useSelector } from "react-redux";
 
 export default function Main() {
   const dispatch = useDispatch();
   const board = useSelector((state) => {
-    return state.app.board;
+    return state.guitar.board;
   });
 
   function incArrIndex() {
-    dispatch(appActions.incArrIndex());
+    dispatch(guitarActions.incArrIndex());
   }
 
   function decArrIndex() {
-    dispatch(appActions.decArrIndex());
+    dispatch(guitarActions.decArrIndex());
   }
 
 

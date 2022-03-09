@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
-import appReducer from './app';
+import guitarReducer from './guitar';
+import salsaReducer from './salsa';
 
 const store = configureStore({
     reducer: {
-        app: appReducer
+        guitar: guitarReducer,
+        salsa: salsaReducer
     }
 })
 

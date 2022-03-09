@@ -1,21 +1,21 @@
-import { appActions } from '../store/app'
+import { guitarActions } from '../../store/guitar';
 import { useDispatch, useSelector } from "react-redux";
 
 export default function Main() {
   let dispatch = useDispatch();
   const selectedNote = useSelector(
-    (state) => state.app.selectedNote
+    (state) => state.guitar.selectedNote
   );
   const selectedType = useSelector(
-    (state) => state.app.selectedType
+    (state) => state.guitar.selectedType
   );
 
   function changeNote(event) {
-    dispatch(appActions.updateChordType({note: event.target.value, type: selectedType}));
+    dispatch(guitarActions.updateChordType({note: event.target.value, type: selectedType}));
   }
 
   function changeType(event) {
-    dispatch(appActions.updateChordType({note: selectedNote, type: event.target.value}));
+    dispatch(guitarActions.updateChordType({note: selectedNote, type: event.target.value}));
   }
 
   return (

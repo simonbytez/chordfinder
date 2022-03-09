@@ -1,6 +1,7 @@
 import Head from "next/head";
 import { Provider } from "react-redux";
 import store from "../src/store/index";
+import { ToneContextProvider } from "../src/store/tone-context";
 
 export default function MyApp(props) {
   const { Component, pageProps } = props;
@@ -8,7 +9,7 @@ export default function MyApp(props) {
   return (
     <>
       <Head>
-        <title>ChordFinder</title>
+        <title>Boomcat</title>
         <meta
           name="viewport"
           content="minimum-scale=1, initial-scale=1, width=device-width"
@@ -16,7 +17,9 @@ export default function MyApp(props) {
       </Head>
 
       <Provider store={store}>
-        <Component {...pageProps} />
+        <ToneContextProvider>
+          <Component {...pageProps} />
+        </ToneContextProvider>
       </Provider>
     </>
   );

@@ -67,18 +67,20 @@ function getChordArrangements(board, chordNotes) {
     let results = [];
     let stringNum = boardKeys[i];
 
-    _getChordArrangements(board, chordNotes, chordNotes[0], stringNum, currentConfig, results, false);
+    _getChordArrangements(board, chordNotes, chordNotes[0], stringNum, stringNum, currentConfig, results, false);
     retval = retval.concat(results);
   }
 
   return retval;
 }
 
-function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentConfig, results, gotRoot) {
+function _getChordArrangements(board, chordNotes, rootNote, stringNum, rootString, currentConfig, results, gotRoot) {
   if(stringNum === 0) {
     let minIndex = 7;
     let maxIndex = -1;
 
+    let prevIndex = -1;
+    let fretSet = new Set();
     let notesLeft = chordNotes.slice();
     let prevNote = '';
     for(const key in currentConfig) {
@@ -89,11 +91,9 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentCo
 
       notesLeft = notesLeft.filter(key => key != entry.note)
       prevNote = entry.note;
-    }
 
-    let prevIndex = -1;
-    let fretSet = new Set();
-    for(const key in currentConfig) {
+      ///////////////////////////////
+
       let value = currentConfig[key];
       fretSet.add(value);
       if(value < minIndex && value !== 0) {
@@ -107,9 +107,47 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentCo
       prevIndex = currentConfig[key];
     }
 
+    // let prevIndex = -1;
+    // let fretSet = new Set();
+    // for(const key in currentConfig) {
+    //   let value = currentConfig[key];
+    //   fretSet.add(value);
+    //   if(value < minIndex && value !== 0) {
+    //     minIndex = value;
+    //   } 
+      
+    //   if(value > maxIndex) {
+    //     maxIndex = value;
+    //   } 
+
+    //   prevIndex = currentConfig[key];
+    // }
+
     //This needs to change to not reject valid configurations with muted strings
     if(maxIndex - minIndex > 3) {
-      return false;
+      //console.log('maxInex - minIndex > 3: ' + JSON.stringify(currentConfig));
+      for(const key in currentConfig) {
+        let value = currentConfig[key];
+        if(value - minIndex > 3) {
+          if(key === rootString) {
+            return false;
+          }
+
+          delete currentConfig[key];
+        }
+      }
+
+      //console.log('after deleted: ' + JSON.stringify(currentConfig));
+
+      let notesLeft = chordNotes.slice();
+      for(const key in currentConfig) {
+        let note = board[key][currentConfig[key]].note;
+        notesLeft.splice(notesLeft.indexOf(note), 1);
+      }
+
+      //console.log('notes left: ' + JSON.stringify(notesLeft));
+
+      return notesLeft.length === 0;
     }
 
     let inverted = {};
@@ -159,7 +197,7 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentCo
         ...currentConfig
       };
 
-      let result = _getChordArrangements(board, chordNotes, rootNote, stringNum - 1, newConfig, results, gotRoot || frets[i].note === rootNote);
+      let result = _getChordArrangements(board, chordNotes, rootNote, stringNum - 1, rootString, newConfig, results, gotRoot || frets[i].note === rootNote);
 
       if(result) {
         results.push(newConfig);
@@ -168,8 +206,8 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, currentCo
   }
 }
 
-const appSlice = createSlice({
-  name: "app",
+const guitarSlice = createSlice({
+  name: "guitar",
   initialState: {
     board: getInitialBoard(),
     chordArrangements: getInitialChordArrangements(),
@@ -210,7 +248,6 @@ const appSlice = createSlice({
         );
       }
       let results = getChordArrangements(state.board, chordValues);
-      console.log('results: ' + JSON.stringify(results));
       state.chordArrangements = results;
       updateBoardChord(state.board, state.chordArrangements, 0);
     },
@@ -222,5 +259,5 @@ export const getBoard = createSelector(
   (selectedNote, selectedType) => {}
 );
 
-export default appSlice.reducer;
-export const appActions = appSlice.actions;
+export default guitarSlice.reducer;
+export const guitarActions = guitarSlice.actions;
