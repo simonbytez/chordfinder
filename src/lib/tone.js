@@ -28,7 +28,7 @@ export function setSamplers(
 }
 
 export function update(toneJsData) {
-  Tone.Transport.bpm.value = 90;
+  Tone.Transport.bpm.value = 70;
   if (part) {
     part.dispose();
   }
@@ -94,7 +94,7 @@ export function update(toneJsData) {
 export async function start() {
   await Tone.start();
   Tone.Transport.start();
-  accelerateLoop = window.setInterval(inc, 16000);
+  accelerateLoop = window.setInterval(inc, 7000);
 }
 
 export async function stop() {
