@@ -124,30 +124,34 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, rootStrin
     // }
 
     //This needs to change to not reject valid configurations with muted strings
+    // if(maxIndex - minIndex > 3) {
+    //   //console.log('maxInex - minIndex > 3: ' + JSON.stringify(currentConfig));
+    //   for(const key in currentConfig) {
+    //     let value = currentConfig[key];
+    //     if(value - minIndex > 3) {
+    //       if(key === rootString) {
+    //         return false;
+    //       }
+
+    //       delete currentConfig[key];
+    //     }
+    //   }
+
+    //   //console.log('after deleted: ' + JSON.stringify(currentConfig));
+
+    //   let notesLeft = chordNotes.slice();
+    //   for(const key in currentConfig) {
+    //     let note = board[key][currentConfig[key]].note;
+    //     notesLeft.splice(notesLeft.indexOf(note), 1);
+    //   }
+
+    //   //console.log('notes left: ' + JSON.stringify(notesLeft));
+
+    //   return notesLeft.length === 0;
+    // }
+
     if(maxIndex - minIndex > 3) {
-      //console.log('maxInex - minIndex > 3: ' + JSON.stringify(currentConfig));
-      for(const key in currentConfig) {
-        let value = currentConfig[key];
-        if(value - minIndex > 3) {
-          if(key === rootString) {
-            return false;
-          }
-
-          delete currentConfig[key];
-        }
-      }
-
-      //console.log('after deleted: ' + JSON.stringify(currentConfig));
-
-      let notesLeft = chordNotes.slice();
-      for(const key in currentConfig) {
-        let note = board[key][currentConfig[key]].note;
-        notesLeft.splice(notesLeft.indexOf(note), 1);
-      }
-
-      //console.log('notes left: ' + JSON.stringify(notesLeft));
-
-      return notesLeft.length === 0;
+      return false;
     }
 
     let inverted = {};
