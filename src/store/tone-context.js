@@ -4,7 +4,8 @@ import * as Tone from "tone";
 //The object passed to createContext is the default context that gets used
 //when the context is not set by the context provider.
 const ToneContext = React.createContext({
-  bongoSampler: null,
+    bassSampler: null,
+    bongoSampler: null,
     claveSampler: null,
     congaSampler: null,
     cowbellSampler: null,
@@ -13,6 +14,7 @@ const ToneContext = React.createContext({
 });
 
 export const ToneContextProvider = (props) => {
+  const [bassSampler, setBassSampler] = useState();
   const [bongoSampler, setBongoSampler] = useState();
   const [claveSampler, setClaveSampler] = useState();
   const [congaSampler, setCongaSampler] = useState();
@@ -80,12 +82,33 @@ export const ToneContextProvider = (props) => {
     }).toDestination();
     setTimbaleSampler(timbaleSampler);
 
+    const bassSampler = new Tone.Sampler({
+      urls: {
+        "C4": "C4.wav",
+        "C#4": "Cs4.wav",
+        "D4": "D4.wav",
+        "D#4": "Ds4.wav",
+        "E4": "E4.wav",
+        "F4": "F4.wav",
+        "F#4": "Fs4.wav",
+        "G4": "G4.wav",
+        "G#4": "Gs4.wav",
+        "A4": "A4.wav",
+        "A#4": "As4.wav",
+        "B4": "B4.wav",
+      },
+      release: 1,
+      baseUrl: `${origin}/samples/bass/`,
+    }).toDestination();
+    setBassSampler(bassSampler);
+
     new Tone.PolySynth().toDestination();
   }, []);
 
   return (
     <ToneContext.Provider
       value={{
+        bassSampler,
         bongoSampler,
         claveSampler,
         congaSampler,

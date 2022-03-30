@@ -1,13 +1,20 @@
 import Header from './Header';
-import { accelerate, inc} from '../../lib/tone';
+import Instruments from './Instruments';
+import { accelerate, inc, updateTempo } from '../../lib/tone';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from "react-redux";
 
-export default function Main() { 
+export default function Main() {
+  const tempo = useSelector(state => state.salsa.tempo);
+  useEffect(() => {
+    updateTempo(tempo);
+  }, [tempo]);
   const acc = () => {
     accelerate();
   }
   return <> 
     <Header />
-      <button onClick={acc}>accelerate</button>
-      <button onClick={inc}>inc</button>
-    </>
+    <br />
+    <Instruments />
+  </>
 }

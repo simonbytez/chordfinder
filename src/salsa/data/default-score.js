@@ -1,5 +1,8 @@
 const smallSinglePart = {
   parts: {
+    bass: {
+      enabled: true
+    },
     bongo: {
       enabled: true,
     },
@@ -26,6 +29,55 @@ const smallSinglePart = {
         type: 4,
       },
       parts: [
+        {
+          instrument: "bass",
+          voices: [
+            {
+              notes: [
+                {
+                  notes: [],
+                  duration: 8,
+                },
+                {
+                  notes: [],
+                  duration: 16,
+                },
+                {
+                  notes: ["E4"],
+                  duration: 16,
+                },
+                {
+                  notes: [],
+                  duration: 8,
+                },
+                {
+                  notes: ["G#4"],
+                  duration: 8,
+                },
+                {
+                  notes: [],
+                  duration: 8,
+                },
+                {
+                  notes: [],
+                  duration: 16,
+                },
+                {
+                  notes: ["E4"],
+                  duration: 16,
+                },
+                {
+                  notes: [],
+                  duration: 8,
+                },
+                {
+                  notes: ["G#4"],
+                  duration: 8,
+                },
+              ],
+            },
+          ],
+        },
         {
           instrument: "conga",
           voices: [

@@ -101,6 +101,9 @@ const salsaSlice = createSlice({
 
       state.isPlaying = !state.isPlaying;
     },
+    toggleInstrumentEnabled(state, action) {
+      state.score.parts[action.payload].enabled = !state.score.parts[action.payload].enabled
+    }
   },
 });
 

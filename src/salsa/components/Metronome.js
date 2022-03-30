@@ -12,7 +12,7 @@ export default function Metronome(props) {
 
   const handleSliderChange = (_, newValue) => {
     setValue(newValue);
-    dispatch(salsaActions.updateTempo(newValue));
+    dispatch(salsaActions.updateTempo(newValue / 2.0));
   };
 
   const handleInputChange = (event) => {
@@ -41,6 +41,7 @@ export default function Metronome(props) {
         <Grid container spacing={2} alignItems="center">
           <Grid item xs>
             <Slider
+              sx={{ width: 150 }}
               value={typeof value === "number" ? value : 0}
               onChange={handleSliderChange}
               min={100}

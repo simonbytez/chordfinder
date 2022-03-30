@@ -3,13 +3,14 @@ import ToneContext from "../../store/tone-context";
 import { getToneJs, salsaActions } from "../../store/salsa";
 import { FaPlay, FaStop } from "react-icons/fa";
 import IconButton from "@mui/material/IconButton";
-import { update as updateToneJs, setSamplers } from "../../lib/tone";
+import { update as updateToneJs, setSamplers, toggleAccelerate } from "../../lib/tone";
 import { useContext, useEffect } from "react";
 import { connect, useSelector, useDispatch } from "react-redux";
 import * as Tone from "tone";
 
 export function TopToolbar(props) {
   const {
+    bassSampler,
     bongoSampler,
     claveSampler,
     congaSampler,
@@ -25,6 +26,7 @@ export function TopToolbar(props) {
   //Set the tonejs samplers, which come from ToneContext
   useEffect(() => {
     setSamplers(
+      bassSampler,
       bongoSampler,
       claveSampler,
       congaSampler,
@@ -33,6 +35,7 @@ export function TopToolbar(props) {
       timbaleSampler
     );
   }, [
+    bassSampler,
     bongoSampler,
     claveSampler,
     congaSampler,
@@ -46,12 +49,16 @@ export function TopToolbar(props) {
   }, [toneJs]);
 
   return (
-    <>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center'
+    }}>
       <IconButton color="inherit" aria-label="play" onClick={startStop}>
         {!isPlaying ? <FaPlay size={24} /> : <FaStop size={24} />}
       </IconButton>
       <Metronome />
-    </>
+      <button onClick={toggleAccelerate}>accelerate</button>
+    </div>
   );
 }
 

@@ -2,6 +2,9 @@ import * as Tone from "tone";
 
 let part = null;
 
+let accelerating = false;
+
+let bassSampler = null;
 let bongoSampler = null;
 let claveSampler = null;
 let congaSampler = null;
@@ -12,6 +15,7 @@ let timbaleSampler = null;
 let accelerateLoop = null;
 
 export function setSamplers(
+  bassSamplerIn,
   bongoSamplerIn,
   claveSamplerIn,
   congaSamplerIn,
@@ -19,6 +23,7 @@ export function setSamplers(
   guiroSamplerIn,
   timbaleSamplerIn
 ) {
+  bassSampler = bassSamplerIn;
   bongoSampler = bongoSamplerIn;
   claveSampler = claveSamplerIn;
   congaSampler = congaSamplerIn;
@@ -27,59 +32,43 @@ export function setSamplers(
   timbaleSampler = timbaleSamplerIn;
 }
 
-export function update(toneJsData) {
-  Tone.Transport.bpm.value = 70;
+export function updateTempo(tempo) {
+  Tone.Transport.bpm.value = tempo;
+}
+
+export function update(toneJsData) { 
   if (part) {
     part.dispose();
   }
 
   part = new Tone.Part((time, value) => {
     if (value) {
-      if (value.instrument === "bongo") {
-        // the value is an object which contains both the note and the velocity
-        bongoSampler.triggerAttackRelease(
-          value.note,
-          value.duration,
-          time,
-          value.velocity ?? 1.0
-        );
+      let sampler = null;
+
+      if (value.instrument === "bass") {
+        sampler = bassSampler;
+      } else if (value.instrument === "bongo") {
+        sampler = bongoSampler;
       } else if (value.instrument === "clave") {
-        // the value is an object which contains both the note and the velocity
-        claveSampler.triggerAttackRelease(
-          value.note,
-          value.duration,
-          time,
-          value.velocity ?? 1.0
-        );
+        sampler = claveSampler;
       } else if (value.instrument === "conga") {
-        congaSampler.triggerAttackRelease(
-          value.note,
-          value.duration,
-          time,
-          value.velocity ?? 1.0
-        );
+        sampler = congaSampler;
       } else if (value.instrument === "cowbell") {
-        cowbellSampler.triggerAttackRelease(
-          value.note,
-          value.duration,
-          time,
-          value.velocity ?? 1.0
-        );
+        sampler = cowbellSampler;
       } else if (value.instrument === "guiro") {
-        guiroSampler.triggerAttackRelease(
-          value.note,
-          value.duration,
-          time,
-          value.velocity ?? 1.0
-        );
+        sampler = guiroSampler;
       } else if (value.instrument === "timbale") {
-        timbaleSampler.triggerAttackRelease(
+        sampler = timbaleSampler
+      }
+      
+      if(sampler) {
+        sampler.triggerAttackRelease(
           value.note,
           value.duration,
           time,
           value.velocity ?? 1.0
         );
-      }
+      }  
     } else {
       //It's a rest
     }
@@ -94,16 +83,24 @@ export function update(toneJsData) {
 export async function start() {
   await Tone.start();
   Tone.Transport.start();
-  accelerateLoop = window.setInterval(inc, 7000);
 }
 
 export async function stop() {
   Tone.Transport.stop();
-  clearInterval(accelerateLoop);
+}
+
+export async function toggleAccelerate() {
+  if(accelerating) {
+    clearInterval(accelerateLoop);
+    accelerating = false;
+  } else {
+    accelerateLoop = window.setInterval(inc, 70);
+    accelerating = true;
+  }
 }
 
 export async function accelerate() {
-  Tone.Transport.bpm.rampTo(120, 10);
+  accelerateLoop = window.setInterval(inc, 7000);
 }
 
 export async function inc() {
