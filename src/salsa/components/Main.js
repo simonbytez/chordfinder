@@ -13,5 +13,7 @@ export default function Main() {
   return <> 
     <Header />
     <Instruments />
+    <div style={{textAlign: 'center', margin: 8}}>Turn off silent mode.</div>
+    <div style={{textAlign: 'center', margin: 8}}>Tap the instruments to mute/play.</div>
   </>
 }
