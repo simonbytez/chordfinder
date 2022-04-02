@@ -1,10 +1,10 @@
 const smallSinglePart = {
   parts: {
     bass: {
-      enabled: true
+      enabled: false
     },
     bongo: {
-      enabled: true,
+      enabled: false,
     },
     clave: {
       enabled: true,
@@ -16,6 +16,9 @@ const smallSinglePart = {
       enabled: true,
     },
     guiro: {
+      enabled: true,
+    },
+    piano: {
       enabled: true,
     },
     timbale: {
@@ -73,6 +76,55 @@ const smallSinglePart = {
                 {
                   notes: ["G#4"],
                   duration: 8,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          instrument: "piano",
+          voices: [
+            {
+              notes: [
+                {
+                  notes: ["C4", "E4", "G4"],
+                  duration: 8,
+                },
+                {
+                  notes: ["E4"],
+                  duration: 16,
+                },
+                {
+                  notes: ["G4"],
+                  duration: 16,
+                },
+                {
+                  notes: [],
+                  duration: 16,
+                },
+                {
+                  notes: ["E4"],
+                  duration: 8,
+                },
+                {
+                  notes: ["D4"],
+                  duration: 8,
+                },
+                {
+                  notes: ["E4"],
+                  duration: 8,
+                },
+                {
+                  notes: ["D4"],
+                  duration: 8,
+                },
+                {
+                  notes: ["E4"],
+                  duration: 8,
+                },
+                {
+                  notes: ["D4"],
+                  duration: 16
                 },
               ],
             },
@@ -183,59 +235,24 @@ const smallSinglePart = {
               notes: [
                 {
                   notes: ["C5"],
-                  duration: 8,
-                  velocity: 0.55
+                  duration: 4,
+                  velocity: 0.75
                 },
                 {
                   notes: ["C5"],
-                  duration: 8,
-                  velocity: 0.25
+                  duration: 4,
+                  velocity: 0.75
                 },
                 {
                   notes: ["C5"],
-                  duration: 8, 
-                  velocity: 0.55
+                  duration: 4,
+                  velocity: 0.75
                 },
                 {
                   notes: ["C5"],
-                  duration: 16,
-                  velocity: 0.25
-                },
-                {
-                  notes: ["C5"],
-                  duration: 16,
-                  velocity: 0.55
-                },
-                {
-                  notes: ["C5"],
-                  duration: 8,
-                  velocity: 0.55
-                },
-                {
-                  notes: ["C5"],
-                  duration: 16,
-                  velocity: 0.25
-                },
-                {
-                  notes: ["C5"],
-                  duration: 16,
-                  velocity: 0.25
-                },
-                {
-                  notes: ["C5"],
-                  duration: 8,
-                  velocity: 0.55
-                },
-                {
-                  notes: ["C5"],
-                  duration: 16,
-                  velocity: 0.25
-                },
-                {
-                  notes: ["C5"],
-                  duration: 16,
-                  velocity: 0.25
-                },
+                  duration: 4,
+                  velocity: 0.75
+                }
               ]
             }
           ],

@@ -10,12 +10,12 @@ export default function Metronome(props) {
   const tempo = useSelector((state) => state.salsa.tempo);
 
   const handleSliderChange = (_, newValue) => {
-    dispatch(salsaActions.updateTempo(newValue / 2.0));
+    dispatch(salsaActions.updateTempo(newValue));
   };
 
   const handleInputChange = (event) => {
     const newValue = Number(event.target.value);
-    dispatch(salsaActions.updateTempo(newValue / 2.0));
+    dispatch(salsaActions.updateTempo(newValue));
   };
 
   function getValidValue(valueIn) {

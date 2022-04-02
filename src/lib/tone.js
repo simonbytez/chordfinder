@@ -8,6 +8,7 @@ let claveSampler = null;
 let congaSampler = null;
 let cowbellSampler = null;
 let guiroSampler = null;
+let pianoSampler = null;
 let timbaleSampler = null;
 
 export function setSamplers(
@@ -17,7 +18,8 @@ export function setSamplers(
   congaSamplerIn,
   cowbellSamplerIn,
   guiroSamplerIn,
-  timbaleSamplerIn
+  timbaleSamplerIn,
+  pianoSamplerIn,
 ) {
   bassSampler = bassSamplerIn;
   bongoSampler = bongoSamplerIn;
@@ -26,6 +28,7 @@ export function setSamplers(
   cowbellSampler = cowbellSamplerIn;
   guiroSampler = guiroSamplerIn;
   timbaleSampler = timbaleSamplerIn;
+  pianoSampler = pianoSamplerIn;
 }
 
 export function updateTempo(tempo) {
@@ -54,7 +57,9 @@ export function update(toneJsData) {
       } else if (value.instrument === "guiro") {
         sampler = guiroSampler;
       } else if (value.instrument === "timbale") {
-        sampler = timbaleSampler
+        sampler = timbaleSampler;
+      } else if(value.instrument === "piano") {
+        sampler = pianoSampler;
       }
       
       if(sampler) {

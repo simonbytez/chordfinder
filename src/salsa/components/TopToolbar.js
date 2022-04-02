@@ -15,6 +15,7 @@ export function TopToolbar(props) {
     congaSampler,
     cowbellSampler,
     guiroSampler,
+    pianoSampler,
     timbaleSampler,
   } = useContext(ToneContext);
 
@@ -33,7 +34,8 @@ export function TopToolbar(props) {
       congaSampler,
       cowbellSampler,
       guiroSampler,
-      timbaleSampler
+      timbaleSampler,
+      pianoSampler
     );
   }, [
     bassSampler,
@@ -43,6 +45,7 @@ export function TopToolbar(props) {
     cowbellSampler,
     guiroSampler,
     timbaleSampler,
+    pianoSampler
   ]);
 
   useEffect(() => {
@@ -62,6 +65,7 @@ export function TopToolbar(props) {
   }
 
   return (
+    <>
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
         <div style={{display: 'flex'}}>
           <div style={{marginRight: 8}}>
@@ -70,6 +74,7 @@ export function TopToolbar(props) {
             </IconButton>
           </div>
           <Metronome />
+          
         </div>
         <div style={{display: 'flex', justifyContent: 'center', marginTop: 15}}>
           <button style={{height: 34}} onClick={toggleAccelerate}>{props.isAccelerating ? 'stop accelerating' : 'accelerate'}</button>
@@ -77,6 +82,8 @@ export function TopToolbar(props) {
           <button style={{height: 34, marginLeft: 8}} onClick={() => dispatch(salsaActions.increaseTempo())}>tempo +</button>
         </div>
     </div>
+    <div style={{textAlign: 'center', margin: 8}}>Tap the instruments below to mute/play</div>
+    </>
   );
 }
 

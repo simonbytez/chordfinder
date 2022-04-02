@@ -10,6 +10,7 @@ const ToneContext = React.createContext({
     congaSampler: null,
     cowbellSampler: null,
     guiroSampler: null,
+    pianoSampler: null,
     timbaleSampler: null
 });
 
@@ -20,6 +21,7 @@ export const ToneContextProvider = (props) => {
   const [congaSampler, setCongaSampler] = useState();
   const [cowbellSampler, setCowbellSampler] = useState();
   const [guiroSampler, setGuiroSampler] = useState();
+  const [pianoSampler, setPianoSampler] = useState();
   const [timbaleSampler, setTimbaleSampler] = useState();
 
   //This setup is done in useEffect because it cannot be done server side when the page is being built.
@@ -82,6 +84,26 @@ export const ToneContextProvider = (props) => {
     }).toDestination();
     setTimbaleSampler(timbaleSampler);
 
+    const pianoSampler = new Tone.Sampler({
+      urls: {
+        'C4': "C4.mp3",
+        'C#4': "Cs4.mp3",
+        'D4': "D4.mp3",
+        'D#4': "Ds4.mp3",
+        'E4': "E4.mp3",
+        'F4': "F4.mp3",
+        'F#4': "Fs4.mp3",
+        'G4': "G4.mp3",
+        'G#4': "Gs4.mp3",
+        'A4': "A4.mp3",
+        'A#4': "As4.mp3",
+        'B4': "B4.mp3",
+      },
+      release: 1,
+      baseUrl: `${origin}/samples/piano/`,
+    }).toDestination();
+    setPianoSampler(pianoSampler);
+
     const bassSampler = new Tone.Sampler({
       urls: {
         "C4": "C4.wav",
@@ -114,7 +136,8 @@ export const ToneContextProvider = (props) => {
         congaSampler,
         cowbellSampler,
         guiroSampler,
-        timbaleSampler
+        timbaleSampler,
+        pianoSampler
       }}
     >
       {props.children}
