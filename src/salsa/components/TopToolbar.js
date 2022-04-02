@@ -68,7 +68,7 @@ export function TopToolbar(props) {
           <Actions />
         </div>
       </div>
-      <div style={{textAlign: 'center', margin: 8}}>Tap the instruments below to mute/play</div>
+      <div style={{textAlign: 'center', margin: 8}}>Tap the instruments below to mute/play. Turn off silent mode.</div>
     </>
   );
 }
