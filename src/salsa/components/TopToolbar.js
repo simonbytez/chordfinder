@@ -1,4 +1,5 @@
 import Metronome from "./Metronome";
+import Actions from "./Actions";
 import ToneContext from "../../store/tone-context";
 import { getToneJs, salsaActions } from "../../store/salsa";
 import { FaPlay, FaStop } from "react-icons/fa";
@@ -52,18 +53,6 @@ export function TopToolbar(props) {
     updateToneJs(toneJs);
   }, [toneJs]);
 
-  function toggleAccelerate() {
-    if(props.isAccelerating) {
-      dispatch(salsaActions.stopAccelerate());
-    } else {
-      const interval = setInterval(() => {
-        dispatch(salsaActions.increaseTempo());
-      }, 7000);
-  
-      dispatch(salsaActions.startAccelerate(interval));
-    } 
-  }
-
   return (
     <>
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
@@ -74,15 +63,12 @@ export function TopToolbar(props) {
             </IconButton>
           </div>
           <Metronome />
-          
         </div>
         <div style={{display: 'flex', justifyContent: 'center', marginTop: 15}}>
-          <button style={{height: 34}} onClick={toggleAccelerate}>{props.isAccelerating ? 'stop accelerating' : 'accelerate'}</button>
-          <button style={{height: 34, marginLeft: 8}} onClick={() => dispatch(salsaActions.decreaseTempo())}>tempo -</button>
-          <button style={{height: 34, marginLeft: 8}} onClick={() => dispatch(salsaActions.increaseTempo())}>tempo +</button>
+          <Actions />
         </div>
-    </div>
-    <div style={{textAlign: 'center', margin: 8}}>Tap the instruments below to mute/play</div>
+      </div>
+      <div style={{textAlign: 'center', margin: 8}}>Tap the instruments below to mute/play</div>
     </>
   );
 }

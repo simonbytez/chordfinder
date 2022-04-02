@@ -3,12 +3,10 @@ import { salsaActions } from "../../store/salsa";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function Instruments() {
-    const instruments = ['piano', 'clave', 'conga', 'cowbell', 'guiro', 'timbale'];
+    const instruments = ['piano', 'bass', 'clave', 'conga', 'cowbell', 'guiro', 'timbale'];
     const dispatch = useDispatch();
-    //const bassSelected = useSelector(state => state.salsa.score.parts['bass'].enabled);
-    const bassSelected = false;
-    //const bongoSelected = useSelector(state => state.salsa.score.parts['bongo'].enabled);
-    const bongoSelected = false;
+    const bassSelected = useSelector(state => state.salsa.score.parts['bass'].enabled);
+    const bongoSelected = useSelector(state => state.salsa.score.parts['bongo'].enabled);
     const claveSelected = useSelector(state => state.salsa.score.parts['clave'].enabled);
     const congaSelected = useSelector(state => state.salsa.score.parts['conga'].enabled);
     const cowbellSelected = useSelector(state => state.salsa.score.parts['cowbell'].enabled);

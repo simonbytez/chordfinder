@@ -1,7 +1,7 @@
 const smallSinglePart = {
   parts: {
     bass: {
-      enabled: false
+      enabled: true
     },
     bongo: {
       enabled: false,
@@ -46,7 +46,7 @@ const smallSinglePart = {
                   duration: 16,
                 },
                 {
-                  notes: ["E4"],
+                  notes: ["E2"],
                   duration: 16,
                 },
                 {
@@ -54,7 +54,7 @@ const smallSinglePart = {
                   duration: 8,
                 },
                 {
-                  notes: ["G#4"],
+                  notes: ["G2"],
                   duration: 8,
                 },
                 {
@@ -66,7 +66,7 @@ const smallSinglePart = {
                   duration: 16,
                 },
                 {
-                  notes: ["E4"],
+                  notes: ["E2"],
                   duration: 16,
                 },
                 {
@@ -74,7 +74,7 @@ const smallSinglePart = {
                   duration: 8,
                 },
                 {
-                  notes: ["G#4"],
+                  notes: ["D2"],
                   duration: 8,
                 },
               ],

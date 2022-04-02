@@ -92,12 +92,12 @@ const salsaSlice = createSlice({
       state.tempo = action.payload;
     },
     increaseTempo(state) {
-      state.tempo = state.tempo + 1;
       inc();
+      state.tempo = state.tempo + 1;
     },
     decreaseTempo(state) {
-      state.tempo = state.tempo - 1;
       dec();
+      state.tempo = state.tempo - 1;
     },
     startStop(state) {
       if (!state.isPlaying) {

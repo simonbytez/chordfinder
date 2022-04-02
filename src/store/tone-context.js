@@ -28,6 +28,26 @@ export const ToneContextProvider = (props) => {
   //This is because Tone.js uses calls that are only available in the browser.
   useEffect(() => {
     const origin = window.location.origin;
+    const bassSampler = new Tone.Sampler({
+      urls: {
+        "C2": "C2.wav",
+        "C#2": "Cs2.wav",
+        "D2": "D2.wav",
+        "D#2": "Ds2.wav",
+        "E2": "E2.wav",
+        "F2": "F2.wav",
+        "F#2": "Fs2.wav",
+        "G2": "G2.wav",
+        "G#2": "Gs2.wav",
+        "A2": "A2.wav",
+        "A#2": "As2.wav",
+        "B2": "B2.wav",
+      },
+      release: 1,
+      baseUrl: `${origin}/samples/bass/`,
+    }).toDestination();
+    setBassSampler(bassSampler);
+    
     const bongoSampler = new Tone.Sampler({
       urls: {
         C5: "Bongo-low.wav",
@@ -86,43 +106,49 @@ export const ToneContextProvider = (props) => {
 
     const pianoSampler = new Tone.Sampler({
       urls: {
-        'C4': "C4.mp3",
-        'C#4': "Cs4.mp3",
-        'D4': "D4.mp3",
-        'D#4': "Ds4.mp3",
-        'E4': "E4.mp3",
-        'F4': "F4.mp3",
-        'F#4': "Fs4.mp3",
-        'G4': "G4.mp3",
-        'G#4': "Gs4.mp3",
-        'A4': "A4.mp3",
-        'A#4': "As4.mp3",
-        'B4': "B4.mp3",
+          A0: "A0.mp3",
+          C1: "C1.mp3",
+          "D#1": "Ds1.mp3",
+          "F#1": "Fs1.mp3",
+          A1: "A1.mp3",
+          C2: "C2.mp3",
+          "D#2": "Ds2.mp3",
+          "F#2": "Fs2.mp3",
+          A2: "A2.mp3",
+          C3: "C3.mp3",
+          "D#3": "Ds3.mp3",
+          "F#3": "Fs3.mp3",
+          A3: "A3.mp3",
+          C4: "C4.mp3",
+          "D#4": "Ds4.mp3",
+          "F#4": "Fs4.mp3",
+          A4: "A4.mp3",
+          C5: "C5.mp3",
+          "D#5": "Ds5.mp3",
+          "F#5": "Fs5.mp3",
+          A5: "A5.mp3",
+          C6: "C6.mp3",
+          "D#6": "Ds6.mp3",
+          "F#6": "Fs6.mp3",
+          A6: "A6.mp3",
+          C7: "C7.mp3",
+          "D#7": "Ds7.mp3",
+          "F#7": "Fs7.mp3",
+          A7: "A7.mp3",
+          C8: "C8.mp3"
       },
-      release: 1,
-      baseUrl: `${origin}/samples/piano/`,
-    }).toDestination();
+
+      // Cela règle la durée de permanence des notes jouées
+      release: 10,
+
+      // Source locale des sons
+      // baseUrl: "./audio/salamander/"
+
+      baseUrl: "https://tonejs.github.io/audio/salamander/"
+  }).toDestination();
     setPianoSampler(pianoSampler);
 
-    const bassSampler = new Tone.Sampler({
-      urls: {
-        "C4": "C4.wav",
-        "C#4": "Cs4.wav",
-        "D4": "D4.wav",
-        "D#4": "Ds4.wav",
-        "E4": "E4.wav",
-        "F4": "F4.wav",
-        "F#4": "Fs4.wav",
-        "G4": "G4.wav",
-        "G#4": "Gs4.wav",
-        "A4": "A4.wav",
-        "A#4": "As4.wav",
-        "B4": "B4.wav",
-      },
-      release: 1,
-      baseUrl: `${origin}/samples/bass/`,
-    }).toDestination();
-    setBassSampler(bassSampler);
+    
 
     new Tone.PolySynth().toDestination();
   }, []);
