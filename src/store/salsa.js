@@ -2,10 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import _ from "lodash";
 import { createSelector } from "reselect";
 import DEFAULT_SCORE from "../salsa/data/default-score";
-import { start as startToneJs, stop as stopToneJs } from "../lib/tone";
-
-const NON_ACCENT_VELOCITY = 1.0;
-const ACCENT_VELOCITY = 1.0;
+import { start as startToneJs, stop as stopToneJs, startAccelerating, stopAccelerating, inc, dec } from "../lib/tone";
 
 //Get the notes for playback
 export const getToneJs = createSelector(
@@ -84,15 +81,25 @@ const salsaSlice = createSlice({
   name: "salsa",
   initialState: {
     isPlaying: false,
-    tempo: 90,
+    tempo: 175,
     score: DEFAULT_SCORE,
+    isAccelerating: false,
+    interval: null
   },
+  
   reducers: {
     updateTempo(state, action) {
       state.tempo = action.payload;
     },
+    increaseTempo(state) {
+      state.tempo = state.tempo + 1;
+      inc();
+    },
+    decreaseTempo(state) {
+      state.tempo = state.tempo - 1;
+      dec();
+    },
     startStop(state) {
-        console.log('startStop');
       if (!state.isPlaying) {
         startToneJs();
       } else {
@@ -103,6 +110,14 @@ const salsaSlice = createSlice({
     },
     toggleInstrumentEnabled(state, action) {
       state.score.parts[action.payload].enabled = !state.score.parts[action.payload].enabled
+    },
+    startAccelerate(state, action) {
+      state.interval = action.payload;
+      state.isAccelerating = true;
+    },
+    stopAccelerate(state) {
+      clearInterval(state.interval);
+      state.isAccelerating = false;
     }
   },
 });

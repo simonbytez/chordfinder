@@ -2,8 +2,6 @@ import * as Tone from "tone";
 
 let part = null;
 
-let accelerating = false;
-
 let bassSampler = null;
 let bongoSampler = null;
 let claveSampler = null;
@@ -11,8 +9,6 @@ let congaSampler = null;
 let cowbellSampler = null;
 let guiroSampler = null;
 let timbaleSampler = null;
-
-let accelerateLoop = null;
 
 export function setSamplers(
   bassSamplerIn,
@@ -33,7 +29,7 @@ export function setSamplers(
 }
 
 export function updateTempo(tempo) {
-  Tone.Transport.bpm.value = tempo;
+  Tone.Transport.bpm.value = tempo / 2.0;
 }
 
 export function update(toneJsData) { 
@@ -89,22 +85,14 @@ export async function stop() {
   Tone.Transport.stop();
 }
 
-export async function toggleAccelerate() {
-  if(accelerating) {
-    clearInterval(accelerateLoop);
-    accelerating = false;
-  } else {
-    accelerateLoop = window.setInterval(inc, 70);
-    accelerating = true;
-  }
-}
-
-export async function accelerate() {
-  accelerateLoop = window.setInterval(inc, 7000);
-}
-
 export async function inc() {
   Tone.Transport.schedule((time) => {
-    Tone.Transport.bpm.value = Tone.Transport.bpm.value + 1;
+    Tone.Transport.bpm.value = Tone.Transport.bpm.value + 0.5;
+  }, "+4n");
+}
+
+export async function dec() {
+  Tone.Transport.schedule((time) => {
+    Tone.Transport.bpm.value = Tone.Transport.bpm.value - 0.5;
   }, "+4n");
 }

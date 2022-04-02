@@ -8,16 +8,13 @@ import { useDispatch, useSelector } from "react-redux";
 export default function Metronome(props) {
   const dispatch = useDispatch();
   const tempo = useSelector((state) => state.salsa.tempo);
-  const [value, setValue] = useState(tempo * 2);
 
   const handleSliderChange = (_, newValue) => {
-    setValue(newValue);
     dispatch(salsaActions.updateTempo(newValue / 2.0));
   };
 
   const handleInputChange = (event) => {
     const newValue = Number(event.target.value);
-    setValue(event.target.value === "" ? "" : newValue);
     dispatch(salsaActions.updateTempo(newValue / 2.0));
   };
 
@@ -33,7 +30,7 @@ export default function Metronome(props) {
 
   const handleBlur = () => {
     const validValue = getValidValue(value);
-    setValue(validValue);
+    dispatch(salsaActions.updateTempo(validValue / 2.0));
   };
 
   return (
@@ -42,7 +39,7 @@ export default function Metronome(props) {
           <Grid item xs>
             <Slider
               sx={{ width: 150 }}
-              value={typeof value === "number" ? value : 0}
+              value={typeof tempo === "number" ? tempo : 0}
               onChange={handleSliderChange}
               min={100}
               max={300}
@@ -52,10 +49,11 @@ export default function Metronome(props) {
           </Grid>
           <Grid item>
             <Input
-              value={value}
+              value={tempo}
               margin="dense"
               onChange={handleInputChange}
               onBlur={handleBlur}
+              style={{width: 50}}
               inputProps={{
                 step: 1,
                 min: 40,
@@ -63,6 +61,7 @@ export default function Metronome(props) {
                 type: "number",
                 "aria-labelledby": "input-slider",
                 pattern: "\\d*",
+                width: 50
               }}
             />
           </Grid>

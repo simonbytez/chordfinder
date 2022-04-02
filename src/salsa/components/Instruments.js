@@ -31,7 +31,12 @@ export default function Instruments() {
     }))
 
     return <>
-        <div class="instruments-wrapper" style={{display: 'flex', flexWrap: 'wrap'}}>
+        <div class="instruments-wrapper" style={{
+            display: 'flex', 
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            marginTop: 10
+            }}>
         {cards.map(card => <Card onClick={card.onClick} image={card.image} alt={card.alt} selected={card.selected} />)}
         </div>
     </>
