@@ -148,7 +148,7 @@ function Main({ categoryOptions, timingCategoryOptions, getPattern }) {
 
       let categoryName = categories[categoryId].name;
       c.push(<Checkbox checked={categoryEnabled} onClick={toggleTimingCategoryEnabled.bind(null, tco.id, categoryId)}/>);
-      c.push(<div>{categoryName}</div>);
+      c.push(<div>{`${categoryName}(${categories[categoryId].type})`}</div>);
       timingCategoryOptions.forEach(option => {
         let {optionId, enabled: optionEnabled} = option;
         c.push(<Chip disabled={!categoryEnabled} variant="contained" 
