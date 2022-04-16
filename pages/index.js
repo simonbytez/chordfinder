@@ -9,5 +9,9 @@ export default function Home() {
   <Link href="/salsa">
     <a>salsa</a>
   </Link>
+  <br />
+  <Link href="/harp">
+    <a>harp</a>
+  </Link>
 </h1>
 }

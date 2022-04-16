@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import _ from "lodash";
-import { boardView } from "./defaultState";
+import { boardView } from "../guitar/data/default";
 import { createSelector } from "reselect";
 
 const chordDiffs = {
