@@ -5,11 +5,11 @@ const dephault = {
             name: 'H',
             enabled: true
         },
-        2: {
-            type: 'L',
-            name: 'A',
-            enabled: true
-        },
+        // 2: {
+        //     type: 'L',
+        //     name: 'A',
+        //     enabled: true
+        // },
         3: {
             type: 'F',
             name: 'A',
@@ -72,19 +72,14 @@ const dephault = {
             name: 'L/R',
             enabled: true
         },
-        8: {
-            categoryId: 3,
-            name: 'Up',
-            enabled: true
-        },
         9: {
             categoryId: 3,
-            name: 'Down',
+            name: 'Right Down',
             enabled: true
         },
         10: {
             categoryId: 3,
-            name: 'Back',
+            name: 'Right Back',
             enabled: true
         },
         11: {
@@ -159,12 +154,37 @@ const dephault = {
         },
         25: {
             categoryId: 6,
-            name: 'Back',
+            name: 'Behind',
             enabled: true
         },
         26: {
             categoryId: 7,
             name: 'Travel',
+            enabled: true
+        },
+        28: {
+            categoryId: 3,
+            name: 'Left Down',
+            enabled: true
+        },
+        29: {
+            categoryId: 3,
+            name: 'Left Back',
+            enabled: true
+        },
+        30: {
+            categoryId: 3,
+            name: 'Left Neck',
+            enabled: true
+        },
+        31: {
+            categoryId: 3,
+            name: 'Right Neck',
+            enabled: true
+        },
+        32: {
+            categoryId: 4,
+            name: '1L',
             enabled: true
         },
     },
@@ -175,6 +195,7 @@ const dephault = {
             options: {
                 1: {
                     enabled: true,
+                    optional: false,
                     options: {
                         1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true
                     }
@@ -182,13 +203,13 @@ const dephault = {
                 3: {
                     enabled: true,
                     options: {
-                        8: true, 9: true, 10: true
+                        9: true, 10: true, 28: true, 29: true, 30: true, 31: true
                     }
                 },
                 4: {
                     enabled: true,
                     options: {
-                        11: true, 12: true, 13: true
+                        11: true, 12: true, 13: true, 32: true
                     }
                 },
                 5: {
@@ -217,6 +238,7 @@ const dephault = {
             options: {
                 1: {
                     enabled: true,
+                    optional: false,
                     options: {
                         1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true
                     }
@@ -224,13 +246,13 @@ const dephault = {
                 3: {
                     enabled: true,
                     options: {
-                        8: true, 9: true, 10: true
+                        9: true, 10: true, 28: true, 29: true, 30: true, 31: true
                     }
                 },
                 4: {
                     enabled: true,
                     options: {
-                        11: true, 12: true, 13: true
+                        11: true, 12: true, 13: true, 32: true
                     }
                 },
                 5: {

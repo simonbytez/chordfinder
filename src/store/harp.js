@@ -37,18 +37,17 @@ export const timingCategoryOptions = createSelector(
           if(!options[optionId].enabled || !categories[categoryId].enabled) { continue };
         
           if(!categoryOptions[categoryId]) {
-            categoryOptions[categoryId] = {enabled: categoryData.enabled, options: []};
+            categoryOptions[categoryId] = {enabled: categoryData.enabled, optional: categoryData.optional, options: []};
           }
     
           categoryOptions[categoryId].options.push({optionId, enabled: categoryDataOptions[optionId]});
         }
-        
       }
       
       timingCategoryOptions.push({id: timingId, start: timing.start, end: timing.end, options: categoryOptions});
     }
 
-    return timingCategoryOptions;
+    return timingCategoryOptions.sort((t1, t2) => t1.start - t2.start);
   }
 );
 
@@ -61,10 +60,10 @@ export const getPattern = state => {
     for(let timing of tcos) {
       let val = {id: timing.id, start: timing.start, end: timing.end, choices: {}};
       for(let categoryId in timing.options) {
-        const {enabled: categoryEnabled, options} = timing.options[categoryId];
+        const {enabled: categoryEnabled, options, optional} = timing.options[categoryId];
         options = options.filter(option => option.enabled && categoryEnabled);
 
-        if(options.length == 0) { continue };
+        if(options.length == 0 || (optional && Math.random() < 0.5)) { continue };
 
         let { type: categoryType } = categories[categoryId];
         let choice = options[options.length * Math.random() | 0];
@@ -76,7 +75,9 @@ export const getPattern = state => {
         val.choices[categoryType][categoryId] = choice.optionId;
       }
 
-      ret.push(val);
+      if(Object.keys(val.choices).length > 0) {
+        ret.push(val);
+      }
     }
 
     return ret;
@@ -167,16 +168,18 @@ const harpSlice = createSlice({
       for(let timingId in state.timings) {
         const timing = state.timings[timingId];
         const categoryData = timing.options[categoryId];
-        const categoryDataOptions = categoryOptions.options;
+        const categoryDataOptions = categoryData.options;
         categoryDataOptions[newOptionId] = true;
       }
 
       state.options[newOptionId] = {categoryId, name, enabled: true};
     },
+    toggleTimingCategoryOptional(state, action) {
+      const {timingId, categoryId} = action.payload;
+      state.timings[timingId].options[categoryId].optional = !state.timings[timingId].options[categoryId].optional;
+    },
     addTiming(state, action) {
-
       const {start, end} = action.payload;
-      console.log('0');
       const categoryOptions = getCategoryOptions(state.options, state.categories);
 
       let newTimingId = 1;
@@ -199,6 +202,16 @@ const harpSlice = createSlice({
         start, end, options: timingOptions
       }
 
+    },
+    clearData(state) {
+      state.categories = {};
+      state.options = {};
+      state.timings = {};
+    },
+    resetData(state) {
+      state.categories = defaultData.categories;
+      state.options = defaultData.options;
+      state.timings = defaultData.timings;
     },
   }
 });

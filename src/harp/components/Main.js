@@ -105,12 +105,12 @@ function Main({ categoryOptions, timingCategoryOptions, getPattern }) {
         }
       }
 
-      patternHtml.push({timing: <strong style={{marginLeft: 10}}>{time.start}-{time.end}</strong>, content: <Card style={{textAlign: 'center'}}><CardContent><span style={{
+      patternHtml.push(<Card style={{textAlign: 'center', margin: 8}}><CardContent><h2 style={{marginTop: 0}}>{time.start}-{time.end}</h2><span style={{
         display: 'inline-block',
         textAlign: 'center',
         verticalAlign: 'middle',
-        fontSize: 16
-      }}>{followHtml}{leadHtml}</span></CardContent></Card>});
+        fontSize: 24
+      }}>{followHtml}{leadHtml}</span></CardContent></Card>);
     }
   };
   let content = [];
@@ -132,28 +132,33 @@ function Main({ categoryOptions, timingCategoryOptions, getPattern }) {
                    style={{margin: 8, opacity: enabled && categoryEnabled ? 1.0 : 0.5}} onClick={toggleEnableOption.bind(null, optionId)} label={options[optionId].name} />);
     });
 
-    content.push(<div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', margin: 8, maxWidth: '100%', flexWrap: 'wrap'}}>{c}</div>)
+    content.push(<div style={{display: 'flex', justifyContent: 'left', alignItems: 'center', margin: 8, maxWidth: '100%', flexWrap: 'wrap'}}>{c}</div>)
   }
 
   let timingsHtml = [];
-  
   for(let tco of timingCategoryOptions) {
     let summary = null;
     let details = [];
     summary = <AccordionSummary expandIcon={<ExpandMoreIcon />}><h3 style={{textAlign: 'center', marginBottom: 8, width: '100%'}}>Timing {tco.start}-{tco.end}</h3></AccordionSummary>;
     
     for(let categoryId in tco.options) {
-      const {enabled: categoryEnabled, options: timingCategoryOptions} = tco.options[categoryId];
+      const {enabled: categoryEnabled, options: timingCategoryOptions, optional} = tco.options[categoryId];
       let c = [];
 
       let categoryName = categories[categoryId].name;
       c.push(<Checkbox checked={categoryEnabled} onClick={toggleTimingCategoryEnabled.bind(null, tco.id, categoryId)}/>);
       c.push(<div>{`${categoryName}(${categories[categoryId].type})`}</div>);
+
       timingCategoryOptions.forEach(option => {
         let {optionId, enabled: optionEnabled} = option;
         c.push(<Chip disabled={!categoryEnabled} variant="contained" 
-                     style={{marginLeft: 8, opacity: optionEnabled && categoryEnabled ? 1.0 : 0.5}} onClick={toggleEnableTimingOption.bind(null, tco.id, categoryId, optionId)} label={options[optionId].name} />);
+                     style={{marginLeft: 8, marginTop: 8, opacity: optionEnabled && categoryEnabled ? 1.0 : 0.5}} 
+                     onClick={toggleEnableTimingOption.bind(null, tco.id, categoryId, optionId)} label={options[optionId].name} 
+                     size="small"/>);
       });
+      c.push(<Chip style={{marginLeft: 8, marginTop: 8, opacity: optional && categoryEnabled ? 1.0 : 0.5}} 
+                   onClick={() => dispatch(harpActions.toggleTimingCategoryOptional({timingId: tco.id, categoryId}))} 
+                   label="Optional" size="small"/>);
 
       details.push(<AccordionDetails><div style={{display: 'flex', justifyContent: 'left', marginBottom: 8, alignItems: 'center', maxWidth: '100%', flexWrap: 'wrap'}}>{c}</div></AccordionDetails>)
     }
@@ -176,9 +181,35 @@ function Main({ categoryOptions, timingCategoryOptions, getPattern }) {
   }
 
   const showPatternHtml = patternHtml.length > 0;
+  const showCategoryMenuItems = categoryMenuItems.length > 0;
   return (
     <>
-    <button style={{display: 'flex', margin: 'auto', marginTop: 15, marginBottom: 15}} onClick={onGetPattern}>Get Pattern</button>
+    <div style={{margin: 24, textAlign: 'center'}}>
+    <button style={{display: 'inline', marginRight: 8}} onClick={onGetPattern}>Get Pattern</button>
+    <button style={{display: 'inline', marginRight: 8}} onClick={() => {
+        setPattern(null);
+        dispatch(harpActions.clearData())
+      }}>Clear</button>
+    <button style={{display: 'inline', marginRight: 8}} onClick={dispatch.bind(null, harpActions.resetData())}>Reset</button>
+    </div>
+    
+    {showPatternHtml && 
+    <>
+      <br />
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          p: 1,
+          m: 1,
+          bgcolor: 'background.paper',
+          borderRadius: 1,
+        }}
+      >
+        {patternHtml}
+      </Box></>}
     <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 8, marginBottom: 8}}>
       Add Timing
         <TextField 
@@ -199,21 +230,6 @@ function Main({ categoryOptions, timingCategoryOptions, getPattern }) {
         <AddCircleOutlineIcon />
       </IconButton>
       </div>
-    {showPatternHtml && 
-    <>
-      <br />
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          p: 1,
-          m: 1,
-          bgcolor: 'background.paper',
-          borderRadius: 1,
-        }}
-      >
-        {patternHtml.map(p => <>{p.timing}<Item>{p.content}</Item></>)}
-      </Box></>}
       
     <Accordion expanded={optionsExpanded}
                                 onChange={(event, expanded) => {
@@ -245,21 +261,22 @@ function Main({ categoryOptions, timingCategoryOptions, getPattern }) {
           <AddCircleOutlineIcon />
       </IconButton>
       </div>
+      {showCategoryMenuItems && 
       <div style={{display: 'flex', justifyContent: 'center', marginTop: 8}}>
-      <Select
-          labelId="demo-simple-select-label"
-          id="new-option-lead-follow-type"
-          value={newOptionCategory}
-          size="small"
-          onChange={event => setNewOptionCategory(event.target.value)}
-        >
-          {categoryMenuItems}
-        </Select>
+        <Select
+            labelId="demo-simple-select-label"
+            id="new-option-lead-follow-type"
+            value={newOptionCategory}
+            size="small"
+            onChange={event => setNewOptionCategory(event.target.value)}
+          >
+            {categoryMenuItems}
+          </Select>
         <TextField style={{marginLeft: 8}} size="small" value={newOptionName} onChange={event => setNewOptionName(event.target.value)} id="new-option-name" label="Option Name" variant="outlined" />
         <IconButton onClick={dispatch.bind(null, harpActions.addCategoryOption({categoryId: newOptionCategory, name: newOptionName}))} aria-label="add option">
           <AddCircleOutlineIcon />
       </IconButton>
-      </div>
+      </div>}
       </div>
       <br/></>
       {content}
