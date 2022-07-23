@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import _ from "lodash";
-import { boardView } from "../guitar/data/default";
+import { boardView, scaleBoard } from "../guitar/data/default";
 import { createSelector } from "reselect";
 
 const chordDiffs = {
@@ -68,6 +68,18 @@ function getInitialBoard() {
   return board;
 }
 
+function getInitialScaleBoard() {
+  let board = _.cloneDeep(boardView);
+
+  for(let string in board) {
+    for(let note of board[string]) {
+      note.included = ['C', 'D', 'E', 'F', 'G', 'A', 'B'].includes(note.note.toUpperCase()); 
+    }
+  }
+
+  return board;
+}
+
 function updateBoardChord(board, arrangements, arrIndex) {
   let arrangement = arrangements[arrIndex];
   Object.keys(board).forEach((stringNum) => {
@@ -126,49 +138,6 @@ function _getChordArrangements(board, chordNotes, rootNote, stringNum, rootStrin
 
       prevIndex = currentConfig[key];
     }
-
-    // let prevIndex = -1;
-    // let fretSet = new Set();
-    // for(const key in currentConfig) {
-    //   let value = currentConfig[key];
-    //   fretSet.add(value);
-    //   if(value < minIndex && value !== 0) {
-    //     minIndex = value;
-    //   } 
-      
-    //   if(value > maxIndex) {
-    //     maxIndex = value;
-    //   } 
-
-    //   prevIndex = currentConfig[key];
-    // }
-
-    //This needs to change to not reject valid configurations with muted strings
-    // if(maxIndex - minIndex > 3) {
-    //   //console.log('maxInex - minIndex > 3: ' + JSON.stringify(currentConfig));
-    //   for(const key in currentConfig) {
-    //     let value = currentConfig[key];
-    //     if(value - minIndex > 3) {
-    //       if(key === rootString) {
-    //         return false;
-    //       }
-
-    //       delete currentConfig[key];
-    //     }
-    //   }
-
-    //   //console.log('after deleted: ' + JSON.stringify(currentConfig));
-
-    //   let notesLeft = chordNotes.slice();
-    //   for(const key in currentConfig) {
-    //     let note = board[key][currentConfig[key]].note;
-    //     notesLeft.splice(notesLeft.indexOf(note), 1);
-    //   }
-
-    //   //console.log('notes left: ' + JSON.stringify(notesLeft));
-
-    //   return notesLeft.length === 0;
-    // }
 
     if(maxIndex - minIndex > 3) {
       return false;
@@ -234,6 +203,7 @@ const guitarSlice = createSlice({
   name: "guitar",
   initialState: {
     board: getInitialBoard(),
+    scaleBoard: getInitialScaleBoard(),
     chordArrangements: getInitialChordArrangements(),
     arrIndex: 0,
     selectedNote: "C",
@@ -269,8 +239,8 @@ const guitarSlice = createSlice({
 
       let notes = noteValues.map(noteValue => numToNoteMap[noteValue]);
 
-      for(let string in state.board) {
-        for(let note of state.board[string]) {
+      for(let string in state.scaleBoard) {
+        for(let note of state.scaleBoard[string]) {
           note.included = notes.includes(note.note.toUpperCase()); 
         }
       }

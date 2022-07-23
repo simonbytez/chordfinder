@@ -14,6 +14,10 @@ export default function Main() {
     return state.guitar.board;
   });
 
+  const scaleBoard = useSelector((state) => {
+    return state.guitar.scaleBoard;
+  });
+
   function incArrIndex() {
     dispatch(guitarActions.incArrIndex());
   }
@@ -64,12 +68,13 @@ export default function Main() {
           <ChordSelector />
           <button type="button" onClick={decArrIndex}>prev</button>
           <button type="button" onClick={incArrIndex}>next</button>
+          <Board board={board} />
         </TabPanel>
         <TabPanel value={type} index={1}>
           <ScaleSelector />
+          <Board board={scaleBoard} />
         </TabPanel>
       </div>
-      <Board board={board} />
     </>
   );
 };
