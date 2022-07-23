@@ -21,7 +21,12 @@ const chordDiffs = {
   sus: [5, 2]
 };
 
-const noteValues = {
+const scaleDiffs = {
+  major: [2, 2, 1, 2, 2, 2],
+  minor: [2, 1, 2, 2, 1, 2]
+};
+
+const noteToNumMap = {
   C: 0,
   "C#": 1,
   D: 2,
@@ -35,6 +40,21 @@ const noteValues = {
   "A#": 10,
   B: 11,
 };
+
+const numToNoteMap = {
+  0: 'C',
+  1: "C#",
+  2: 'D',
+  3: "D#",
+  4: 'E',
+  5: 'F',
+  6: "F#",
+  7: 'G',
+  8: "G#",
+  9: 'A',
+  10: "A#",
+  11: 'B',
+}
 
 function getInitialChordArrangements() {
   let board = boardView;
@@ -217,7 +237,9 @@ const guitarSlice = createSlice({
     chordArrangements: getInitialChordArrangements(),
     arrIndex: 0,
     selectedNote: "C",
+    selectedRoot: "C",
     selectedType: "major",
+    selectedScale: "major"
   },
   reducers: {
     incArrIndex(state) {
@@ -232,13 +254,34 @@ const guitarSlice = createSlice({
       }
       updateBoardChord(state.board, state.chordArrangements, state.arrIndex);
     },
+    updateScale(state, action) {
+      let selectedRoot = action.payload.root.toUpperCase();
+      let selectedScale = action.payload.scale;
+      state.selectedRoot = selectedRoot;
+      state.selectedScale = selectedScale;
+      let noteValues = [noteToNumMap[selectedRoot]];
+      let currentValue = noteValues[0];
+
+      for(let diff of scaleDiffs[selectedScale]) {
+        currentValue = (currentValue + diff) % 12;
+        noteValues.push(currentValue);
+      }
+
+      let notes = noteValues.map(noteValue => numToNoteMap[noteValue]);
+
+      for(let string in state.board) {
+        for(let note of state.board[string]) {
+          note.included = notes.includes(note.note.toUpperCase()); 
+        }
+      }
+    },
     updateChordType(state, action) {
       let selectedNote = action.payload.note;
       let selectedType = action.payload.type;
       state.selectedNote = selectedNote;
       state.selectedType = selectedType;
 
-      let selectedNoteVal = noteValues[selectedNote];
+      let selectedNoteVal = noteToNumMap[selectedNote];
       let diffs = chordDiffs[selectedType];
 
       let chordValues = [selectedNote.toLowerCase()];

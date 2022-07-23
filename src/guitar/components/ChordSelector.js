@@ -20,7 +20,7 @@ export default function Main() {
 
   return (
       <>
-        <select onChange={changeNote} selected={selectedNote}>
+        <select id="chord-selector-root" onChange={changeNote} value={selectedNote}>
             <option value="C">C</option>
             <option value="C#">C#</option>
             <option value="D">D</option>
@@ -35,7 +35,7 @@ export default function Main() {
             <option value="B">B</option>
         </select>
 
-        <select onChange={changeType} selected={selectedType}>
+        <select id="chord-selector-type" onChange={changeType} value={selectedType}>
             <option value="major">major</option>
             <option value="major6">major6</option>
             <option value="major7">major7</option>
