@@ -3,9 +3,9 @@ export default function Fret({note, included}) {
   return <>
     <td style={{
       border: '1px solid black',
-      background,
+      //background,
       width: '15px',
       height: '15px'
-    }}></td>
+    }}>{included ? note : ''}</td>
   </>
 };
