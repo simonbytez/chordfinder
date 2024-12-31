@@ -148,8 +148,6 @@ export const ToneContextProvider = (props) => {
   }).toDestination();
     setPianoSampler(pianoSampler);
 
-    
-
     new Tone.PolySynth().toDestination();
   }, []);
 

@@ -75,7 +75,7 @@ export function update(toneJsData) {
     }
   }, toneJsData.notes);
   part.loopStart = 0;
-  part.loopEnd = "1m";
+  part.loopEnd = toneJsData.notes.length;
   part.loop = true;
 
   part.start(0);

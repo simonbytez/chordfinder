@@ -1,0 +1,339 @@
+/* Reset and base styles */
+  
+  /* Layout */
+  .nav {
+    background: black;
+    color: white;
+    padding: 1rem;
+    position: fixed;
+    width: 100%;
+    z-index: 50;
+  }
+  
+  .nav-content {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .nav-logo {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+  
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+  
+  .nav-links button {
+    color: #9ca3af;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .nav-links button:hover {
+    color: #d1d5db;
+  }
+  
+  /* Main content */
+  .main {
+    padding-top: 4rem;
+  }
+  
+  section {
+    min-height: 100vh;
+    padding: 4rem 1rem;
+  }
+  
+  section:nth-child(even) {
+    background: #f9fafb;
+  }
+  
+  /* Features */
+  .feature-container {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+  
+  .feature-content {
+    max-width: 32rem;
+    margin: 0 auto;
+    text-align: center;
+  }
+  
+  .feature-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    background: #f3f4f6;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .feature-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .feature-description {
+    color: #4b5563;
+    margin-bottom: 2rem;
+  }
+  
+  /* Phone mockup */
+  .phone-mockup {
+    background: #f3f4f6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    aspect-ratio: 9/16;
+    width: 100%;
+  }
+  
+  .phone-screen {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    height: 100%;
+  }
+  
+  .phone-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  
+  .phone-content {
+    height: 12rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Navigation buttons */
+  .nav-button {
+    padding: 0.5rem;
+    border-radius: 9999px;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+  
+  .nav-button:hover {
+    background: #e5e7eb;
+  }
+  
+  /* FAQ and Contact sections */
+  .section-content {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  .section-title {
+    font-size: 1.875rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .faq-item {
+    margin-bottom: 2rem;
+  }
+  
+  .faq-question {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  
+  .faq-answer {
+    color: #4b5563;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Reset and base styles */
+  
+  /* Layout */
+  .nav {
+    background: black;
+    color: white;
+    padding: 1rem;
+    position: fixed;
+    width: 100%;
+    z-index: 50;
+  }
+  
+  .nav-content {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .nav-logo {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+  
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+  
+  .nav-links button {
+    color: #9ca3af;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .nav-links button:hover {
+    color: #d1d5db;
+  }
+  
+  /* Main content */
+  .main {
+    padding-top: 4rem;
+  }
+  
+  section {
+    min-height: 100vh;
+    padding: 4rem 1rem;
+  }
+  
+  section:nth-child(even) {
+    background: #f9fafb;
+  }
+  
+  /* Features */
+  .feature-container {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+  
+  .feature-content {
+    max-width: 32rem;
+    margin: 0 auto;
+    text-align: center;
+  }
+  
+  .feature-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    background: #f3f4f6;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .feature-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .feature-description {
+    color: #4b5563;
+    margin-bottom: 2rem;
+  }
+  
+  /* Phone mockup */
+  .phone-mockup {
+    background: #f3f4f6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    aspect-ratio: 9/16;
+    width: 100%;
+  }
+  
+  .phone-screen {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    height: 100%;
+  }
+  
+  .phone-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  
+  .phone-content {
+    height: 12rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Navigation buttons */
+  .nav-button {
+    padding: 0.5rem;
+    border-radius: 9999px;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+  
+  .nav-button:hover {
+    background: #e5e7eb;
+  }
+  
+  /* FAQ and Contact sections */
+  .section-content {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  .section-title {
+    font-size: 1.875rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .faq-item {
+    margin-bottom: 2rem;
+  }
+  
+  .faq-question {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  
+  .faq-answer {
+    color: #4b5563;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }

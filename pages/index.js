@@ -1,17 +1,14 @@
 import Link from 'next/link';
 
 export default function Home() {
+  const links = ["guitar", "salsa", "harp", "voice", "drumtoolz"]
+        .map(l => <>
+                    <Link href={`/${l}`} key={Math.random().toString}>
+                      <a>{l}</a>
+                    </Link>
+                    <br/>
+                  </>)
   return <h1 className="title">
-  <Link href="/guitar">
-    <a>guitar</a>
-  </Link>
-  <br />
-  <Link href="/salsa">
-    <a>salsa</a>
-  </Link>
-  <br />
-  <Link href="/harp">
-    <a>harp</a>
-  </Link>
+  {links}
 </h1>
 }

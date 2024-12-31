@@ -2,6 +2,7 @@ import Head from "next/head";
 import { Provider } from "react-redux";
 import store from "../src/store/index";
 import { ToneContextProvider } from "../src/store/tone-context";
+import styles from '../styles/globals.css';
 
 export default function MyApp(props) {
   const { Component, pageProps } = props;
