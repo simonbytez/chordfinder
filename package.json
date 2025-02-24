@@ -5,6 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "consolidate": "node consolidate.js",
     "lint": "next lint"
   },
   "dependencies": {

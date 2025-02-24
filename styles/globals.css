@@ -183,3 +183,14 @@ a {
   html {
     scroll-behavior: smooth;
   }
+
+  .device-indicator.listener {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+  }
+
+  .device-indicator.jammer {
+    position: absolute;
+    top: 50%;
+  }

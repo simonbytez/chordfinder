@@ -1,0 +1,45 @@
+/* styles.css */
+.board {
+    display: inline-block;
+    background-color: #ddd;
+    padding: 8px;
+  }
+  
+  .board-row {
+    display: flex;
+  }
+  
+  .cell {
+    position: relative;  /* for absolutely positioned .device-indicator */
+    width: 50px;
+    height: 50px;
+    border: 1px solid #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  
+  .piece-label {
+    font-weight: bold;
+  }
+  
+  .device-indicator {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    pointer-events: none;   /* so clicks pass through */
+    font-size: 1.1rem;
+  }
+
+  .device-indicator.listener {
+    position: 'absolute';
+    top: '50%';
+    left: '50%';
+  }
+
+  .device-indicator.jammer {
+    position: 'absolute';
+    top: '50%';
+  }
+  
