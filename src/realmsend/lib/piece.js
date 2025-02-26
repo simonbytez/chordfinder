@@ -18,7 +18,7 @@ export default class Piece {
     }
 
     get category() {
-        if(['brute', 'sniper', 'scanner', 'destroyer', 'scout', 'jammer', 'listener'].includes(this.type)) {
+        if(['brute', 'sniper', 'scanner', 'destroyer', 'scout', 'jammer', 'listener', 'pawn'].includes(this.type)) {
             return 'person'
         } else {
             return this.type
@@ -26,7 +26,7 @@ export default class Piece {
     }
 
     get color() {
-        if(['brute', 'sniper', 'scanner', 'destroyer', 'scout', 'jammer', 'listener'].includes(this.type)) {
+        if(['brute', 'sniper', 'scanner', 'destroyer', 'scout', 'jammer', 'listener', 'pawn'].includes(this.type)) {
             return 'black'
         } else if(this.type == 'wall') {
             return 'brown'

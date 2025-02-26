@@ -21,7 +21,7 @@ const MovementPanel = require('./MovementPanel');
 const IntelLogPanel = require('./IntelLogPanel');
 
 const BOARD_SIZE = 9;
-const PIECE_TYPES = ['wall', 'flag', 'brute', 'scanner', 'jail', 'scout', 'jammer', 'listener'];
+const PIECE_TYPES = ['wall', 'flag', 'brute', 'scanner', 'jail', 'scout', 'jammer', 'listener', 'pawn'];
 
 function rotateDirection(currentDir, side, player) {
   const dirs = ['north', 'east', 'south', 'west'];

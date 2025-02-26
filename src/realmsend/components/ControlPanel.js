@@ -4,14 +4,15 @@
 const React = require('react');
 
 const PIECE_LIMITS = {
-  wall: 1,
+  wall: 10,
   flag: 1,
-  brute: 1,
-  scanner: 1,
-  scout: 1,
+  brute: 3,
+  scanner: 3,
+  scout: 3,
   jail: 0,
-  jammer: 1,
-  listener: 1
+  jammer: 3,
+  listener: 3,
+  pawn: 9
 };
 
 function ControlPanel({ pieces, selectedPiece, onSelectPiece, onComplete, counts }) {
