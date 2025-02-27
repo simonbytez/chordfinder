@@ -28,7 +28,6 @@ function MovementPanel({
         backgroundColor: '#fff',
       }}
     >
-      <h3>Player {player} Controls</h3>
       <div>Actions left: {actionsRemaining}</div>
 
       {/* End Turn */}

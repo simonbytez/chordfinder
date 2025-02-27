@@ -12,6 +12,7 @@ import Piece from '../lib/piece';
 import abbrs from '../lib/consts';
 import { current } from '@reduxjs/toolkit';
 import { DevicesFold } from '@mui/icons-material';
+import { useEffect } from 'react';
 
 const { useState } = React;
 
@@ -120,11 +121,24 @@ function getLineOfSight(board, x, y, piece) {
   return [{ x: cx, y: cy, hasEnemy: enemyHere, distance: 1, isCertain: true }];
 }
 
-function App() {
-  const [board, setBoard] = useState(createInitialBoard());
+function App({playerNumber, 
+              isMyTurn, 
+              onSetupComplete, 
+              onGameStateUpdate,
+              gameState}) {
+  const [board, setBoard] = useState(gameState.board);
   const [counts, setCounts] = useState(initializeCounts());
-  const [currentPlayer, setCurrentPlayer] = useState(1);
-  const [phase, setPhase] = useState('setup');
+  const [currentPlayer, setCurrentPlayer] = useState(playerNumber);
+  const [phase, setPhase] = useState(gameState.phase);
+
+  useEffect(() => {
+    setPhase(gameState.phase)
+  }, [gameState.phase])
+
+  useEffect(() => {
+    setBoard(gameState.board)
+  }, [gameState.board])
+
   const [selectedPieceType, setSelectedPieceType] = useState('wall');
   const [selectedCell, setSelectedCell] = useState(null);
 
@@ -164,15 +178,9 @@ function App() {
 
   function nextPhase() {
     if (phase === 'setup') {
-      if (currentPlayer === 1) {
-        setCurrentPlayer(2);
-      } else {
-        // done placing, go to movement
-        setCurrentPlayer(1);
-        setPhase('movement');
-        setActionsRemaining(2);
-        setFreeRotationUsed(false);
-      }
+      setActionsRemaining(2);
+      setFreeRotationUsed(false);
+      onSetupComplete(currentPlayer)
     }
   }
 
@@ -180,15 +188,13 @@ function App() {
     // increment certain intel ages & uncertain scan report ages
     newBoard = incrementIntelAgesForPlayer(newBoard, currentPlayer);
 
-    const nextP = currentPlayer === 1 ? 2 : 1;
     const finishing = currentPlayer;
     setIntelLogs(prev => ({
       ...prev,
       [finishing]: [], // clear logs for finishing player
     }));
 
-    setCurrentPlayer(nextP);
-    setBoard(newBoard);
+    onGameStateUpdate(newBoard, 3 - currentPlayer, 'movement')
     setActionsRemaining(2);
     setSelectedCell(null);
     setDetectionResults([]);
@@ -256,7 +262,7 @@ function App() {
     cellCopy.pieces = [...cellCopy.pieces, newPiece];
     newBoard[y][x] = cellCopy;
 
-    setBoard(newBoard);
+    gameState.board = newBoard
     setCounts(newCounts);
   }
 
@@ -355,7 +361,6 @@ function App() {
       removeDevices(newBoard, currentPlayer, ty, tx)
     }
 
-    setBoard(newBoard);
     setSelectedCell({ x: tx, y: ty, piece });
 
     // re-check LoS
@@ -379,6 +384,7 @@ function App() {
 
     updateListeningDeviceIntel(newBoard, currentPlayer, ey, ex, listeningDevice, true)
     updateJammerIntel(newBoard, currentPlayer, ey, ex, jammer, true)
+    gameState.board = newBoard
 
     setActionsRemaining(prev => {
       const next = prev - 1;
@@ -548,7 +554,7 @@ function App() {
 
     piece.deviceCount++;
 
-    setBoard(newBoard);
+    gameState.board = newBoard
     setSelectedCell({ x, y, piece });
 
     setActionsRemaining(prev => {
@@ -624,7 +630,8 @@ function App() {
     cellCopy.jammer[currentPlayer] = true
     newBoard[y][x] = cellCopy;
 
-    setBoard(newBoard);
+    gameState.board = board
+
     setSelectedCell({ x, y, piece });
 
     setActionsRemaining(prev => {
@@ -680,7 +687,7 @@ function App() {
       }*/
     });
 
-    setBoard(newBoard);
+    gameState.board = board
 
     updateIntel(newBoard, 3 - currentPlayer, y, x, piece, true, 1)
 
@@ -707,7 +714,7 @@ function App() {
     piece.direction = rotateDirection(piece.direction, side, currentPlayer);
 
     newBoard[selectedCell.y][selectedCell.x] = cellCopy;
-    setBoard(newBoard);
+    gameState.board = board
     setSelectedCell({ x: selectedCell.x, y: selectedCell.y, piece });
 
     // re-check LoS
@@ -752,22 +759,35 @@ function App() {
   // RENDER
   // =========================
 
+  let title = null
+  if(phase === 'setup') {
+    if(isMyTurn) {
+      title = 'Setup Phase'
+    } else {
+      title = `Setup Phase - waiting on other player set up`
+    }
+  } else if(!isMyTurn) {
+    title = 'Waiting on other player'
+  } else {
+    title = 'Your turn!'
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h1>
-        Player {currentPlayer} - {phase === 'setup' ? 'Setup' : 'Movement'} Phase
+        {title}
       </h1>
       <div style={{ display: 'flex', gap: '20px' }}>
-        <IntelLogPanel currentPlayer={currentPlayer} logs={intelLogs[currentPlayer]} />
-        <GameBoard
+        {(phase == 'movement' || isMyTurn) && <GameBoard
           board={board}
           onCellClick={handleCellClick}
           isActive={phase === 'setup' || phase === 'movement'}
           selectedCell={selectedCell}
+          isMyTurn={isMyTurn}
           detectionResults={detectionResults}
           currentPlayer={currentPlayer}
-        />
-        {phase === 'movement' && (
+        />}
+        {phase === 'movement' && isMyTurn && (
           <MovementPanel
             player={currentPlayer}
             selectedCell={selectedCell}
@@ -783,7 +803,7 @@ function App() {
           />
         )}
       </div>
-      {phase === 'setup' && (
+      {phase === 'setup' && isMyTurn && (
         <ControlPanel
           pieces={PIECE_TYPES}
           selectedPiece={selectedPieceType}

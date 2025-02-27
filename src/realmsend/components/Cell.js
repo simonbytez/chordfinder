@@ -7,6 +7,8 @@
  *  - The scanner reports for the current player, e.g. "P3" with a subscript "2"
  *******************************************************/
 const React = require('react');
+const {abbrs} = require('../lib/consts.js');
+const { StyledEngineProvider } = require('@mui/material');
 
 function Cell({
   cell,
@@ -15,6 +17,7 @@ function Cell({
   isSelected,
   isInLOS,
   currentPlayer,
+  isMyTurn,
   eyeD
 }) {
   const piece = cell.pieces[0] || null;
@@ -44,7 +47,7 @@ function Cell({
         }
         return renderPieceCell(
           cell, piece, bgColor, onClick, false, currentPlayer, 
-          ownsDevice, ownsJammer
+          ownsDevice, ownsJammer, isMyTurn
         );
       } else {
         // not in LOS => show intel overlay
@@ -69,7 +72,8 @@ function renderPieceCell(
   isOwn,
   currentPlayer,
   ownsDevice,
-  ownsJammer
+  ownsJammer,
+  isMyTurn
 ) {
   const style = {
     width: 45,
@@ -79,6 +83,10 @@ function renderPieceCell(
     cursor: 'pointer',
     position: 'relative',
   };
+
+  if(!isMyTurn) {
+    style.pointerEvents = 'none'
+  }
 
   if (isOwn && piece.type === 'flag') {
     style.background = 'radial-gradient(circle, red 20%, transparent 60%)';
@@ -102,7 +110,8 @@ function renderEmptyCell(
   isActive,
   currentPlayer,
   ownsDevice,
-  ownsJammer
+  ownsJammer,
+  isMyTurn
 ) {
   return (
     <div
@@ -114,6 +123,7 @@ function renderEmptyCell(
         backgroundColor: bgColor,
         cursor: isActive ? 'pointer' : 'default',
         position: 'relative',
+        pointerEvents: !isMyTurn ? 'none' : undefined
       }}
     >
       <IntelOverlay cell={cell} player={currentPlayer} />
@@ -130,7 +140,8 @@ function renderIntelCell(
   isActive,
   currentPlayer,
   ownsDevice,
-  ownsJammer
+  ownsJammer,
+  isMyTurn
 ) {
   return (
     <div
@@ -142,6 +153,7 @@ function renderIntelCell(
         backgroundColor: bgColor,
         cursor: isActive ? 'pointer' : 'default',
         position: 'relative',
+        pointerEvents: !isMyTurn ? 'none' : undefined
       }}
     >
       <IntelOverlay cell={cell} player={currentPlayer} />
@@ -167,7 +179,7 @@ function PieceFacingLabel({ piece, player }) {
     color: piece.player === 1 ? 'blue' : 'green',
   };
   // or use a consts map, e.g. abbrs[piece.type]
-  return <div style={style}>{piece.typeAbbr}</div>;
+  return <div style={style}>{abbrs[piece.type]}</div>;
 }
 
 function getRotationDegrees(direction, player) {
@@ -229,7 +241,7 @@ function IntelOverlay({ cell, player }) {
 
   let intelHtmlElements = []
   if(certainPersonIntel) {
-    intelHtmlElements.push(<span>{certainPersonIntel.piece.typeAbbr}<sub>{certainPersonIntel.age}</sub></span>)
+    intelHtmlElements.push(<span>{abbrs[certainPersonIntel.piece.type]}<sub>{certainPersonIntel.age}</sub></span>)
   }
 
   if(certainJammerIntel) {
