@@ -5,7 +5,7 @@ import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestor
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import App from './Main';
-const BOARD_SIZE = 9;
+const BOARD_SIZE = 15;
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwXLdaJvQ4D8uY-eylPEafxSfyteUOzes",
@@ -178,16 +178,9 @@ function Main() {
     <div className="container mx-auto p-4">
       {playerNumber === 1 && (
         <div className="mb-4 p-4 bg-gray-100 rounded">
-          <p>Share this link with your opponent:</p>
           <code className="block p-2 bg-white">{shareUrl}</code>
         </div>
       )}
-      
-      <div className="mb-4">
-        <p>You are Player {playerNumber}</p>
-        <p>Current Phase: {gameState.phase}</p>
-        <p>Current Turn: Player {gameState.currentPlayer}</p>
-      </div>
 
       <App
         gameState={gameState}

@@ -21,7 +21,7 @@ const ControlPanel = require('./ControlPanel');
 const MovementPanel = require('./MovementPanel');
 const IntelLogPanel = require('./IntelLogPanel');
 
-const BOARD_SIZE = 9;
+const BOARD_SIZE = 15;
 const PIECE_TYPES = ['wall', 'flag', 'brute', 'scanner', 'jail', 'scout', 'jammer', 'listener', 'pawn'];
 
 function rotateDirection(currentDir, side, player) {

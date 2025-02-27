@@ -35,14 +35,14 @@ function Cell({
     if (isOwnPiece) {
       return renderPieceCell(
         cell, piece, bgColor, onClick, true, currentPlayer, 
-        ownsDevice, ownsJammer
+        ownsDevice, ownsJammer, isMyTurn
       );
     } else {
       if (isInLOS) {
         // if it's the enemy flag, do something special if you want
         if (piece.type === 'flag') {
           return renderEmptyCell(
-            cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer
+            cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn
           );
         }
         return renderPieceCell(
@@ -52,14 +52,14 @@ function Cell({
       } else {
         // not in LOS => show intel overlay
         return renderIntelCell(
-          cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer
+          cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn
         );
       }
     }
   } else {
     // no piece visible
     return renderIntelCell(
-      cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer
+      cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn
     );
   }
 }
