@@ -4,8 +4,8 @@
 const React = require('react');
 
 const PIECE_LIMITS = {
-  wall: 1,
-  flag: 1,
+  wall: 0,
+  flag: 0,
   brute: 1,
   scanner: 1,
   scout: 1,

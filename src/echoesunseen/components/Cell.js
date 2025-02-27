@@ -7,6 +7,7 @@
  *  - The scanner reports for the current player, e.g. "P3" with a subscript "2"
  *******************************************************/
 const React = require('react');
+import { abbrs } from '../lib/consts.js';
 
 function Cell({
   cell,
@@ -23,7 +24,7 @@ function Cell({
   else if (isInLOS) bgColor = '#ffffcc';
 
   // Check if current player owns a device here
-  const ownsDevice = cell.listeningDevice[currentPlayer]
+  const ownsDevice = cell.listeningDevices?.some(d => d.owner === currentPlayer);
   const ownsJammer = cell.jammer[currentPlayer]
 
   //JARED_TODO: all this needs to be cleaned up. There are way too many cell renderings.
@@ -152,8 +153,8 @@ function renderIntelCell(
 }
 
 /** Renders a piece label with rotation. E.g. "SC5" for scout #5. */
-function PieceFacingLabel({ piece, player }) {
-  const rotation = getRotationDegrees(piece.direction, player);
+function PieceFacingLabel({ piece }) {
+  const rotation = getRotationDegrees(piece.direction, piece.player);
   const style = {
     transform: `rotate(${rotation}deg)`,
     transformOrigin: 'center center',
@@ -170,21 +171,12 @@ function PieceFacingLabel({ piece, player }) {
   return <div style={style}>{piece.typeAbbr}</div>;
 }
 
-function getRotationDegrees(direction, player) {
-  if(player == 1) {
-    switch (direction) {
-      case 'east':  return 90;
-      case 'south': return 180;
-      case 'west':  return 270;
-      default:      return 0;
-    }
-  } else {
-    switch (direction) {
-      case 'east':  return 270;
-      case 'north': return 180;
-      case 'west':  return 90;
-      default:      return 0;
-    }
+function getRotationDegrees(direction) {
+  switch (direction) {
+    case 'east':  return 90;
+    case 'south': return 180;
+    case 'west':  return 270;
+    default:      return 0;
   }
 }
 
@@ -204,9 +196,11 @@ function IntelOverlay({ cell, player }) {
     color: intel.isCertain ? 'darkorange' : 'red',
   };
 
-  let certainPersonIntel = false,
+  let uncertainPersonIntel = false, 
+      certainPersonIntel = false,
+      uncertainJammerIntel = false,
       certainJammerIntel = false,
-      wallIntel = false,
+      uncertainListenerIntel = false,
       certainListenerIntel = false,
       jammed = false
   for(let i in intel) {
@@ -215,21 +209,34 @@ function IntelOverlay({ cell, player }) {
     if(+i) {
       if(intelValue.certain && !certainPersonIntel) {
         certainPersonIntel = intelValue
-      } 
+      } else if (!intelValue.certain && !uncertainPersonIntel) {
+        uncertainPersonIntel = intelValue
+      }
+    } else if (i == 'jammer' && !intelValue.certain && !uncertainJammerIntel) { //could either be a jammer or listener
+      uncertainJammerIntel = intelValue
     } else if (i == 'jammer' && intel[i].certain && !certainJammerIntel) { //could either be a jammer or listener
       certainJammerIntel = intelValue
+    } else if (i == 'listeningDevice' && !intelValue.certain && !uncertainListenerIntel) { //could either be a jammer or listener
+      uncertainListenerIntel = intelValue
     } else if (i == 'listeningDevice' && intelValue.certain && !certainListenerIntel) { //could either be a jammer or listener
       certainListenerIntel = intelValue
-    } else if (i == 'wall' && intelValue.certain) { //could either be a jammer or listener
-      wallIntel = intelValue
     } else if(i == 'jammed') {
       jammed = true
     }
   }
 
   let intelHtmlElements = []
+  if(uncertainPersonIntel) {
+    intelHtmlElements.push(<span>{'P'}<sub>{uncertainPersonIntel.age}</sub></span>)
+  }
   if(certainPersonIntel) {
     intelHtmlElements.push(<span>{certainPersonIntel.piece.typeAbbr}<sub>{certainPersonIntel.age}</sub></span>)
+  }
+
+  if(uncertainJammerIntel || uncertainListenerIntel) {
+    const age = uncertainJammerIntel?.age || uncertainListenerIntel?.age
+    //Doesn't matter which intel's age you get
+    intelHtmlElements.push(<span>D<sub>{age}</sub></span>)
   }
 
   if(certainJammerIntel) {
@@ -237,9 +244,6 @@ function IntelOverlay({ cell, player }) {
   }
   if(certainListenerIntel) {
     intelHtmlElements.push(<span>{'L'}<sub>{certainListenerIntel.age}</sub></span>)
-  }
-  if(wallIntel) {
-    intelHtmlElements.push(<span>{'W'}</span>)
   }
   if(jammed) {
     intelHtmlElements.push(<span>{'X'}</span>)

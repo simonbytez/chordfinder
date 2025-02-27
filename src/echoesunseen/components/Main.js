@@ -9,9 +9,8 @@
  *******************************************************/
 const React = require('react');
 import Piece from '../lib/piece';
-import abbrs from '../lib/consts';
-import { current } from '@reduxjs/toolkit';
-import { DevicesFold } from '@mui/icons-material';
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 
 const { useState } = React;
 
@@ -19,29 +18,38 @@ const GameBoard = require('./GameBoard');
 const ControlPanel = require('./ControlPanel');
 const MovementPanel = require('./MovementPanel');
 const IntelLogPanel = require('./IntelLogPanel');
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 
-const BOARD_SIZE = 9;
 const PIECE_TYPES = ['wall', 'flag', 'brute', 'scanner', 'jail', 'scout', 'jammer', 'listener'];
 
-function rotateDirection(currentDir, side, player) {
+function rotateDirection(currentDir, side) {
   const dirs = ['north', 'east', 'south', 'west'];
   let idx = dirs.indexOf(currentDir);
   if (idx < 0) idx = 0;
-
   if (side === 'left') idx = (idx + dirs.length - 1) % dirs.length;
-    else idx = (idx + 1) % dirs.length;
-  
+  else idx = (idx + 1) % dirs.length;
   return dirs[idx];
 }
 
 function resolveGlobalDirection(player, facing) {
   // If player=1, directions are normal; if player=2, invert them:
-  switch (facing) {
-    case 'north': return [0, -1];
-    case 'south': return [0, 1];
-    case 'east':  return [1, 0];
-    case 'west':  return [-1, 0];
-    default:      return [0, -1];
+  if (player === 1) {
+    switch (facing) {
+      case 'north': return [0, -1];
+      case 'south': return [0, 1];
+      case 'east':  return [1, 0];
+      case 'west':  return [-1, 0];
+      default:      return [0, -1];
+    }
+  } else {
+    // invert
+    switch (facing) {
+      case 'north': return [0, 1];
+      case 'south': return [0, -1];
+      case 'east':  return [-1, 0];
+      case 'west':  return [1, 0];
+      default:      return [0, 1];
+    }
   }
 }
 
@@ -73,36 +81,6 @@ function genPieceId() {
  *  }
  * }
  */
-//JARED_TOOD: what happens when two players have listening devices in the same cell?
-function createCell() {
-  return {
-    pieces: [],
-    listeningDevice: {
-      1: false,
-      2: false
-    },
-    jammer: {
-      1: false,
-      2: false
-    },
-    intel: {
-      1: {},
-      2: {},
-    },
-  };
-}
-
-function createInitialBoard() {
-  const board = [];
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    const row = [];
-    for (let c = 0; c < BOARD_SIZE; c++) {
-      row.push(createCell());
-    }
-    board.push(row);
-  }
-  return board;
-}
 
 function initializeCounts() {
   return {
@@ -120,13 +98,37 @@ function getLineOfSight(board, x, y, piece) {
   return [{ x: cx, y: cy, hasEnemy: enemyHere, distance: 1, isCertain: true }];
 }
 
-function App() {
-  const [board, setBoard] = useState(createInitialBoard());
+const firebaseConfig = {
+  apiKey: "AIzaSyCwXLdaJvQ4D8uY-eylPEafxSfyteUOzes",
+  authDomain: "echoes-unseen.firebaseapp.com",
+  projectId: "echoes-unseen",
+  storageBucket: "echoes-unseen.firebasestorage.app",
+  messagingSenderId: "782670279231",
+  appId: "1:782670279231:web:eff6b1d5d897b601393e8a",
+  measurementId: "G-WPLHQ6R0G1"
+};
+
+function generateGameId() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 10; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
+
+// Initialize Firebase
+const fire = initializeApp(firebaseConfig);
+const analytics = getAnalytics(fire);
+
+export default function App({ gameState, playerNumber, isMyTurn, onSetupComplete, onGameStateUpdate }) {
   const [counts, setCounts] = useState(initializeCounts());
-  const [currentPlayer, setCurrentPlayer] = useState(1);
-  const [phase, setPhase] = useState('setup');
   const [selectedPieceType, setSelectedPieceType] = useState('wall');
   const [selectedCell, setSelectedCell] = useState(null);
+  const [board, setBoard] = useState(gameState.board)
+  const [fireApp, setFireApp] = useState({})
+  const [currentPlayer, setCurrentPlayer] = useState(gameState.currentPlayer);
+  const [phase, setPhase] = useState(gameState.phase);
 
   const [actionsRemaining, setActionsRemaining] = useState(2);
   const [jails, setJails] = useState({ player1: [], player2: [] });
@@ -164,6 +166,7 @@ function App() {
 
   function nextPhase() {
     if (phase === 'setup') {
+      onSetupComplete();
       if (currentPlayer === 1) {
         setCurrentPlayer(2);
       } else {
@@ -187,6 +190,7 @@ function App() {
       [finishing]: [], // clear logs for finishing player
     }));
 
+    onGameStateUpdate(newBoard, nextP, phase);
     setCurrentPlayer(nextP);
     setBoard(newBoard);
     setActionsRemaining(2);
@@ -238,7 +242,7 @@ function App() {
   // =========================
 
   function handleSetupClick(x, y) {
-    const pKey = `player${currentPlayer}`;
+    const pKey = `player${playerNumber}`;
     const newCounts = { ...counts };
     const plyCount = { ...newCounts[pKey] };
     plyCount[selectedPieceType] = (plyCount[selectedPieceType] || 0) + 1;
@@ -248,7 +252,7 @@ function App() {
     newBoard[y] = [...newBoard[y]];
     const cellCopy = { ...newBoard[y][x] };
 
-    const newPiece = new Piece(currentPlayer, selectedPieceType, currentPlayer == 1 ? 'north' : 'south');
+    const newPiece = new Piece(currentPlayer, selectedPieceType, 'north');
     newPiece.id = genPieceId();
     if (selectedPieceType === 'listener') newPiece.deviceCount = 0;
     if (selectedPieceType === 'jammer') newPiece.jammerCount = 0;
@@ -256,6 +260,7 @@ function App() {
     cellCopy.pieces = [...cellCopy.pieces, newPiece];
     newBoard[y][x] = cellCopy;
 
+    onGameStateUpdate(newBoard, currentPlayer, phase);
     setBoard(newBoard);
     setCounts(newCounts);
   }
@@ -266,11 +271,11 @@ function App() {
 
   function handleMovementClick(x, y) {
     const cellPieces = board[y][x].pieces;
-    let piece = cellPieces[0]
     if (!selectedCell) {
       // select a piece
-      if (cellPieces.length > 0 && piece.player === currentPlayer) {
-        if (piece.type === 'jail' || piece.type == 'wall') return;
+      if (cellPieces.length > 0 && cellPieces[0].player === currentPlayer) {
+        const piece = cellPieces[0];
+        if (piece.type === 'jail') return;
 
         if (piece.type == 'scout') {
           setActionsRemaining(6);
@@ -292,29 +297,12 @@ function App() {
         const enemyPiece = board[ey][ex].pieces[0];
         if(enemyPiece && enemyPiece.player != currentPlayer)
           updateIntel(board, currentPlayer, ey, ex, enemyPiece, true);
-        else {
-          updateIntel(board, currentPlayer, ey, ex, false, true);
-        }
-
-        const listeningDevice = board[ey][ex].listeningDevice[3 - currentPlayer]
-        const jammer = board[ey][ex].jammer[3 - currentPlayer]
-
-        /**
-         * these intel updates really need to be one call
-         */
-          // certain intel discovered
-
-        updateListeningDeviceIntel(board, currentPlayer, ey, ex, listeningDevice, true)
-        updateJammerIntel(board, currentPlayer, ey, ex, jammer, true)
 
         setDetectionResults(los);
       }
     } else {
-      let selectedPiece = selectedCell.piece
       // move the selected piece
-      if(!piece || piece.type != 'wall' || selectedPiece == 'brute') {
-        movePiece(selectedCell.x, selectedCell.y, x, y);
-      }
+      movePiece(selectedCell.x, selectedCell.y, x, y);
     }
   }
 
@@ -350,10 +338,6 @@ function App() {
 
     newBoard[fy][fx] = fromCell;
     newBoard[ty][tx] = toCell;
-
-    if(piece.type == 'brute') {
-      removeDevices(newBoard, currentPlayer, ty, tx)
-    }
 
     setBoard(newBoard);
     setSelectedCell({ x: tx, y: ty, piece });
@@ -414,7 +398,7 @@ function App() {
     }
   }
 
-  function updateIntel(board, player, cy, cx, piece, certain, age) {
+  function updateIntel(board, player, cy, cx, piece, certain) {
     const pieceId = piece && piece.id;
 
     // Add the intel if you are certain of the piece OR
@@ -423,27 +407,12 @@ function App() {
     if(pieceId) {
       board[cy][cx].intel[player][pieceId] = {
         piece,
-        age: age || 0,
+        age: 0,
         certain,
       };
-
-      if(certain) {
-        //delete the uncertain intel
-        delete board[cy][cx].intel[player][-1]
-      }
     } else {
-      //No pieces, delete prior intel
-      const intel = board[cy][cx].intel[player]
-      for(let i in intel) {
-        if(+i) {
-          delete board[cy][cx].intel[player][i]
-        }
-      }
+      delete board[cy][cx].intel[player][pieceId]
     }
-  }
-
-  function wallIntel(board, player, y, x) {
-    board[y][x].intel[player].wall = true
   }
 
   function updateJammerIntel(board, player, y, x, jammer, certain) {
@@ -464,18 +433,6 @@ function App() {
         age: 0
       }
     } else {
-      board[y][x].intel[player].listeningDevice = false
-    }
-  }
-
-  function removeDevices(board, player, y, x) {
-    if(board[y][x].jammer[3 - player]) {
-      board[y][x].jammer[3 - player] = false
-      board[y][x].intel[player].jammer = false
-    }
-
-    if(board[y][x].listeningDevice[3 - player]) {
-      board[y][x].listeningDevice[3 - player] = false
       board[y][x].intel[player].listeningDevice = false
     }
   }
@@ -543,7 +500,12 @@ function App() {
     newBoard[y] = [...newBoard[y]];
     const cellCopy = { ...newBoard[y][x] };
 
-    cellCopy.listeningDevice[currentPlayer] = true
+    const devs = [...(cellCopy.listeningDevices || [])];
+    devs.push({
+      owner: currentPlayer,
+      coverage: getListener3x3(x, y),
+    });
+    cellCopy.listeningDevices = devs;
     newBoard[y][x] = cellCopy;
 
     piece.deviceCount++;
@@ -581,16 +543,16 @@ function App() {
 
     let player1 = currentPlayer == 1
 
-    if(direction == 'north') {
+    if(direction == (player1 ? 'north' : 'south')) {
       xRange = [-1, 1]
       yRange = [-2, -1]
-    } else if(direction == 'east') {
+    } else if(direction == (player1 ? 'east' : 'west')) {
       xRange = [1, 2]
       yRange = [-1, 1]
-    } else if(direction == 'south') {
+    } else if(direction == (player1? 'south' : 'north')) {
       xRange = [-1, 1]
       yRange = [1, 2]
-    } else if(direction == 'west') {
+    } else if(direction == (player1 ? 'west' : 'east')) {
       xRange = [-1, -2]
       yRange = [-1, 1]
     }
@@ -648,6 +610,8 @@ function App() {
 
     const newBoard = [...board];
     const squares = getScanner3x3(x, y, piece.direction);
+    let enemiesFound = [];
+    let listeningDevices = false, jammers = false
     squares.forEach(({ x: sx, y: sy }) => {
       //JARED_TODO: I think I should say portions of the scan were jammed. Or should I?
       if (isJammed(board, sx, sy, 3 - currentPlayer)) {
@@ -659,30 +623,53 @@ function App() {
       const c = newBoard[sy][sx];
        // skip scanner's own cell
       if(choice == 'devices') {
-        //It shouldn't ever pick up on the jammer cause it will be jammed in the code above it. 
-        //So, I do believe this code won't be hit. But, I'm not worrying about changing it now.
-          updateJammerIntel(newBoard, currentPlayer, sy, sx, c.jammer[3 - currentPlayer], true)
-          updateListeningDeviceIntel(newBoard, currentPlayer, sy, sx, c.listeningDevice[3 - currentPlayer], true)
+        if(c.jammer[3 - currentPlayer]) {
+          jammers = true
+        }
+
+        if(c.listeningDevice[3 - currentPlayer]) {
+          listeningDevices = true
+        }
       } else {
         const enemy = newBoard[sy][sx].pieces.find(
           p => p.player !== currentPlayer && p.category == choice
         );
-
-        updateIntel(newBoard, currentPlayer, sy, sx, enemy || false, true)
-      } /*else if(choice == 'walls') {
-        const wall = newBoard[sy][sx].pieces.find(
-          p => p.player !== currentPlayer && p.category == 'wall'
-        );
-        
-        if(wall) {
-          wallIntel(newBoard, currentPlayer, sy, sx, wall, true)
+        if (enemy) {
+          enemiesFound.push(enemy)
         }
-      }*/
+      }
     });
 
-    setBoard(newBoard);
 
-    updateIntel(newBoard, 3 - currentPlayer, y, x, piece, true, 1)
+    if(choice == 'devices') {
+      if(!listeningDevices) {
+        squares.forEach(({x, y}) => {
+          updateListeningDeviceIntel(newBoard, currentPlayer, y, x, false, true)
+        })
+      } else {
+        updateListeningDeviceIntel(newBoard, currentPlayer, y, x, true, false)
+      }
+
+      if(!jammers) {
+        squares.forEach(({x, y}) => {
+          updateJammerIntel(newBoard, currentPlayer, y, x, false, true)
+        })
+      } else {
+        updateJammerIntel(newBoard, currentPlayer, y, x, true, false)
+      }
+    } else if(choice == 'person') {
+      if(!enemiesFound.length) {
+        squares.forEach(({x, y}) => {
+          updateIntel(newBoard, currentPlayer, y, x, false, true)
+        })
+      } else {
+        for(let enemy of enemiesFound) {
+          updateIntel(newBoard, currentPlayer, y, x, enemy, false)
+        }
+      }
+    }
+
+    setBoard(newBoard);
 
     setActionsRemaining(prev => {
       const next = prev - 1;
@@ -704,7 +691,7 @@ function App() {
     cellCopy.pieces = [...cellCopy.pieces];
     const piece = cellCopy.pieces[0];
 
-    piece.direction = rotateDirection(piece.direction, side, currentPlayer);
+    piece.direction = rotateDirection(piece.direction, side);
 
     newBoard[selectedCell.y][selectedCell.x] = cellCopy;
     setBoard(newBoard);
@@ -725,11 +712,6 @@ function App() {
       // certain intel discovered
     if(enemyPiece && enemyPiece.player != currentPlayer) {
       updateIntel(newBoard, currentPlayer, ey, ex, enemyPiece, true);
-      // if(enemyPiece.category == 'wall') {
-      //   wallIntel(newBoard, currentPlayer, ey, ex)
-      // }
-    } else {
-      updateIntel(board, currentPlayer, ey, ex, false, true);
     }
     updateListeningDeviceIntel(newBoard, currentPlayer, ey, ex, listeningDevice, true)
     updateJammerIntel(newBoard, currentPlayer, ey, ex, jammer, true)

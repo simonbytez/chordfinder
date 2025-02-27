@@ -49,7 +49,7 @@ function MovementPanel({
         <div style={{ marginTop: '10px' }}>
           <div>Scan for:</div>
           <button onClick={() => onScannerChoice('person')}>People</button>
-          <button onClick={() => onScannerChoice('wall')}>Walls</button>
+          <button onClick={() => onScannerChoice('walls')}>Walls</button>
           <button onClick={() => onScannerChoice('devices')}>Devices</button>
         </div>
       )}
