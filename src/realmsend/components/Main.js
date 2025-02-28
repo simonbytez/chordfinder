@@ -194,7 +194,6 @@ function App({playerNumber,
       [finishing]: [], // clear logs for finishing player
     }));
 
-    onGameStateUpdate(newBoard, 3 - currentPlayer, 'movement')
     setActionsRemaining(2);
     setSelectedCell(null);
     setDetectionResults([]);
@@ -202,6 +201,7 @@ function App({playerNumber,
     clearJammedIntel(newBoard, currentPlayer)
     // check listening devices
     checkListeningDevices(newBoard);
+    onGameStateUpdate(newBoard, 3 - currentPlayer, 'movement')
   }
 
   function incrementIntelAgesForPlayer(oldBoard, player) {
@@ -508,22 +508,19 @@ function App({playerNumber,
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const c = b[row][col];
-        if (c.listeningDevices && c.listeningDevices.length > 0) {
-          for (let device of c.listeningDevices) {
-            if(device.owner !== currentPlayer) {
-              for(let cov of device.coverage) {
-                let piece = b[cov.y][cov.x].pieces[0]
-                if(isJammed(b, cov.x, cov.y, currentPlayer)) {
-                  updateJammedIntel(b, 3 - currentPlayer, cov.y, cov.x)
-                } else if (piece && piece.player == currentPlayer) {
-                  updateIntel(b, device.owner, cov.y, cov.x, piece, true);
-                  logIntelForPlayer(device.owner, 
-                    `Your listening device detected an enemy ${piece.type} at (${cov.x}, ${cov.y}).`
-                  );
-                }
+        if (c.listeningDevice[3 - currentPlayer]) {
+            let coverage = getListener3x3(row, col)
+            for(let cov of coverage) {
+              let piece = b[cov.y][cov.x].pieces[0]
+              if(isJammed(b, cov.x, cov.y, currentPlayer)) {
+                updateJammedIntel(b, 3 - currentPlayer, cov.y, cov.x)
+              } else if (piece && piece.player == currentPlayer) {
+                updateIntel(b, 3 - currentPlayer, cov.y, cov.x, piece, true);
+                logIntelForPlayer(3 - currentPlayer, 
+                  `Your listening device detected an enemy ${piece.type} at (${cov.x}, ${cov.y}).`
+                );
               }
-            }    
-          }
+            }   
         }
       }
     }
