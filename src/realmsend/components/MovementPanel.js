@@ -21,7 +21,7 @@ function MovementPanel({
   return (
     <div
       style={{
-        width: '200px',
+        width: '100%',
         border: '1px solid #ccc',
         borderRadius: '8px',
         padding: '8px',
@@ -37,11 +37,8 @@ function MovementPanel({
         </button>
       </div>
 
-      {/* Rotation */}
-      <div style={{ marginTop: '10px' }}>
-        <button onClick={onRotateLeft}>Rotate Left</button>
-        <button onClick={onRotateRight}>Rotate Right</button>
-      </div>
+      <button onClick={onRotateLeft}>Rotate Left</button>
+      <button onClick={onRotateRight}>Rotate Right</button>
 
       {/* Scanner */}
       {isScannerSelected && (
@@ -68,14 +65,14 @@ function MovementPanel({
       )}
 
       {/* Jail */}
-      <div style={{ marginTop: '10px' }}>
-        <h4>Your Jail</h4>
+      {/* <div style={{ marginTop: '10px' }}>
+        <h1>Your Jail</h1>
         {(jails[`player${player}`] || []).map((p, idx) => (
           <div key={idx}>
             {p.type} {p.id}
           </div>
         ))}
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -767,10 +767,8 @@ function App({playerNumber,
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <h1>
-        {title}
-      </h1>
-      <div style={{ display: 'flex', gap: '20px' }}>
+        <div style={{fontSize: '24px'}}>{title}</div>
+      <div style={{ display: 'flex', gap: '20px', flexDirection: 'column' }}>
         {(phase == 'movement' || isMyTurn) && <GameBoard
           board={board}
           onCellClick={handleCellClick}
