@@ -10,3 +10,11 @@ export const abbrs = {
     jammer: 'JM',
     listener: 'LI'
   };
+
+  export function typeCategory(type) {
+    if(['brute', 'sniper', 'scanner', 'destroyer', 'scout', 'jammer', 'listener', 'pawn'].includes(type)) {
+      return 'person'
+    } else {
+      return type
+    }
+  }

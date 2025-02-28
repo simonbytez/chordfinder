@@ -9,7 +9,7 @@
  *******************************************************/
 const React = require('react');
 import Piece from '../lib/piece';
-import abbrs from '../lib/consts';
+import abbrs, {typeCategory} from '../lib/consts';
 import { current } from '@reduxjs/toolkit';
 import { DevicesFold } from '@mui/icons-material';
 import { useEffect } from 'react';
@@ -665,7 +665,7 @@ function App({playerNumber,
           updateListeningDeviceIntel(newBoard, currentPlayer, sy, sx, c.listeningDevice[3 - currentPlayer], true)
       } else {
         const enemy = newBoard[sy][sx].pieces.find(
-          p => p.player !== currentPlayer && p.category == choice
+          p => p.player != currentPlayer && typeCategory(p.type) == choice
         );
 
         updateIntel(newBoard, currentPlayer, sy, sx, enemy || false, true)

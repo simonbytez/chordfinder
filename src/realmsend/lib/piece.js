@@ -17,14 +17,6 @@ export default class Piece {
         this.id = genPieceId()
     }
 
-    get category() {
-        if(['brute', 'sniper', 'scanner', 'destroyer', 'scout', 'jammer', 'listener', 'pawn'].includes(this.type)) {
-            return 'person'
-        } else {
-            return this.type
-        }
-    }
-
     get color() {
         if(['brute', 'sniper', 'scanner', 'destroyer', 'scout', 'jammer', 'listener', 'pawn'].includes(this.type)) {
             return 'black'
