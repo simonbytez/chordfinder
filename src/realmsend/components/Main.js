@@ -755,9 +755,9 @@ function App({playerNumber,
   let title = null
   if(phase === 'setup') {
     if(isMyTurn) {
-      title = 'Setup Phase'
+      title = 'Setup'
     } else {
-      title = `Setup Phase - waiting on other player set up`
+      title = `Waiting on other player set up`
     }
   } else if(!isMyTurn) {
     title = 'Waiting on other player'
