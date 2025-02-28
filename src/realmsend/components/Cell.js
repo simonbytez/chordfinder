@@ -225,14 +225,14 @@ function IntelOverlay({ cell, player }) {
     const intelValue = intel[i]
     //is the piece id
     if(+i) {
-      if(intelValue.certain && !certainPersonIntel) {
+      if(intelValue.certain && !certainPersonIntel && intelValue.age == 0) {
         certainPersonIntel = intelValue
       } 
-    } else if (i == 'jammer' && intel[i].certain && !certainJammerIntel) { //could either be a jammer or listener
+    } else if (i == 'jammer' && intel[i].certain && !certainJammerIntel && intelValue.age == 0) { //could either be a jammer or listener
       certainJammerIntel = intelValue
-    } else if (i == 'listeningDevice' && intelValue.certain && !certainListenerIntel) { //could either be a jammer or listener
+    } else if (i == 'listeningDevice' && intelValue.certain && !certainListenerIntel && intelValue.age == 0) { //could either be a jammer or listener
       certainListenerIntel = intelValue
-    } else if (i == 'wall' && intelValue.certain) { //could either be a jammer or listener
+    } else if (i == 'wall' && intelValue.certain && intelValue.age == 0) { //could either be a jammer or listener
       wallIntel = intelValue
     } else if(i == 'jammed') {
       jammed = true
@@ -241,14 +241,14 @@ function IntelOverlay({ cell, player }) {
 
   let intelHtmlElements = []
   if(certainPersonIntel) {
-    intelHtmlElements.push(<span>{abbrs[certainPersonIntel.piece.type]}<sub>{certainPersonIntel.age}</sub></span>)
+    intelHtmlElements.push(<span>{abbrs[certainPersonIntel.piece.type]}</span>)
   }
 
   if(certainJammerIntel) {
-    intelHtmlElements.push(<span>{'J'}<sub>{certainJammerIntel.age}</sub></span>)
+    intelHtmlElements.push(<span>{'J'}</span>)
   }
   if(certainListenerIntel) {
-    intelHtmlElements.push(<span>{'L'}<sub>{certainListenerIntel.age}</sub></span>)
+    intelHtmlElements.push(<span>{'L'}</span>)
   }
   if(wallIntel) {
     intelHtmlElements.push(<span>{'W'}</span>)

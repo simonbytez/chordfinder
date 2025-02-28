@@ -217,10 +217,6 @@ function App({playerNumber,
             value.age++;
           }
         }
-        cellCopy.intel = {
-          ...cellCopy.intel,
-          [player]: pIntel
-        };
         newBoard[y][x] = cellCopy;
       }
     }
@@ -686,7 +682,7 @@ function App({playerNumber,
 
     gameState.board = board
 
-    updateIntel(newBoard, 3 - currentPlayer, y, x, piece, true, 1)
+    updateIntel(newBoard, 3 - currentPlayer, y, x, piece, true)
 
     setActionsRemaining(prev => {
       const next = prev - 1;
