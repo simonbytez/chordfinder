@@ -227,18 +227,30 @@ function App({playerNumber,
   // =========================
 
   function handleSetupClick(x, y) {
-    const pKey = `player${currentPlayer}`;
-    const newCounts = { ...counts };
-    const plyCount = { ...newCounts[pKey] };
-    plyCount[selectedPieceType] = (plyCount[selectedPieceType] || 0) + 1;
-    newCounts[pKey] = plyCount;
-
     const newBoard = [...board];
     newBoard[y] = [...newBoard[y]];
     const cellCopy = { ...newBoard[y][x] };
-    if((currentPlayer == 1 && y < 10) || (currentPlayer == 2 && y > 4) || cellCopy.pieces[0]) {
+    const pKey = `player${currentPlayer}`;
+    const newCounts = { ...counts };
+    const plyCount = { ...newCounts[pKey] };
+    if((currentPlayer == 1 && y < 8) || (currentPlayer == 2 && y > 4)) {
+      return
+    } else if(cellCopy.pieces && cellCopy.pieces[0]) {
+      if (cellCopy.pieces[0].type == selectedPieceType) {
+        cellCopy.pieces = []
+        plyCount[selectedPieceType] = (plyCount[selectedPieceType] || 0) - 1;
+        newCounts[pKey] = plyCount;
+        setCounts(newCounts)
+        newBoard[y][x] = cellCopy;
+        gameState.board = newBoard
+      } 
+
       return
     }
+
+    
+    plyCount[selectedPieceType] = (plyCount[selectedPieceType] || 0) + 1;
+    newCounts[pKey] = plyCount;
 
     const newPiece = new Piece(currentPlayer, selectedPieceType, currentPlayer == 1 ? 'north' : 'south');
     newPiece.id = genPieceId();
@@ -474,8 +486,8 @@ function App({playerNumber,
 
   /** Remove certain intel references about an enemy piece ID. */
   function removeIntel(boardRef, player, id) {
-    for (let y = 0; y < NUM_COLS; y++) {
-      for (let x = 0; x < NUM_ROWS; x++) {
+    for (let y = 0; y < NUM_ROWS; y++) {
+      for (let x = 0; x < NUM_COLS; x++) {
         let cell = boardRef[y][x]
         if (cell.intel[player][id]) {
           delete cell.intel[player][id];
