@@ -6,7 +6,6 @@ function MovementPanel({
   actionsRemaining,
   onEndTurn,
   onScannerChoice,
-  detectionResults,
   onRotateLeft,
   onRotateRight,
   jails,

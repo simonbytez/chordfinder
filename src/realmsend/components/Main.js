@@ -291,32 +291,34 @@ function App({playerNumber,
 
         setSelectedCell({ x, y, piece });
         const los = getLineOfSight(board, x, y, piece)
-        const ex = los[0].x;
-        const ey = los[0].y;
-        const enemyPiece = board[ey][ex].pieces[0];
-        if(enemyPiece && enemyPiece.player != currentPlayer)
-          updateIntel(board, currentPlayer, ey, ex, enemyPiece, true);
-        else {
-          updateIntel(board, currentPlayer, ey, ex, false, true);
-        }
+        if(los.length) {
+          const ex = los[0].x;
+          const ey = los[0].y;
+          const enemyPiece = board[ey][ex].pieces[0];
+          if(enemyPiece && enemyPiece.player != currentPlayer)
+            updateIntel(board, currentPlayer, ey, ex, enemyPiece, true);
+          else {
+            updateIntel(board, currentPlayer, ey, ex, false, true);
+          }
 
-        const listeningDevice = board[ey][ex].listeningDevice[3 - currentPlayer]
-        const jammer = board[ey][ex].jammer[3 - currentPlayer]
+          const listeningDevice = board[ey][ex].listeningDevice[3 - currentPlayer]
+          const jammer = board[ey][ex].jammer[3 - currentPlayer]
 
-        /**
-         * these intel updates really need to be one call
-         */
-          // certain intel discovered
+          /**
+           * these intel updates really need to be one call
+           */
+            // certain intel discovered
 
-        updateListeningDeviceIntel(board, currentPlayer, ey, ex, listeningDevice, true)
-        updateJammerIntel(board, currentPlayer, ey, ex, jammer, true)
+          updateListeningDeviceIntel(board, currentPlayer, ey, ex, listeningDevice, true)
+          updateJammerIntel(board, currentPlayer, ey, ex, jammer, true)
+        }  
 
         setDetectionResults(los);
       }
     } else {
       let selectedPiece = selectedCell.piece
       // move the selected piece
-      if(!piece || piece.type != 'wall' || selectedPiece.type == 'brute') {
+      if(!piece || (piece.type != 'wall' && selectedPiece.type != 'scout') || selectedPiece.type == 'brute') {
         movePiece(selectedCell.x, selectedCell.y, x, y);
       }
     }
@@ -355,21 +357,18 @@ function App({playerNumber,
     newBoard[fy][fx] = fromCell;
     newBoard[ty][tx] = toCell;
 
-    if(piece.type == 'brute') {
-      removeDevices(newBoard, currentPlayer, ty, tx)
-    }
-
     setSelectedCell({ x: tx, y: ty, piece });
 
     // re-check LoS
     const los = getLineOfSight(newBoard, tx, ty, piece);
-    setDetectionResults(los);
+    if(los.length) {
+      setDetectionResults(los);
 
-    const ex = los[0].x;
-    const ey = los[0].y;
-    const enemyPiece = newBoard[ey][ex].pieces[0];
-    const listeningDevice = newBoard[ey][ex].listeningDevice[3 - currentPlayer]
-    const jammer = newBoard[ey][ex].jammer[3 - currentPlayer]
+      const ex = los[0].x;
+      const ey = los[0].y;
+      const enemyPiece = newBoard[ey][ex].pieces[0];
+      const listeningDevice = newBoard[ey][ex].listeningDevice[3 - currentPlayer]
+      const jammer = newBoard[ey][ex].jammer[3 - currentPlayer]
 
     /**
      * these intel updates really need to be one call
@@ -377,11 +376,13 @@ function App({playerNumber,
       // certain intel discovered
 
     //JARED_TODO: Do I need to say when something has been jammed?
-    if(enemyPiece && enemyPiece.player != currentPlayer)
-      updateIntel(newBoard, currentPlayer, ey, ex, enemyPiece, true);
+      if(enemyPiece && enemyPiece.player != currentPlayer)
+        updateIntel(newBoard, currentPlayer, ey, ex, enemyPiece, true);
 
-    updateListeningDeviceIntel(newBoard, currentPlayer, ey, ex, listeningDevice, true)
-    updateJammerIntel(newBoard, currentPlayer, ey, ex, jammer, true)
+      updateListeningDeviceIntel(newBoard, currentPlayer, ey, ex, listeningDevice, true)
+      updateJammerIntel(newBoard, currentPlayer, ey, ex, jammer, true)
+    }
+      
     gameState.board = newBoard
 
     setActionsRemaining(prev => {
@@ -472,18 +473,6 @@ function App({playerNumber,
     }
   }
 
-  function removeDevices(board, player, y, x) {
-    if(board[y][x].jammer[3 - player]) {
-      board[y][x].jammer[3 - player] = false
-      board[y][x].intel[player].jammer = false
-    }
-
-    if(board[y][x].listeningDevice[3 - player]) {
-      board[y][x].listeningDevice[3 - player] = false
-      board[y][x].intel[player].listeningDevice = false
-    }
-  }
-
   /** Remove certain intel references about an enemy piece ID. */
   function removeIntel(boardRef, player, id) {
     for (let y = 0; y < NUM_ROWS; y++) {
@@ -507,7 +496,7 @@ function App({playerNumber,
       for (let col = 0; col < NUM_COLS; col++) {
         const c = b[row][col];
         if (c.listeningDevice[3 - currentPlayer]) {
-            let coverage = getListener3x3(row, col)
+            let coverage = getListener3x3(col, row)
             for(let cov of coverage) {
               let piece = b[cov.y][cov.x].pieces[0]
               if(isJammed(b, cov.x, cov.y, currentPlayer)) {
@@ -714,27 +703,29 @@ function App({playerNumber,
 
     // re-check LoS
     const los = getLineOfSight(newBoard, selectedCell.x, selectedCell.y, piece);
-    setDetectionResults(los);
-    const ex = los[0].x;
-    const ey = los[0].y;
-    const enemyPiece = newBoard[ey][ex].pieces[0];
-    const listeningDevice = newBoard[ey][ex].listeningDevice[3 - currentPlayer]
-    const jammer = newBoard[ey][ex].jammer[3 - currentPlayer]
-
-    /**
-     * these intel updates really need to be one call
-     */
-      // certain intel discovered
-    if(enemyPiece && enemyPiece.player != currentPlayer) {
-      updateIntel(newBoard, currentPlayer, ey, ex, enemyPiece, true);
-      // if(enemyPiece.category == 'wall') {
-      //   wallIntel(newBoard, currentPlayer, ey, ex)
-      // }
-    } else {
-      updateIntel(board, currentPlayer, ey, ex, false, true);
+    if(los.length) {
+      setDetectionResults(los);
+      const ex = los[0].x;
+      const ey = los[0].y;
+      const enemyPiece = newBoard[ey][ex].pieces[0];
+      const listeningDevice = newBoard[ey][ex].listeningDevice[3 - currentPlayer]
+      const jammer = newBoard[ey][ex].jammer[3 - currentPlayer]
+  
+      /**
+       * these intel updates really need to be one call
+       */
+        // certain intel discovered
+      if(enemyPiece && enemyPiece.player != currentPlayer) {
+        updateIntel(newBoard, currentPlayer, ey, ex, enemyPiece, true);
+        // if(enemyPiece.category == 'wall') {
+        //   wallIntel(newBoard, currentPlayer, ey, ex)
+        // }
+      } else {
+        updateIntel(board, currentPlayer, ey, ex, false, true);
+      }
+      updateListeningDeviceIntel(newBoard, currentPlayer, ey, ex, listeningDevice, true)
+      updateJammerIntel(newBoard, currentPlayer, ey, ex, jammer, true)
     }
-    updateListeningDeviceIntel(newBoard, currentPlayer, ey, ex, listeningDevice, true)
-    updateJammerIntel(newBoard, currentPlayer, ey, ex, jammer, true)
 
     if (!freeRotationUsed) {
       setFreeRotationUsed(true);
