@@ -1,5 +1,6 @@
 const React = require('react');
 const Cell = require('./Cell');
+import { NUM_ROWS, NUM_COLS } from '../lib/consts';
 
 function GameBoard({
   board,
@@ -10,7 +11,6 @@ function GameBoard({
   currentPlayer,
   isMyTurn
 }) {
-  const size = board.length;
   const displayBoard =
     +currentPlayer === 2
       ? board.slice().reverse().map(row => row.slice().reverse())
@@ -18,19 +18,24 @@ function GameBoard({
 
   const detectionSet = new Set(detectionResults.map(d => `${d.x},${d.y}`));
 
+  let elements = []
+  for(let row of displayBoard) {
+    
+  }
+
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: `repeat(${size}, 45px)`,
+      display: 'flex',
+      flexDirection: 'column',
       gap: 0,
     }}>
-      {displayBoard.map((row, rowIndex) =>
+      {displayBoard.map((row, rowIndex) => <div key={rowIndex} style={{display: 'flex'}}>{
         row.map((cell, colIndex) => {
           let realY = rowIndex;
           let realX = colIndex;
           if (+currentPlayer === 2) {
-            realY = size - 1 - rowIndex;
-            realX = size - 1 - colIndex;
+            realY = NUM_ROWS - 1 - rowIndex;
+            realX = NUM_COLS - 1 - colIndex;
           }
           const isInLOS = detectionSet.has(`${realX},${realY}`);
           const isSelected =
@@ -51,7 +56,7 @@ function GameBoard({
               currentPlayer={currentPlayer}
             />
           );
-        })
+        })}</div>
       )}
     </div>
   );

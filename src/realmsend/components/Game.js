@@ -5,7 +5,7 @@ import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestor
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import App from './Main';
-const BOARD_SIZE = 15;
+import { NUM_ROWS, NUM_COLS } from '../lib/consts';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwXLdaJvQ4D8uY-eylPEafxSfyteUOzes",
@@ -23,12 +23,12 @@ const analytics = getAnalytics(fire);
 
 function createInitialBoard() {
   const board = [];
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    const row = [];
-    for (let c = 0; c < BOARD_SIZE; c++) {
-      row.push(createCell());
+  for (let r = 0; r < NUM_ROWS; r++) {
+    const cols = [];
+    for (let c = 0; c < NUM_COLS; c++) {
+      cols.push(createCell());
     }
-    board.push(row);
+    board.push(cols);
   }
   return board;
 }

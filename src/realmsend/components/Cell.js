@@ -52,14 +52,14 @@ function Cell({
       } else {
         // not in LOS => show intel overlay
         return renderIntelCell(
-          cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn
+          cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn, eyeD
         );
       }
     }
   } else {
     // no piece visible
     return renderIntelCell(
-      cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn
+      cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn, eyeD
     );
   }
 }
@@ -141,11 +141,13 @@ function renderIntelCell(
   currentPlayer,
   ownsDevice,
   ownsJammer,
-  isMyTurn
+  isMyTurn,eyeD
 ) {
+  let className = eyeD
   return (
     <div
       onClick={onClick}
+      className={className}
       style={{
         width: 45,
         height: 45,
@@ -207,10 +209,6 @@ function getRotationDegrees(direction, player) {
 function IntelOverlay({ cell, player }) {
   const intel = cell.intel[player];
   const style = {
-    position: 'absolute',
-    top: '20%',
-    left: '50%',
-    translate: '-50% -50%',
     fontWeight: 'bold',
     fontSize: '12px',
     color: intel.isCertain ? 'darkorange' : 'red',

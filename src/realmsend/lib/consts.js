@@ -18,3 +18,5 @@ export const abbrs = {
       return type
     }
   }
+  export const NUM_ROWS = 13
+  export const NUM_COLS = 15

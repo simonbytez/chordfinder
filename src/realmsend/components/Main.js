@@ -9,7 +9,7 @@
  *******************************************************/
 const React = require('react');
 import Piece from '../lib/piece';
-import abbrs, {typeCategory} from '../lib/consts';
+import abbrs, {typeCategory, NUM_ROWS, NUM_COLS} from '../lib/consts';
 import { current } from '@reduxjs/toolkit';
 import { DevicesFold } from '@mui/icons-material';
 import { useEffect } from 'react';
@@ -21,8 +21,7 @@ const ControlPanel = require('./ControlPanel');
 const MovementPanel = require('./MovementPanel');
 const IntelLogPanel = require('./IntelLogPanel');
 
-const BOARD_SIZE = 15;
-const PIECE_TYPES = ['wall', 'flag', 'brute', 'scanner', 'scout', 'jammer', 'listener', 'pawn'];
+const PIECE_TYPES = ['wall', 'flag', 'brute', 'scout', 'jammer', 'listener', 'pawn'];
 
 function rotateDirection(currentDir, side, player) {
   const dirs = ['north', 'east', 'south', 'west'];
@@ -93,18 +92,6 @@ function createCell() {
   };
 }
 
-function createInitialBoard() {
-  const board = [];
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    const row = [];
-    for (let c = 0; c < BOARD_SIZE; c++) {
-      row.push(createCell());
-    }
-    board.push(row);
-  }
-  return board;
-}
-
 function initializeCounts() {
   return {
     player1: { wall: 0, flag: 0, brute: 0, scanner: 0, jail: 0, scout: 0, jammer: 0 },
@@ -115,7 +102,7 @@ function initializeCounts() {
 function getLineOfSight(board, x, y, piece) {
   const [dx, dy] = resolveGlobalDirection(piece.player, piece.direction);
   const cx = x + dx, cy = y + dy;
-  if (cx < 0 || cx >= BOARD_SIZE || cy < 0 || cy >= BOARD_SIZE) return [];
+  if (cx < 0 || cx >= NUM_COLS || cy < 0 || cy >= NUM_ROWS) return [];
   const cellPieces = board[cy][cx].pieces;
   const enemyHere = cellPieces.some(p => p.player !== piece.player);
   return [{ x: cx, y: cy, hasEnemy: enemyHere, distance: 1, isCertain: true }];
@@ -158,8 +145,8 @@ function App({playerNumber,
   }
 
   function isJammed(board, x, y, player) {
-    for (let row = 0; row < BOARD_SIZE; row++) {
-      for (let col = 0; col < BOARD_SIZE; col++) {
+    for (let row = 0; row < NUM_ROWS; row++) {
+      for (let col = 0; col < NUM_COLS; col++) {
         // If the opponent has a jammer at (col, row)...
         if (board[row][col].jammer[player]) {
           // Check if (x,y) is within 1 cell in both directions
@@ -206,9 +193,9 @@ function App({playerNumber,
 
   function incrementIntelAgesForPlayer(oldBoard, player) {
     const newBoard = [...oldBoard];
-    for (let y = 0; y < BOARD_SIZE; y++) {
+    for (let y = 0; y < NUM_ROWS; y++) {
       newBoard[y] = [...newBoard[y]];
-      for (let x = 0; x < BOARD_SIZE; x++) {
+      for (let x = 0; x < NUM_COLS; x++) {
         const cellCopy = { ...newBoard[y][x] };
         const pIntel = { ...cellCopy.intel[player] };
         for (let key in pIntel) {
@@ -249,6 +236,9 @@ function App({playerNumber,
     const newBoard = [...board];
     newBoard[y] = [...newBoard[y]];
     const cellCopy = { ...newBoard[y][x] };
+    if((currentPlayer == 1 && y < 10) || (currentPlayer == 2 && y > 4) || cellCopy.pieces[0]) {
+      return
+    }
 
     const newPiece = new Piece(currentPlayer, selectedPieceType, currentPlayer == 1 ? 'north' : 'south');
     newPiece.id = genPieceId();
@@ -275,7 +265,7 @@ function App({playerNumber,
         if (piece.type === 'jail' || piece.type == 'wall') return;
 
         if (piece.type == 'scout') {
-          setActionsRemaining(6);
+          setActionsRemaining(4);
         } else {
           setActionsRemaining(2);
         }
@@ -314,7 +304,7 @@ function App({playerNumber,
     } else {
       let selectedPiece = selectedCell.piece
       // move the selected piece
-      if(!piece || piece.type != 'wall' || selectedPiece == 'brute') {
+      if(!piece || piece.type != 'wall' || selectedPiece.type == 'brute') {
         movePiece(selectedCell.x, selectedCell.y, x, y);
       }
     }
@@ -409,9 +399,9 @@ function App({playerNumber,
   }
 
   function clearJammedIntel(board, player) {
-    for (let row = 0; row < BOARD_SIZE; row++) {
-      for (let col = 0; col < BOARD_SIZE; col++) {
-        delete board[col][row].intel[player].jammed
+    for (let row = 0; row < NUM_ROWS; row++) {
+      for (let col = 0; col < NUM_COLS; col++) {
+        delete board[row][col].intel[player].jammed
       }
     }
   }
@@ -484,8 +474,8 @@ function App({playerNumber,
 
   /** Remove certain intel references about an enemy piece ID. */
   function removeIntel(boardRef, player, id) {
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      for (let x = 0; x < BOARD_SIZE; x++) {
+    for (let y = 0; y < NUM_COLS; y++) {
+      for (let x = 0; x < NUM_ROWS; x++) {
         let cell = boardRef[y][x]
         if (cell.intel[player][id]) {
           delete cell.intel[player][id];
@@ -501,15 +491,15 @@ function App({playerNumber,
 
   //JARED_TODO: this is highly inefficient.
   function checkListeningDevices(b) {
-    for (let row = 0; row < BOARD_SIZE; row++) {
-      for (let col = 0; col < BOARD_SIZE; col++) {
+    for (let row = 0; row < NUM_ROWS; row++) {
+      for (let col = 0; col < NUM_COLS; col++) {
         const c = b[row][col];
         if (c.listeningDevice[3 - currentPlayer]) {
             let coverage = getListener3x3(row, col)
             for(let cov of coverage) {
               let piece = b[cov.y][cov.x].pieces[0]
               if(isJammed(b, cov.x, cov.y, currentPlayer)) {
-                updateJammedIntel(b, 3 - currentPlayer, cov.y, cov.x)
+                //updateJammedIntel(b, 3 - currentPlayer, cov.y, cov.x)
               } else if (piece && piece.player == currentPlayer) {
                 updateIntel(b, 3 - currentPlayer, cov.y, cov.x, piece, true);
                 logIntelForPlayer(3 - currentPlayer, 
@@ -565,7 +555,7 @@ function App({playerNumber,
     for (let dx = -1; dx <= 1; dx++) {
       for (let dy = -1; dy <= 1; dy++) {
         const cx = x + dx, cy = y + dy;
-        if (cx >= 0 && cx < BOARD_SIZE && cy >= 0 && cy < BOARD_SIZE) {
+        if (cx >= 0 && cx < NUM_ROWS && cy >= 0 && cy < NUM_COLS) {
           squares.push({ x: cx, y: cy });
         }
       }
@@ -597,7 +587,7 @@ function App({playerNumber,
     for (let dx = xRange[0]; dx <= xRange[1]; dx++) {
       for (let dy = yRange[0]; dy <= yRange[1]; dy++) {
         const cx = x + dx, cy = y + dy;
-        if (cx >= 0 && cx < BOARD_SIZE && cy >= 0 && cy < BOARD_SIZE) {
+        if (cx >= 0 && cx < NUM_ROWS && cy >= 0 && cy < NUM_COLS) {
           squares.push({ x: cx, y: cy });
         }
       }
@@ -755,7 +745,7 @@ function App({playerNumber,
   let title = null
   if(phase === 'setup') {
     if(isMyTurn) {
-      title = 'Setup'
+      title = 'Setup (bottom five rows)'
     } else {
       title = `Waiting on other player set up`
     }
