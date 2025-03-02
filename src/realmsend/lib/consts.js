@@ -18,5 +18,6 @@ export const abbrs = {
       return type
     }
   }
-  export const NUM_ROWS = 12
+  export const NUM_ROWS = 11
   export const NUM_COLS = 14
+  export const NUM_ACTIONS = 5

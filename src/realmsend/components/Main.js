@@ -73,24 +73,6 @@ function genPieceId() {
  *  }
  * }
  */
-//JARED_TOOD: what happens when two players have listening devices in the same cell?
-function createCell() {
-  return {
-    pieces: [],
-    listeningDevice: {
-      1: false,
-      2: false
-    },
-    jammer: {
-      1: false,
-      2: false
-    },
-    intel: {
-      1: {},
-      2: {},
-    },
-  };
-}
 
 function initializeCounts() {
   return {
@@ -129,10 +111,14 @@ function App({playerNumber,
   const [selectedPieceType, setSelectedPieceType] = useState('wall');
   const [selectedCell, setSelectedCell] = useState(null);
 
-  const [actionsRemaining, setActionsRemaining] = useState(2);
+  const [actionsRemaining, setActionsRemaining] = useState(5);
   const [jails, setJails] = useState({ player1: [], player2: [] });
   const [detectionResults, setDetectionResults] = useState([]);
   const [freeRotationUsed, setFreeRotationUsed] = useState(false);
+
+  useEffect(() => {
+    setActionsRemaining(5)
+  }, [currentPlayer])
 
   const [intelLogs, setIntelLogs] = useState({ 1: [], 2: [] });
 
@@ -165,7 +151,7 @@ function App({playerNumber,
 
   function nextPhase() {
     if (phase === 'setup') {
-      setActionsRemaining(2);
+      setActionsRemaining(5);
       setFreeRotationUsed(false);
       onSetupComplete(currentPlayer)
     }
@@ -181,7 +167,7 @@ function App({playerNumber,
       [finishing]: [], // clear logs for finishing player
     }));
 
-    setActionsRemaining(2);
+    setActionsRemaining(5);
     setSelectedCell(null);
     setDetectionResults([]);
     setFreeRotationUsed(false);
@@ -218,7 +204,7 @@ function App({playerNumber,
     if (phase === 'setup') {
       handleSetupClick(x, y);
     } else if (phase === 'movement') {
-      handleMovementClick(x, y);
+      handleMovementClick(x, y, selectedCell);
     }
   }
 
@@ -233,21 +219,20 @@ function App({playerNumber,
     const pKey = `player${currentPlayer}`;
     const newCounts = { ...counts };
     const plyCount = { ...newCounts[pKey] };
-    if((currentPlayer == 1 && y < 8) || (currentPlayer == 2 && y > 3)) {
+    if((currentPlayer == 1 && y < 7) || (currentPlayer == 2 && y > 3)) {
+      alert("Set up only in the bottom four rows.")
       return
     } else if(cellCopy.pieces && cellCopy.pieces[0]) {
-      if (cellCopy.pieces[0].type == selectedPieceType) {
-        cellCopy.pieces = []
-        plyCount[selectedPieceType] = (plyCount[selectedPieceType] || 0) - 1;
-        newCounts[pKey] = plyCount;
-        setCounts(newCounts)
-        newBoard[y][x] = cellCopy;
-        gameState.board = newBoard
-      } 
+      let pieceType = cellCopy.pieces[0].type
+      cellCopy.pieces = []
+      plyCount[pieceType] = (plyCount[pieceType] || 0) - 1;
+      newCounts[pKey] = plyCount;
+      setCounts(newCounts)
+      newBoard[y][x] = cellCopy;
+      gameState.board = newBoard
 
       return
     }
-
     
     plyCount[selectedPieceType] = (plyCount[selectedPieceType] || 0) + 1;
     newCounts[pKey] = plyCount;
@@ -268,19 +253,18 @@ function App({playerNumber,
   // MOVEMENT PHASE
   // =========================
 
-  function handleMovementClick(x, y) {
+  function handleMovementClick(x, y, selectedCellIn) {
+    if(actionsRemaining == 0) {
+      alert("No actions left, end your turn!")
+      return
+    }
+
     const cellPieces = board[y][x].pieces;
     let piece = cellPieces[0]
-    if (!selectedCell) {
+    if (!selectedCellIn) {
       // select a piece
       if (cellPieces.length > 0 && piece.player === currentPlayer) {
         if (piece.type === 'jail' || piece.type == 'wall') return;
-
-        if (piece.type == 'scout') {
-          setActionsRemaining(4);
-        } else {
-          setActionsRemaining(2);
-        }
 
         if (piece.type === 'listener' && piece.deviceCount == null) {
           piece.deviceCount = 0;
@@ -314,12 +298,21 @@ function App({playerNumber,
         }  
 
         setDetectionResults(los);
+        setActionsRemaining(prev => {
+          return prev - 1
+        });
       }
     } else {
-      let selectedPiece = selectedCell.piece
+      let selectedPiece = selectedCellIn.piece
+      let los = null
+      if(piece) {
+        los = getLineOfSight(board, x, y, selectedPiece)
+      }
       // move the selected piece
-      if(!piece || (piece.type != 'wall' && selectedPiece.type != 'scout') || selectedPiece.type == 'brute') {
+      if(!piece || (piece.player == 3 - currentPlayer && los.x == x && los.y == y && (piece.type != 'wall' && selectedPiece.type != 'scout' || selectedPiece.type == 'brute'))) {
         movePiece(selectedCell.x, selectedCell.y, x, y);
+      } else if(piece && piece.player == currentPlayer) {
+        handleMovementClick(x, y)
       }
     }
   }
@@ -386,12 +379,7 @@ function App({playerNumber,
     gameState.board = newBoard
 
     setActionsRemaining(prev => {
-      const next = prev - 1;
-      if (next <= 0) {
-        endTurn(newBoard);
-        return next;
-      }
-      return next;
+      return prev - 1
     });
   }
 
@@ -445,10 +433,6 @@ function App({playerNumber,
         }
       }
     }
-  }
-
-  function wallIntel(board, player, y, x) {
-    board[y][x].intel[player].wall = true
   }
 
   function updateJammerIntel(board, player, y, x, jammer, certain) {
@@ -676,9 +660,7 @@ function App({playerNumber,
     updateIntel(newBoard, 3 - currentPlayer, y, x, piece, true)
 
     setActionsRemaining(prev => {
-      const next = prev - 1;
-      if (next <= 0) endTurn(newBoard);
-      return next;
+      return prev - 1
     });
   }
 
@@ -688,6 +670,11 @@ function App({playerNumber,
 
   function handleRotate(side) {
     if (!selectedCell) return;
+    if(actionsRemaining == 0) {
+      alert("No actions left")
+      return
+    }
+
     const newBoard = [...board];
     newBoard[selectedCell.y] = [...newBoard[selectedCell.y]];
     const cellCopy = { ...newBoard[selectedCell.y][selectedCell.x] };
@@ -731,12 +718,7 @@ function App({playerNumber,
       setFreeRotationUsed(true);
     } else {
       setActionsRemaining(prev => {
-        const next = prev - 1;
-        if (next <= 0) {
-          endTurn(newBoard);
-          return next;
-        }
-        return next;
+        return prev - 1
       });
     }
   }
