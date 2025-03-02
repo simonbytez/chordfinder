@@ -233,7 +233,7 @@ function App({playerNumber,
     const pKey = `player${currentPlayer}`;
     const newCounts = { ...counts };
     const plyCount = { ...newCounts[pKey] };
-    if((currentPlayer == 1 && y < 8) || (currentPlayer == 2 && y > 4)) {
+    if((currentPlayer == 1 && y < 8) || (currentPlayer == 2 && y > 3)) {
       return
     } else if(cellCopy.pieces && cellCopy.pieces[0]) {
       if (cellCopy.pieces[0].type == selectedPieceType) {
