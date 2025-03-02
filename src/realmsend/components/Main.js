@@ -112,6 +112,7 @@ function App({playerNumber,
   const [selectedCell, setSelectedCell] = useState(null);
 
   const [actionsRemaining, setActionsRemaining] = useState(5);
+  const [pieceActionsRemaining, setPieceActionsRemaining] = useState(null)
   const [jails, setJails] = useState({ player1: [], player2: [] });
   const [detectionResults, setDetectionResults] = useState([]);
   const [freeRotationUsed, setFreeRotationUsed] = useState(false);
@@ -168,10 +169,12 @@ function App({playerNumber,
     }));
 
     setActionsRemaining(5);
+    setPieceActionsRemaining(null)
     setSelectedCell(null);
     setDetectionResults([]);
     setFreeRotationUsed(false);
     clearJammedIntel(newBoard, currentPlayer)
+    clearDeletedIntel(newBoard, currentPlayer)
     // check listening devices
     checkListeningDevices(newBoard);
     onGameStateUpdate(newBoard, 3 - currentPlayer, 'movement')
@@ -190,6 +193,7 @@ function App({playerNumber,
             value.age++;
           }
         }
+
         newBoard[y][x] = cellCopy;
       }
     }
@@ -204,6 +208,31 @@ function App({playerNumber,
     if (phase === 'setup') {
       handleSetupClick(x, y);
     } else if (phase === 'movement') {
+      if(actionsRemaining == 0) {
+        alert("No actions left, end your turn!")
+        return
+      }
+
+      const cellPieces = board[y][x].pieces;
+      let piece = cellPieces[0]
+      if(piece) {
+        if(!selectedCell) {
+          if(piece.type == 'scout') {
+            setPieceActionsRemaining(actionsRemaining - 1)
+          } else {
+            setPieceActionsRemaining(2)
+          }
+        } else if(piece.id == selectedCell.piece.id) {
+          setPieceActionsRemaining(prev => prev - 1)
+        } else if(piece.player == selectedCell.piece.player) {
+          if(piece.type == 'scout') {
+            setPieceActionsRemaining(actionsRemaining - 1)
+          } else {
+            setPieceActionsRemaining(Math.min(2, actionsRemaining - 1))
+          }
+        }
+      }
+      
       handleMovementClick(x, y, selectedCell);
     }
   }
@@ -254,13 +283,9 @@ function App({playerNumber,
   // =========================
 
   function handleMovementClick(x, y, selectedCellIn) {
-    if(actionsRemaining == 0) {
-      alert("No actions left, end your turn!")
-      return
-    }
-
     const cellPieces = board[y][x].pieces;
     let piece = cellPieces[0]
+
     if (!selectedCellIn) {
       // select a piece
       if (cellPieces.length > 0 && piece.player === currentPlayer) {
@@ -304,12 +329,10 @@ function App({playerNumber,
       }
     } else {
       let selectedPiece = selectedCellIn.piece
-      let los = null
-      if(piece) {
-        los = getLineOfSight(board, x, y, selectedPiece)
-      }
+      let los = getLineOfSight(board, selectedCell.x, selectedCell.y, selectedPiece)[0]
+      console.log(los)
       // move the selected piece
-      if(!piece || (piece.player == 3 - currentPlayer && los.x == x && los.y == y && (piece.type != 'wall' && selectedPiece.type != 'scout' || selectedPiece.type == 'brute'))) {
+      if(!piece || (piece.player == 3 - currentPlayer && los && los.x == x && los.y == y && (piece.type != 'wall' && selectedPiece.type != 'scout' || selectedPiece.type == 'brute'))) {
         movePiece(selectedCell.x, selectedCell.y, x, y);
       } else if(piece && piece.player == currentPlayer) {
         handleMovementClick(x, y)
@@ -340,7 +363,7 @@ function App({playerNumber,
     const enemy = toCell.pieces.find(p => p.player !== currentPlayer);
     if (enemy) {
       toCell.pieces = toCell.pieces.filter(p => p !== enemy);
-      capturePiece(enemy);
+      capturePiece(enemy, ty, tx);
       removeIntel(newBoard, currentPlayer, enemy.id);
     }
 
@@ -381,18 +404,23 @@ function App({playerNumber,
     setActionsRemaining(prev => {
       return prev - 1
     });
+
+    setPieceActionsRemaining(prev => {
+      return prev - 1
+    });
   }
 
   // =========================
   // CAPTURE & INTEL
   // =========================
 
-  function capturePiece(enemyPiece) {
+  function capturePiece(enemyPiece, y, x) {
     const yourKey = `player${currentPlayer}`;
     const newJails = { ...jails };
     const arr = [...newJails[yourKey], enemyPiece];
     newJails[yourKey] = arr;
     setJails(newJails);
+    updateDeletedIntel(board, 3 - currentPlayer, y, x, enemyPiece)
   }
 
   function updateJammedIntel(board, player, y, x) {
@@ -405,6 +433,22 @@ function App({playerNumber,
         delete board[row][col].intel[player].jammed
       }
     }
+  }
+
+  function clearDeletedIntel(board, player) {
+    for (let row = 0; row < NUM_ROWS; row++) {
+      for (let col = 0; col < NUM_COLS; col++) {
+        delete board[row][col].intel[player].deleted
+      }
+    }
+  }
+
+  function updateDeletedIntel(board, player, y, x, piece) {
+    if(!board[y][x].intel[player].deleted) {
+      board[y][x].intel[player].deleted = []
+    }
+
+    board[y][x].intel[player].deleted = true
   }
 
   function updateIntel(board, player, cy, cx, piece, certain, age) {
@@ -526,12 +570,11 @@ function App({playerNumber,
     setSelectedCell({ x, y, piece });
 
     setActionsRemaining(prev => {
-      const next = prev - 1;
-      if (next <= 0) {
-        endTurn(newBoard);
-        return next;
-      }
-      return next;
+      return prev - 1
+    });
+
+    setPieceActionsRemaining(prev => {
+      return prev - 1
     });
   }
 
@@ -603,12 +646,10 @@ function App({playerNumber,
     setSelectedCell({ x, y, piece });
 
     setActionsRemaining(prev => {
-      const next = prev - 1;
-      if (next <= 0) {
-        endTurn(newBoard);
-        return next;
-      }
-      return next;
+      return prev - 1
+    });
+    setPieceActionsRemaining(prev => {
+      return prev - 1
     });
   }
 
@@ -660,6 +701,9 @@ function App({playerNumber,
     updateIntel(newBoard, 3 - currentPlayer, y, x, piece, true)
 
     setActionsRemaining(prev => {
+      return prev - 1
+    });
+    setPieceActionsRemaining(prev => {
       return prev - 1
     });
   }
@@ -720,6 +764,9 @@ function App({playerNumber,
       setActionsRemaining(prev => {
         return prev - 1
       });
+      setPieceActionsRemaining(prev => {
+        return prev - 1
+      });
     }
   }
 
@@ -758,6 +805,7 @@ function App({playerNumber,
             player={currentPlayer}
             selectedCell={selectedCell}
             actionsRemaining={actionsRemaining}
+            pieceActionsRemaining={pieceActionsRemaining}
             onEndTurn={endTurn.bind(this, board)}
             onScannerChoice={handleScannerChoice}
             detectionResults={detectionResults}

@@ -35,19 +35,19 @@ function Cell({
     if (isOwnPiece) {
       return renderPieceCell(
         cell, piece, bgColor, onClick, true, currentPlayer, 
-        ownsDevice, ownsJammer, isMyTurn
+        ownsDevice, ownsJammer, isMyTurn, eyeD
       );
     } else {
       if (isInLOS) {
         // if it's the enemy flag, do something special if you want
         if (piece.type === 'flag') {
           return renderEmptyCell(
-            cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn
+            cell, onClick, bgColor, isActive, currentPlayer, ownsDevice, ownsJammer, isMyTurn, eyeD
           );
         }
         return renderPieceCell(
           cell, piece, bgColor, onClick, false, currentPlayer, 
-          ownsDevice, ownsJammer, isMyTurn
+          ownsDevice, ownsJammer, isMyTurn, eyeD
         );
       } else {
         // not in LOS => show intel overlay
@@ -73,7 +73,7 @@ function renderPieceCell(
   currentPlayer,
   ownsDevice,
   ownsJammer,
-  isMyTurn
+  isMyTurn, eyeD
 ) {
   const style = {
     width: 45,
@@ -95,7 +95,7 @@ function renderPieceCell(
   return (
     <div onClick={onClick} style={style}>
       <PieceFacingLabel piece={piece} player={currentPlayer}/>
-      <IntelOverlay cell={cell} player={currentPlayer} />
+      <IntelOverlay cell={cell} player={currentPlayer} eyeD={eyeD}/>
       {ownsDevice && <div className="device-indicator listener">📡</div>}
                           
       {ownsJammer && <div className="device-indicator jammer">🛰️</div>}
@@ -111,7 +111,7 @@ function renderEmptyCell(
   currentPlayer,
   ownsDevice,
   ownsJammer,
-  isMyTurn
+  isMyTurn, eyeD
 ) {
   return (
     <div
@@ -126,7 +126,7 @@ function renderEmptyCell(
         pointerEvents: !isMyTurn ? 'none' : undefined
       }}
     >
-      <IntelOverlay cell={cell} player={currentPlayer} />
+      <IntelOverlay cell={cell} player={currentPlayer} eyeD={eyeD}/>
       {ownsDevice && <div className="device-indicator listener">📡</div>}
       {ownsJammer && <div className="device-indicator jammer" style={{ left: '20px' }}>🛰️</div>}
     </div>
@@ -158,7 +158,7 @@ function renderIntelCell(
         pointerEvents: !isMyTurn ? 'none' : undefined
       }}
     >
-      <IntelOverlay cell={cell} player={currentPlayer} />
+      <IntelOverlay cell={cell} player={currentPlayer} eyeD={eyeD}/>
       {ownsDevice && <div className="device-indicator listener">📡</div>}
       {ownsJammer && <div className="device-indicator jammer" style={{ left: '20px' }}>🛰️</div>}
     </div>
@@ -206,7 +206,7 @@ function getRotationDegrees(direction, player) {
  * Renders certain intel about pieces in this cell for the current player. 
  * e.g. "SC3(1)" meaning scout #3, age=1 
  */
-function IntelOverlay({ cell, player }) {
+function IntelOverlay({ cell, player, eyeD }) {
   const intel = cell.intel[player];
   const style = {
     fontWeight: 'bold',
@@ -218,7 +218,8 @@ function IntelOverlay({ cell, player }) {
       certainJammerIntel = false,
       wallIntel = false,
       certainListenerIntel = false,
-      jammed = false
+      jammed = false, 
+      deleted = false
   for(let i in intel) {
     const intelValue = intel[i]
     //is the piece id
@@ -234,6 +235,8 @@ function IntelOverlay({ cell, player }) {
       wallIntel = intelValue
     } else if(i == 'jammed') {
       jammed = true
+    } else if(i === 'deleted') {
+      deleted = true
     }
   }
 
@@ -253,6 +256,9 @@ function IntelOverlay({ cell, player }) {
   }
   if(jammed) {
     intelHtmlElements.push(<span>{'X'}</span>)
+  }
+  if(deleted) {
+    intelHtmlElements.push(<span>{'DEAD'}</span>)
   }
 
   return (

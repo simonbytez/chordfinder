@@ -4,6 +4,7 @@ function MovementPanel({
   player,
   selectedCell,
   actionsRemaining,
+  pieceActionsRemaining,
   onEndTurn,
   onScannerChoice,
   onRotateLeft,
@@ -27,7 +28,8 @@ function MovementPanel({
         backgroundColor: '#fff',
       }}
     >
-      <div>Actions left: {actionsRemaining}</div>
+      <div>Total Actions left: {actionsRemaining}</div>
+      {!!pieceActionsRemaining && <div>Piece Actions Left: {pieceActionsRemaining}</div>}
 
       {/* End Turn */}
       <div style={{ marginTop: '10px' }}>
