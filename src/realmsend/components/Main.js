@@ -211,7 +211,7 @@ function App({playerNumber,
       if(actionsRemaining == 0) {
         alert("No actions left, end your turn!")
         return
-      }
+      } 
 
       const cellPieces = board[y][x].pieces;
       let piece = cellPieces[0]
@@ -333,6 +333,10 @@ function App({playerNumber,
       console.log(los)
       // move the selected piece
       if(!piece || (piece.player == 3 - currentPlayer && los && los.x == x && los.y == y && (piece.type != 'wall' && selectedPiece.type != 'scout' || selectedPiece.type == 'brute'))) {
+        if(pieceActionsRemaining == 0) {
+          alert("no actions left for this piece!")
+          return
+        }
         movePiece(selectedCell.x, selectedCell.y, x, y);
       } else if(piece && piece.player == currentPlayer) {
         handleMovementClick(x, y)
@@ -716,6 +720,10 @@ function App({playerNumber,
     if (!selectedCell) return;
     if(actionsRemaining == 0) {
       alert("No actions left")
+      return
+    }
+    if(pieceActionsRemaining == 0) {
+      alert("No actions left for this piece")
       return
     }
 
