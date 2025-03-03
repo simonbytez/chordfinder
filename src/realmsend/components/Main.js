@@ -533,7 +533,7 @@ function App({playerNumber,
               let piece = b[cov.y][cov.x].pieces[0]
               if(isJammed(b, cov.x, cov.y, currentPlayer)) {
                 //updateJammedIntel(b, 3 - currentPlayer, cov.y, cov.x)
-              } else if (piece && piece.player == currentPlayer) {
+              } else if (piece && piece.player == currentPlayer && piece.type != 'jammer') {
                 updateIntel(b, 3 - currentPlayer, cov.y, cov.x, piece, true);
                 logIntelForPlayer(3 - currentPlayer, 
                   `Your listening device detected an enemy ${piece.type} at (${cov.x}, ${cov.y}).`
