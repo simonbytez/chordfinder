@@ -1,0 +1,2367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Republic of Rome Tutorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Marcellus+SC&display=swap">
+<style>
+/* Layout: course map, then per lesson a drawn game board (laid out like the real one) with the players' factions around it, beside a sticky tutor panel. */
+:root {
+  --stone: #E7E4E6;
+  --table: #DAD5D9;
+  --slab: #F7F5F6;
+  --parch: #E9DFC9;
+  --parch-2: #F3ECDD;
+  --parch-rule: #CDBF9F;
+  --ink: #221C26;
+  --muted: #625968;
+  --rule: #C5BEC4;
+  --clavus: #5E2770;
+  --clavus-soft: #ECE1F0;
+  --on-clavus: #FBF8FC;
+  --gold: #B57A06;
+  --gold-soft: #F7EACB;
+  --on-gold: #221C26;
+  --good: #2D7548;
+  --good-soft: #DDEFE3;
+  --bad: #A2342B;
+  --bad-soft: #F6E1DD;
+  --blue: #2C6A89;
+  --bronze: #8A5527;
+  --shadow: rgba(40, 20, 50, .22);
+  --font-display: "Marcellus SC", "Trajan Pro", Georgia, serif;
+  --font-body: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --stone: #141116; --table: #1F1A22; --slab: #2A242E; --parch: #2B251D; --parch-2: #352E24; --parch-rule: #4C4232;
+    --ink: #EEE9F1; --muted: #AEA4B4; --rule: #3F3744;
+    --clavus: #C796DB; --clavus-soft: #3A2645; --on-clavus: #1E1424;
+    --gold: #E6B54C; --gold-soft: #3A2E14; --on-gold: #1B1408;
+    --good: #6BC28E; --good-soft: #183323; --bad: #EC8A7E; --bad-soft: #3D1D19;
+    --blue: #72B4D6; --bronze: #D9A06C; --shadow: rgba(0, 0, 0, .55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --stone: #141116; --table: #1F1A22; --slab: #2A242E; --parch: #2B251D; --parch-2: #352E24; --parch-rule: #4C4232;
+  --ink: #EEE9F1; --muted: #AEA4B4; --rule: #3F3744;
+  --clavus: #C796DB; --clavus-soft: #3A2645; --on-clavus: #1E1424;
+  --gold: #E6B54C; --gold-soft: #3A2E14; --on-gold: #1B1408;
+  --good: #6BC28E; --good-soft: #183323; --bad: #EC8A7E; --bad-soft: #3D1D19;
+  --blue: #72B4D6; --bronze: #D9A06C; --shadow: rgba(0, 0, 0, .55);
+  color-scheme: dark;
+}
+
+body { margin: 0; background: var(--stone); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+[hidden] { display: none !important; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--stone); }
+b { font-weight: 700; }
+button { font: inherit; color: inherit; }
+
+.page {
+  max-width: 80rem; margin: 0 auto; display: grid; gap: 1.25rem; overflow-x: clip;
+  padding-block: 1.25rem 3rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.eyebrow { margin: 0; font-family: var(--font-display); letter-spacing: .08em; color: var(--clavus); font-size: .95rem; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(1.75rem, 4vw, 2.6rem); line-height: 1.1; margin: .15rem 0 .4rem; text-wrap: balance; }
+.lede { margin: 0; max-width: 62ch; color: var(--muted); }
+
+/* Course map */
+#map-view { display: grid; gap: 1.5rem; max-width: 52rem; }
+.hero { display: grid; gap: .6rem; }
+.hero .link { justify-self: start; }
+.meter { display: flex; align-items: center; gap: .75rem; font-size: .9rem; color: var(--muted); flex-wrap: wrap; }
+.meter .bar { width: 12rem; max-width: 100%; height: .45rem; background: var(--table); border-radius: 999px; overflow: hidden; }
+.meter .bar span { display: block; height: 100%; background: var(--clavus); border-radius: 999px; }
+.note { margin: 0; font-size: .9rem; color: var(--muted); border-left: 3px solid var(--gold); padding: .2rem 0 .2rem .8rem; max-width: 66ch; }
+.sec { display: grid; gap: .6rem; }
+.sec h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; display: flex; gap: .6rem; align-items: baseline; }
+.sec h2 .rn { color: var(--clavus); }
+.sec > p { margin: 0; color: var(--muted); font-size: .92rem; }
+.lessons { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.lrow {
+  all: unset; box-sizing: border-box; width: 100%; cursor: pointer;
+  display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) auto; gap: .8rem; align-items: center;
+  background: var(--slab); padding: .65rem .9rem; border-radius: 8px; box-shadow: 0 1px 0 var(--rule);
+  transition: background .15s ease;
+}
+.lrow:hover { background: var(--clavus-soft); }
+.lrow:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.lnum { font-family: var(--font-display); font-size: 1.25rem; color: var(--clavus); text-align: center; font-variant-numeric: tabular-nums; }
+.ltitle { font-weight: 700; display: block; }
+.lblurb { font-size: .88rem; color: var(--muted); display: block; }
+.lstat { font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); white-space: nowrap; }
+.lstat.done { color: var(--good); font-weight: 700; }
+.foot { font-size: .8rem; color: var(--muted); margin: 0; }
+
+/* Lesson and appendix views */
+#lesson-view, #appendix-view { display: grid; gap: 1rem; }
+.lesson-top { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; }
+.link { all: unset; cursor: pointer; color: var(--clavus); font-weight: 700; font-size: .92rem; }
+.link:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 2px; }
+.crumb { font-size: .85rem; color: var(--muted); }
+.phases { list-style: none; display: flex; flex-wrap: wrap; gap: .35rem; padding: 0; margin: 0; }
+.phases li { font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; padding: .16rem .6rem; border-radius: 999px; color: var(--muted); border: 1px solid var(--rule); }
+.phases li.now { background: var(--clavus); color: var(--on-clavus); border-color: var(--clavus); font-weight: 700; }
+
+.layout { display: grid; gap: 1.25rem; align-items: start; }
+.layout.solo { max-width: 44rem; }
+@media (min-width: 62rem) {
+  .layout:not(.solo) { grid-template-columns: minmax(0, 1fr) 23rem; }
+  .layout:not(.solo) .board { grid-column: 1; grid-row: 1; }
+  .layout:not(.solo) .tutor { grid-column: 2; grid-row: 1; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 1rem); max-height: calc(100vh - 2rem); overflow-y: auto; }
+}
+@media (max-width: 61.99rem) {
+  .layout:not(.solo) .tutor { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; }
+}
+
+/* The table: game board plus the players' areas around it */
+.board { background: var(--table); border-radius: 10px; padding: 1rem; display: grid; gap: 1.1rem; min-width: 0; grid-template-columns: minmax(0, 1fr); container-type: inline-size; }
+@media (min-width: 40rem) {
+  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .board > * { grid-column: 1 / -1; }
+  .board > .zone.half { grid-column: auto; }
+}
+.zone { min-width: 0; }
+.zone h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.08rem; margin: 0 0 .5rem; display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; letter-spacing: .03em; }
+.zone h3 small { font-family: var(--font-body); font-size: .8rem; color: var(--muted); letter-spacing: 0; }
+.zone.tone-you h3 { color: var(--clavus); }
+.dot { width: .65rem; height: .65rem; border-radius: 50%; display: inline-block; }
+.dot-blue { background: var(--blue); }
+.dot-bronze { background: var(--bronze); }
+.empty { margin: 0; font-size: .85rem; color: var(--muted); font-style: italic; padding: .4rem 0; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); gap: .65rem; padding-top: .4rem; }
+.chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .6rem; padding-top: .3rem; }
+.pills { display: flex; flex-wrap: wrap; gap: .55rem; padding-top: .45rem; }
+
+/* The drawn game board */
+.gameboard { background: var(--parch); border-radius: 8px; padding: .7rem; display: grid; gap: .6rem; box-shadow: inset 0 0 0 1px var(--parch-rule); min-width: 0; }
+.gb-name { margin: 0; text-align: center; font-family: var(--font-display); letter-spacing: .3em; font-size: .85rem; color: var(--muted); }
+.gb-cols { display: grid; gap: .55rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.gb-col { display: flex; flex-wrap: wrap; gap: .4rem; align-content: start; min-width: 0; }
+.gb-col.center { order: -1; }
+@container (min-width: 42rem) {
+  .gb-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr) minmax(0, 1fr); }
+  .gb-col.center { order: 0; }
+}
+.bslot {
+  flex: 1 1 100%; min-width: 0; box-sizing: border-box; position: relative;
+  background: var(--parch-2); border: 1px solid var(--parch-rule); border-radius: 6px; padding: .3rem .45rem .4rem;
+  outline: 2.5px solid transparent; outline-offset: 2px; transition: opacity .2s ease, outline-color .2s ease;
+}
+.bslot.small { flex-basis: calc(33.3% - .3rem); }
+.bslot.half { flex-basis: calc(50% - .25rem); }
+.bslot.big { min-height: 3.6rem; }
+@container (max-width: 41.99rem) {
+  .gb-col.side .bslot:not(.has-items):not(.is-open) { flex: 0 1 auto; }
+}
+.blabel { display: flex; justify-content: space-between; align-items: baseline; gap: .4rem; border-radius: 4px; }
+.blabel h4 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: .8rem; letter-spacing: .04em; line-height: 1.25; }
+.blabel small { display: block; font-size: .68rem; color: var(--muted); }
+.blabel[data-target] { cursor: pointer; }
+.blabel[data-target]:hover { background: var(--gold-soft); }
+.bslot.is-open { border-color: var(--clavus); }
+.bitems { padding-top: .35rem; }
+.bitems.cards { grid-template-columns: repeat(auto-fill, minmax(6.6rem, 1fr)); gap: .5rem; padding-top: .5rem; }
+.btoggle { all: unset; cursor: pointer; font-size: .7rem; font-weight: 700; color: var(--clavus); white-space: nowrap; }
+.btoggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 2px; }
+.lookup { display: grid; gap: .6rem; }
+.lookup-card { background: var(--parch-2); border: 1px solid var(--clavus); border-radius: 6px; padding: .5rem .6rem; min-width: 0; }
+.lookup-card h4 { margin: 0 0 .3rem; font-family: var(--font-display); font-weight: 400; font-size: .95rem; display: flex; justify-content: space-between; gap: .5rem; align-items: baseline; }
+
+.tblwrap { overflow-x: auto; }
+.rtable { width: 100%; border-collapse: collapse; font-size: .84rem; font-variant-numeric: tabular-nums; }
+.rtable th { text-align: left; font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: .25rem .45rem; border-bottom: 1px solid var(--parch-rule); white-space: nowrap; }
+.rtable td { padding: .2rem .45rem; border-bottom: 1px solid var(--parch-rule); vertical-align: top; }
+.rtable td:first-child { font-weight: 700; white-space: nowrap; }
+.rtable tr.rowhl td { background: var(--gold-soft); }
+.rtable tr[data-target] { cursor: pointer; }
+.rtable tr[data-target]:hover td { background: var(--clavus-soft); }
+.rtable tr[data-target]:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.rtable tr.picked td { background: var(--good-soft); font-weight: 700; }
+.rtable tr.wrongrow td { background: var(--bad-soft); }
+.tnote { font-size: .78rem; color: var(--muted); margin: .4rem 0 0; }
+
+.legend { display: flex; flex-wrap: wrap; gap: .3rem 1.1rem; margin: 0; padding-top: .8rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--muted); }
+.legend div { display: flex; gap: .35rem; }
+.legend dt { font-weight: 700; color: var(--ink); letter-spacing: .04em; }
+.legend dd { margin: 0; }
+
+/* Things on the table */
+.card, .chip, .pill, .chit {
+  position: relative; box-sizing: border-box; min-width: 0;
+  outline: 2.5px solid transparent; outline-offset: 2px;
+  transition: transform .15s ease, opacity .2s ease, outline-color .2s ease, background .2s ease;
+}
+.card { display: grid; gap: .28rem; align-content: start; background: var(--slab); border-radius: 6px; padding: .6rem .55rem .5rem; box-shadow: 0 1px 0 var(--rule), 0 6px 14px -12px var(--shadow); }
+.card.war { background: var(--parch); border: 1px solid var(--parch-rule); }
+.chip { display: grid; gap: .05rem; background: var(--slab); border-radius: 8px; padding: .45rem .65rem; box-shadow: 0 1px 0 var(--rule); }
+.chip .k { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.chip .v { font-family: var(--font-display); font-size: 1.3rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.chip .sub { font-size: .74rem; color: var(--muted); }
+.chip.secret .v { font-family: var(--font-body); font-style: italic; font-size: 1rem; color: var(--muted); }
+.pill { background: var(--slab); border-radius: 999px; padding: .45rem .95rem; font-weight: 500; box-shadow: 0 1px 0 var(--rule); }
+.pill small { display: block; font-size: .74rem; color: var(--muted); font-weight: 400; }
+.chit { width: 3.4rem; height: 3.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--slab); font-family: var(--font-display); font-size: 1.25rem; box-shadow: 0 4px 10px -6px var(--shadow); }
+
+[data-target] { cursor: pointer; }
+.card[data-target]:hover, .chip[data-target]:hover, .pill[data-target]:hover, .chit[data-target]:hover { transform: translateY(-2px); z-index: 2; }
+[data-target]:focus-visible { outline-color: var(--ink) !important; }
+.card:hover { z-index: 2; }
+.hl { outline-color: var(--gold); animation: beckon 1.5s ease-in-out infinite; }
+.dim { opacity: .42; }
+.picked { outline-color: var(--clavus); opacity: 1; }
+.seq-done { background: var(--clavus-soft); }
+.shake { animation: shake .35s ease; }
+.arrive { animation: arrive .7s ease-out; }
+@keyframes beckon { 50% { outline-offset: 5px; } }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@keyframes arrive { from { transform: translateY(-1.25rem) scale(.95); opacity: .15; } }
+
+.tag { position: absolute; top: -.6rem; right: .4rem; z-index: 1; font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: .05rem .45rem; border-radius: 999px; background: var(--gold); color: var(--on-gold); white-space: nowrap; }
+.tag.num { background: var(--clavus); color: var(--on-clavus); }
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: .3rem; }
+.nm { font-family: var(--font-display); font-size: 1.02rem; line-height: 1.1; }
+.idn { font-size: .7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.role { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--clavus); line-height: 1.2; min-height: 1.2em; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+.stats.two { grid-template-columns: repeat(2, 1fr); }
+.stats.three { grid-template-columns: repeat(3, 1fr); }
+.stat { position: relative; display: grid; justify-items: center; padding: .15rem 0; border-radius: 3px; }
+.stat .k { font-size: .58rem; letter-spacing: .05em; color: var(--muted); }
+.stat .v { font-weight: 700; font-variant-numeric: tabular-nums; font-size: .98rem; line-height: 1.1; }
+.stat .v small { font-size: .7rem; color: var(--bad); }
+.stat[data-target]:hover { background: var(--gold-soft); }
+.stat.em-for { background: var(--clavus-soft); }
+.stat.em-for .v { color: var(--clavus); }
+.stat.em-against { background: var(--bad-soft); }
+.stat.em-against .v { color: var(--bad); }
+.purse { font-size: .78rem; color: var(--muted); display: flex; align-items: center; gap: .3rem; font-variant-numeric: tabular-nums; border-radius: 3px; }
+.purse.em-against { color: var(--bad); font-weight: 700; }
+.purse.em-for { color: var(--clavus); font-weight: 700; }
+.coin { width: .62rem; height: .62rem; border-radius: 50%; background: var(--gold); flex: none; }
+.delta { font-weight: 700; font-family: var(--font-body); font-size: .85em; }
+.delta.up { color: var(--good); }
+.delta.down { color: var(--bad); }
+.badges { display: flex; flex-wrap: wrap; gap: .25rem; }
+.badge { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: .05rem .35rem; border-radius: 3px; background: var(--table); color: var(--muted); }
+.badge.office { background: var(--clavus); color: var(--on-clavus); }
+.ds { display: flex; gap: .6rem; font-size: .76rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ds span:first-child { color: var(--bad); }
+.wsub { font-size: .76rem; color: var(--muted); }
+
+[data-tip] { position: relative; }
+[data-tip]:hover::after {
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: 13rem; padding: .3rem .5rem; border-radius: 4px; z-index: 4; pointer-events: none;
+  background: var(--ink); color: var(--slab); font: 400 .76rem/1.3 var(--font-body); letter-spacing: 0; text-transform: none; text-align: left;
+}
+@media (hover: none) { [data-tip]:hover::after { display: none; } }
+
+/* Tutor panel */
+.tutor { background: var(--slab); border-radius: 10px; padding: 1rem 1.1rem 1.1rem; display: grid; gap: .8rem; min-width: 0; box-shadow: 0 1px 0 var(--rule), 0 14px 30px -22px var(--shadow); }
+.tutor h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+.tutor h2:focus { outline: none; }
+.tutor p { margin: 0; }
+.txt { display: grid; gap: .55rem; }
+.txt p { margin: 0; }
+.txt ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .3rem; }
+.fine { font-size: .86rem; color: var(--muted); margin: 0; }
+.dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+.dots li { flex: 1; height: 4px; border-radius: 2px; background: var(--rule); }
+.dots li.done { background: var(--clavus); }
+.dots li.now { background: var(--gold); }
+
+.fb { border-radius: 6px; padding: .6rem .75rem; font-size: .95rem; }
+.fb .lab { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .09em; font-weight: 700; margin-bottom: .1rem; }
+.fb.good { background: var(--good-soft); }
+.fb.good .lab { color: var(--good); }
+.fb.bad { background: var(--bad-soft); }
+.fb.bad .lab { color: var(--bad); }
+.fb.info { background: var(--gold-soft); }
+.fb.info .lab { color: var(--gold); }
+
+.choices { display: grid; gap: .45rem; }
+.opt { text-align: left; border: 0; border-radius: 6px; padding: .6rem .8rem; cursor: pointer; background: var(--clavus-soft); color: var(--ink); line-height: 1.35; }
+.opt:hover:not(:disabled) { box-shadow: inset 0 0 0 1.5px var(--clavus); }
+.opt:disabled { cursor: default; }
+.opt.tried { opacity: .5; text-decoration: line-through; }
+.opt.right { background: var(--good-soft); box-shadow: inset 0 0 0 1.5px var(--good); }
+.opt:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.numin { display: flex; align-items: center; gap: .5rem; }
+.numin input { font: 400 1.5rem/1 var(--font-display); width: 5rem; text-align: center; padding: .3rem .2rem; border-radius: 6px; border: 1.5px solid var(--rule); background: var(--stone); color: var(--ink); font-variant-numeric: tabular-nums; }
+.numin input:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.unit { font-size: .88rem; color: var(--muted); }
+.stepper { display: flex; align-items: center; gap: .6rem; }
+.stepper output { font-family: var(--font-display); font-size: 1.6rem; min-width: 1.5ch; text-align: center; line-height: 1; }
+.sq { font: 700 1.2rem/1 var(--font-body); width: 2.3rem; height: 2.3rem; border-radius: 6px; border: 0; cursor: pointer; background: var(--clavus-soft); color: var(--clavus); flex: none; }
+.sq:disabled { opacity: .35; cursor: default; }
+.sq:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.calc { display: grid; grid-template-columns: 1fr auto; gap: .2rem .75rem; font-size: .93rem; font-variant-numeric: tabular-nums; align-items: baseline; }
+.calc .src { color: var(--muted); font-size: .8rem; }
+.calc .plus, .calc .minus, .calc .zero { font-weight: 700; text-align: right; }
+.calc .plus { color: var(--clavus); }
+.calc .minus { color: var(--bad); }
+.calc .zero { color: var(--muted); }
+.calc .total { border-top: 1px solid var(--rule); padding-top: .35rem; font-weight: 700; }
+.calc .n { font-family: var(--font-display); font-size: 1.7rem; font-weight: 400; line-height: 1; text-align: right; }
+
+.odds { display: flex; gap: .9rem; align-items: center; }
+.grid36 { display: grid; grid-template-columns: repeat(6, .95rem); gap: 2px; flex: none; }
+.grid36 span { width: .95rem; height: .95rem; border-radius: 2px; background: var(--table); }
+.grid36 span.win { background: var(--good); }
+.grid36 span.rolled { outline: 2px solid var(--ink); outline-offset: 1px; }
+.grid6 { display: flex; gap: 3px; flex: none; }
+.grid6 span { width: 1.25rem; height: 1.25rem; border-radius: 3px; background: var(--table); display: grid; place-items: center; font-size: .7rem; font-weight: 700; color: var(--muted); }
+.grid6 span.win { background: var(--good); color: var(--slab); }
+.odds p { font-size: .86rem; color: var(--muted); margin: 0; }
+.odds b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.controls { display: flex; flex-wrap: wrap; gap: .5rem; }
+.btn { font: 700 .95rem/1.2 var(--font-body); border: 0; border-radius: 6px; padding: .6rem 1rem; cursor: pointer; background: var(--clavus); color: var(--on-clavus); }
+.btn.ghost { background: transparent; color: var(--clavus); box-shadow: inset 0 0 0 1.5px var(--clavus); }
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.dice { display: flex; gap: .55rem; align-items: center; flex-wrap: wrap; }
+.die { width: 2.6rem; height: 2.6rem; box-sizing: border-box; background: var(--slab); border: 1.5px solid var(--ink); border-radius: 8px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 5px; flex: none; }
+.pip { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); place-self: center; }
+.pip.off { visibility: hidden; }
+.sum { font-family: var(--font-display); font-size: 1.6rem; }
+
+.recap { margin: 0; padding-left: 1.1rem; display: grid; gap: .45rem; }
+.score { margin: 0; font-size: 1.05rem; }
+.ruleref { font-size: .76rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: .6rem; margin: 0; }
+
+/* Appendix */
+#appendix { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); align-items: start; }
+.apx { background: var(--parch-2); border: 1px solid var(--parch-rule); border-radius: 8px; padding: .8rem .9rem; display: grid; gap: .45rem; min-width: 0; }
+.apx h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.2rem; }
+.apx .when { margin: 0; font-size: .88rem; color: var(--muted); }
+.apx .ruleref { border-top-color: var(--parch-rule); }
+
+/* The display face draws 1 like I and 0 like O, so numbers and war names use the body face. */
+.lnum, .chip .v, .numin input, .stepper output, .calc .n, .sum, .card.war .nm { font-family: var(--font-body); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+<style>:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }</style>
+</head>
+<body>
+<div class="page">
+  <section id="map-view" aria-labelledby="map-title">
+    <header class="hero">
+      <a class="link" href="/ammon">← Ammon</a>
+      <p class="eyebrow">Unofficial learning aid · 2nd edition rules</p>
+      <h1 id="map-title">Republic of Rome Tutorial</h1>
+      <p class="lede">Fifteen short, hands-on lessons on a drawn copy of the game board. A tutor explains each rule as you use it, and you look things up on the board's own tables. When you finish, you'll be ready for the Early Republic scenario.</p>
+      <div class="meter" id="meter"></div>
+      <div class="controls"><button class="btn" id="resume" data-nav="resume">Start the first lesson</button></div>
+    </header>
+    <p class="note">Every rule here was checked against the 2nd edition rulebook, and each step cites its section number. The board's tables were copied from the 2nd edition board. Senator numbers in the examples are made up: read the real ones off your cards.</p>
+    <div id="course" class="course"></div>
+    <p class="foot">Made as a study aid. Not affiliated with the game's publishers.</p>
+  </section>
+
+  <section id="lesson-view" hidden>
+    <div class="lesson-top">
+      <button class="link" data-nav="map">← Course map</button>
+      <button class="link" data-nav="appendix">Board tables</button>
+      <span class="crumb" id="crumb"></span>
+    </div>
+    <h1 id="lesson-title"></h1>
+    <ol class="phases" id="phases" aria-label="Phases of a turn"></ol>
+    <div class="layout" id="layout">
+      <aside class="tutor" id="tutor" aria-label="Tutor"></aside>
+      <section class="board" id="board" aria-label="Game table"></section>
+    </div>
+  </section>
+
+  <section id="appendix-view" hidden aria-labelledby="apx-title">
+    <div class="lesson-top"><button class="link" data-nav="back">← Back</button></div>
+    <h1 id="apx-title">Board tables</h1>
+    <p class="lede">The tables printed on the game board, cut down to what the Early Republic basic game uses. Keep this open while you play.</p>
+    <p class="note">Left out on purpose: the Middle and Late Republic columns, and everything for the advanced rules (Pontifex Maximus, Priests, Advocates, trial appeals, Provincial Wars, Rebel Governors and Passing Laws).</p>
+    <div id="appendix"></div>
+  </section>
+</div>
+
+<script>
+/* ---------- Helpers ---------- */
+const clone = o => JSON.parse(JSON.stringify(o));
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const signed = n => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
+const fn = (v, ...a) => (typeof v === 'function' ? v(...a) : v);
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const sen = (name, num, mil, ora, loy, inf, x = {}) => ({ type: 'senator', name, num, mil, ora, loy, inf, t: 0, ...x });
+const chip = (label, value, x = {}) => ({ type: 'chip', label, value, ...x });
+const pill = (label, x = {}) => ({ type: 'pill', label, ...x });
+const war = (name, x = {}) => ({ type: 'war', name, ...x });
+
+const PHASES = ['Mortality', 'Revenue', 'Forum', 'Population', 'Senate', 'Combat', 'Revolution'];
+const SECTIONS = [
+  { name: 'Foundations', blurb: 'What you are trying to do, how to read a Senator, and where the money lives.' },
+  { name: 'The turn, phase by phase', blurb: 'Each of the seven phases, in the order you play them.' },
+  { name: 'Putting it together', blurb: 'Set up the Early Republic, take the designer’s advice, then test yourself.' },
+];
+const ROMAN = ['I', 'II', 'III'];
+const STATS = [
+  ['mil', 'MIL', 'Military: skill as a commander'],
+  ['ora', 'ORA', 'Oratory: persuasion and Senate votes'],
+  ['loy', 'LOY', 'Loyalty: resistance to persuasion'],
+  ['inf', 'INF', 'Influence: prestige, which wins the game'],
+];
+const PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
+const dieHTML = v => `<span class="die" role="img" aria-label="${v}">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(p =>
+  `<span class="pip${PIPS[v].includes(p) ? '' : ' off'}"></span>`).join('')}</span>`;
+const diceHTML = (vals, showSum) => `<div class="dice">${vals.map(dieHTML).join('')}${showSum ? `<span class="sum">= ${vals.reduce((a, b) => a + b, 0)}</span>` : ''}</div>`;
+const LEGEND = `<dl class="legend">
+  <div><dt>#</dt><dd>ID, matches a Mortality chit</dd></div>
+  <div><dt>MIL</dt><dd>Military</dd></div>
+  <div><dt>ORA</dt><dd>Oratory: votes and persuasion</dd></div>
+  <div><dt>LOY</dt><dd>Loyalty</dd></div>
+  <div><dt>INF</dt><dd>Influence</dd></div>
+  <div><dt>Talents</dt><dd>Personal Treasury</dd></div>
+</dl>`;
+
+function move(sc, id, zoneId) {
+  for (const z of sc.zones) z.ids = z.ids.filter(x => x !== id);
+  let z = sc.zones.find(x => x.id === zoneId);
+  if (!z) { z = { id: zoneId, ids: [] }; sc.zones.push(z); }
+  z.ids.push(id);
+}
+
+/* ---------- The board's tables (2nd edition board, basic game only) ---------- */
+const TABLES = {
+  population: {
+    title: 'Population Table', ref: ['1.08.2'],
+    when: 'Population Phase. The HRAO rolls 3d6, subtracts the Unrest Level and adds the HRAO’s Popularity.',
+    head: ['Modified 3d6', 'State of the Republic'],
+    rows: [
+      ['≥18', '−3 from Unrest Level'], ['17', '−2 from Unrest Level'], ['16', '−1 from Unrest Level'],
+      ['15', 'No change'], ['14', 'No change'], ['13', 'No change'], ['12', 'No change'], ['11', 'No change'],
+      ['10', '+1 to Unrest Level'], ['9', '+2 to Unrest Level'], ['8', '+3 to Unrest Level'], ['7', '+3 to Unrest Level, MS'],
+      ['6', '+4 to Unrest Level'], ['5', '+4 to Unrest Level, MS'], ['4', '+5 to Unrest Level'], ['3', '+5 to Unrest Level, MS'],
+      ['2', '+5 to Unrest Level, NR'], ['1', '+5 to Unrest Level, NR, Mob'], ['0', '+6 to Unrest Level, NR, Mob'],
+      ['≤−1', 'People Revolt: all players lose'],
+    ],
+    note: 'MS = Manpower Shortage. NR = No Recruitment this turn. Mob = the Senate is attacked: draw six Mortality chits.',
+  },
+  unrest: {
+    title: 'Unrest Level Adjustments', ref: ['1.08.11', '1.08.12', '1.10.2', '1.10.21', '1.10.4'],
+    when: 'Changes to Unrest that happen outside the Population Table. Unrest never goes below 0.',
+    head: ['Cause', 'Unrest', 'When'],
+    rows: [
+      ['Victory', '−1', 'Combat Phase'], ['Disaster', '+1', 'Combat Phase'], ['Defeat', '+2', 'Combat Phase'],
+      ['Each Drought effect', '+1', 'Population Phase'], ['Each Unprosecuted War', '+1', 'Population Phase'],
+    ],
+  },
+  combat: {
+    title: 'Combat Results Table', ref: ['1.10.11', '1.10.2', '1.10.21', '1.10.3', '1.10.31', '1.10.4'],
+    when: 'Combat Phase. Add 3d6 to your strength minus the war’s strength. Check Disaster and Standoff numbers on the unmodified roll first.',
+    head: ['Modified 3d6', 'Result', 'Losses'],
+    rows: [
+      ['≤3', 'Defeat', 'All'], ['4', 'Defeat', '4 Legions and 4 Fleets'], ['5', 'Defeat', '3 Legions and 3 Fleets'],
+      ['6', 'Defeat', '2 Legions and 2 Fleets'], ['7', 'Defeat', '1 Legion and 1 Fleet'],
+      ['8', 'Stalemate', '5 Legions and 5 Fleets'], ['9', 'Stalemate', '4 Legions and 4 Fleets'], ['10', 'Stalemate', '3 Legions and 3 Fleets'],
+      ['11', 'Stalemate', '2 Legions and 2 Fleets'], ['12', 'Stalemate', '1 Legion and 1 Fleet'], ['13', 'Stalemate', 'No losses'],
+      ['14', 'Victory', '4 Legions and 4 Fleets'], ['15', 'Victory', '3 Legions and 3 Fleets'], ['16', 'Victory', '2 Legions and 2 Fleets'],
+      ['17', 'Victory', '1 Legion and 1 Fleet'], ['≥18', 'Victory', 'No losses'],
+    ],
+    note: 'Disaster: lose half of all Legions and Fleets, rounded up. Standoff: lose a quarter, rounded up. Defeat and Disaster raise Unrest.',
+  },
+  events: {
+    title: 'Random Events Table', ref: ['1.07.21'],
+    when: 'Forum Phase, when your initiative roll is a 7. Roll 3d6 and take that Event card instead of drawing.',
+    head: ['3d6', 'Early Republic event'],
+    rows: [
+      ['3', 'Mob Violence'], ['4', 'Natural Disaster'], ['5', 'Ally Deserts'], ['6', 'Evil Omens'], ['7', 'Refuge'],
+      ['8', 'Epidemic'], ['9', 'Drought'], ['10', 'Evil Omens'], ['11', 'Storm at Sea'], ['12', 'Manpower Shortage'],
+      ['13', 'Allied Enthusiasm'], ['14', 'New Alliance'], ['15', 'Rhodian Alliance'], ['16', 'Enemy Ally Deserts'],
+      ['17', 'Enemy Leader Dies'], ['18', 'Trial of Verres'],
+    ],
+    note: 'If that Event is already in play, flip it to its darker side.',
+  },
+  games: {
+    title: 'Games Table', ref: ['1.07.6'],
+    when: 'Forum Phase, on your initiative. The sponsor pays from their Personal Treasury.',
+    head: ['', 'Slice and Dice', 'Blood Fest', 'Gladiator Gala'],
+    rows: [['Cost', '7T', '13T', '18T'], ['Popularity', '+1', '+2', '+3'], ['Unrest Level', '−1', '−2', '−3']],
+  },
+  landBills: {
+    title: 'Land Bills Table', ref: ['1.09.62', '1.09.621', '1.06.53'],
+    when: 'Senate Phase. A Land Bill needs a sponsor and a co-sponsor. At most one of each type per turn.',
+    head: ['', 'Type I', 'Type II', 'Type III'],
+    rows: [
+      ['Cost to the State', '20T once', '5T every turn', '10T every turn'],
+      ['Sponsor Popularity', '+2', '+2', '+4'], ['Co-sponsor Popularity', '+1', '+1', '+2'],
+      ['Each Senator voting against', '−1', '−1', '−2'], ['Unrest Level', '−1', '−2', '−3'],
+      ['Repeal: sponsor', 'no repeal', '−2', '−4'], ['Repeal: each voting for', 'no repeal', '−1', '−2'],
+      ['Repeal: Unrest Level', 'no repeal', '+2', '+3'],
+    ],
+  },
+  appeal: {
+    title: 'Popular Appeal Table', ref: ['1.09.421'],
+    when: 'During a Prosecution, the accused may appeal to the people: 2d6 plus the accused’s Popularity.',
+    head: ['2d6 + Popularity', 'Result'],
+    rows: [
+      ['≤2', 'Accused killed by the mob'], ['3', '−16 votes'], ['4', '−12 votes'], ['5', '−8 votes'], ['6', '−4 votes'],
+      ['7', 'No change'], ['8', '+4 votes'], ['9', '+8 votes'], ['10', '+12 votes'], ['11', '+16 votes'], ['≥12', 'Accused freed'],
+    ],
+    note: 'Negative votes count for conviction, positive votes against. Above 11, draw a Mortality chit for each point over: the Censor and Prosecutor are at risk.',
+  },
+  assassination: {
+    title: 'Assassination Table', ref: ['1.09.72', '1.09.74'],
+    when: 'Senate Phase, while the Senate is in session. Roll 1d6, plus any Assassin cards played.',
+    head: ['Modified 1d6', 'Result'],
+    rows: [['≥5', 'Target killed'], ['3–4', 'No effect'], ['≤2', 'Assassin caught']],
+    note: 'A caught assassin is killed, and their Faction Leader loses 5 Influence and faces a Special Major Prosecution.',
+  },
+  voting: {
+    title: 'Voting Summary', ref: ['1.09.14', '1.09.141', '1.09.143', '1.09.42', '1.09.821'],
+    when: 'Senate Phase. The Presiding Magistrate decides which faction votes when.',
+    head: ['Votes come from', 'Worth'],
+    rows: [
+      ['Oratory', '1 vote per point'], ['Knights', '1 vote each'], ['Talents spent', '1 vote each, from the Senator’s own treasury, for one vote only'],
+      ['Consul for Life vote', 'Nominee adds their Influence'], ['Prosecution', 'Accused adds their Influence'],
+    ],
+    note: 'A proposal passes with more than half of the votes cast.',
+  },
+  influence: {
+    title: 'Influence and Popularity Summary', ref: ['1.09.22', '1.09.33', '1.09.4', '1.09.44', '1.09.441', '1.09.144', '1.06.4', '1.06.52', '1.10.4', '1.10.61', '1.09.74'],
+    when: 'How Influence (and sometimes Popularity) changes during play.',
+    head: ['Event', 'Influence', 'Notes'],
+    rows: [
+      ['Dictator', '+7', 'Only with 3 Active Wars, or one war of 20+ strength'],
+      ['Consul', '+5', 'Elected in pairs. Current Consuls can’t be re-elected'],
+      ['Censor', '+5', 'Can be re-elected'],
+      ['Master of Horse', '+3', 'Appointed by the Dictator'],
+      ['Minor conviction', '−5', 'Also −5 Popularity, and loses Prior Consul marker and Concessions'],
+      ['Successful prosecutor', '+half', 'Half the Influence the accused lost, plus their Prior Consul marker'],
+      ['Leader of a caught assassin', '−5', 'Faces a Special Major Prosecution'],
+      ['Province developed', '+3', 'For its Governor'],
+      ['Unanimous defeat', '−1', 'Presiding Magistrate, unless they step down'],
+      ['Contribution to Rome', '+1 / +3 / +7', 'For 10 / 25 / 50 talents'],
+      ['Military victory', '+half', 'Half the war’s printed strength, rounded up. Same gain in Popularity'],
+      ['Legions lost in battle', '—', 'Commander loses 1 Popularity per 2 Legions lost'],
+    ],
+  },
+  revenue: {
+    title: 'State Revenue', ref: ['1.06.5', '1.06.52', '1.06.53'],
+    when: 'Revenue Phase. Rome’s income and bills, tracked on the State Treasury track.',
+    head: ['Item', 'Effect'],
+    rows: [
+      ['Annual revenue', '+100T'], ['Each Active War', '−20T'], ['Each Legion or Fleet', '−2T upkeep'],
+      ['Land Bill I', '−20T once'], ['Land Bill II', '−5T every turn'], ['Land Bill III', '−10T every turn'],
+      ['Contribute 10T', '+1 Influence'], ['Contribute 25T', '+3 Influence'], ['Contribute 50T', '+7 Influence'],
+    ],
+    note: 'If Rome can’t pay, it’s bankrupt and everyone loses.',
+  },
+  allegiance: {
+    title: 'Active Forces: Legion allegiance', ref: ['1.11.31'],
+    when: 'Revolution Phase, when a Commander considers Revolt. Roll 1d6 for each Legion.',
+    head: ['Scenario', 'Legion follows on'],
+    rows: [['Early Republic', '5–6'], ['Middle Republic', '4–6'], ['Late Republic', '3–6'], ['Each talent spent', '+1 to one Legion’s roll']],
+  },
+};
+const APPENDIX = ['population', 'unrest', 'combat', 'events', 'games', 'landBills', 'appeal', 'assassination', 'voting', 'influence', 'revenue', 'allegiance'];
+
+/* The board, laid out like the real one: tables on the left, the Forum and war spaces in the middle, Curia and money on the right. */
+const REGIONS = {
+  events: { title: 'Random Events Table', table: 'events' },
+  combat: { title: 'Combat Results Table', table: 'combat' },
+  influence: { title: 'Influence / Popularity Summary', table: 'influence' },
+  population: { title: 'Population Table', sub: 'with the Unrest track', table: 'population' },
+  forum: { title: 'Forum', sub: 'unaligned Senators, Concessions and Provinces', big: true },
+  activeWars: { title: 'Active Wars', big: true },
+  unprosecuted: { title: 'Unprosecuted War', small: true },
+  imminent: { title: 'Imminent Wars', small: true },
+  inactive: { title: 'Inactive Wars', small: true },
+  draw: { title: 'Draw Pile', half: true },
+  discard: { title: 'Discard Pile', half: true },
+  forcePool: { title: 'Force Pool', half: true },
+  activeForces: { title: 'Active Forces', half: true, table: 'allegiance' },
+  appeal: { title: 'Popular Appeal Table', table: 'appeal' },
+  landBills: { title: 'Land Bills Table', table: 'landBills' },
+  games: { title: 'Games Table', table: 'games' },
+  assassination: { title: 'Assassination Table', table: 'assassination' },
+  voting: { title: 'Voting Summary', table: 'voting' },
+  laws: { title: 'Laws' },
+  curia: { title: 'Curia', sub: 'Enemy Leaders, Repopulating Rome, Destroyed Concessions' },
+  revenue: { title: 'State Revenue', sub: 'and the State Treasury track', table: 'revenue' },
+};
+const BOARD_COLS = [
+  { cls: 'side', ids: ['events', 'combat', 'influence', 'population'] },
+  { cls: 'center', ids: ['forum', 'activeWars', 'unprosecuted', 'imminent', 'inactive', 'draw', 'discard'] },
+  { cls: 'side', ids: ['forcePool', 'activeForces', 'appeal', 'landBills', 'games', 'assassination', 'voting', 'laws', 'curia', 'revenue'] },
+];
+const BOARD_ORDER = BOARD_COLS.flatMap(c => c.ids);
+
+/* ---------- Persuasion helpers ---------- */
+const PERSUADE_ROLL = [2, 4];
+const strength = (sc, id) => sc.items[id].ora + sc.items[id].inf;
+function pBase(sc, v) { return strength(sc, 'cornelius') - sc.items.plautius.loy - v.targetT0; }
+function wins2d6(n) {
+  let c = 0;
+  for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b <= n && a + b <= 9) c++;
+  return c;
+}
+function odds2d6(n, rolled) {
+  let cells = '';
+  for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) {
+    const s = a + b, win = s <= n && s <= 9, r = rolled && a === rolled[0] && b === rolled[1];
+    cells += `<span class="${win ? 'win' : ''}${r ? ' rolled' : ''}"></span>`;
+  }
+  const w = wins2d6(n);
+  const what = n >= 2 ? `Green squares are rolls of ${Math.min(n, 9)} or less.` : 'No roll can succeed.';
+  return `<div class="odds"><div class="grid36" aria-hidden="true">${cells}</div>
+    <p><b>${w} of 36</b> rolls succeed (${Math.round(w / 36 * 100)}%). Each square is one way two dice can land. ${what}</p></div>`;
+}
+function pCalc(sc, v, bribe, counter) {
+  const p = sc.items.cornelius, t = sc.items.plautius;
+  const rows = [
+    ['Oratory', p.name, p.ora],
+    ['Influence', p.name, p.inf],
+    ['Loyalty', t.name, -t.loy],
+    ['Talents held', t.name, -v.targetT0],
+  ];
+  if (bribe !== null) rows.push(['Bribes', `from ${p.name}`, bribe]);
+  if (counter) rows.push(['Counter-bribes', 'Blue faction', -counter]);
+  const n = pBase(sc, v) + (bribe || 0) - (counter || 0);
+  return `<div class="calc">${rows.map(([l, src, val]) =>
+    `<span>${l} <span class="src">${src}</span></span><span class="${val > 0 ? 'plus' : val < 0 ? 'minus' : 'zero'}">${signed(val)}</span>`).join('')}
+    <span class="total">Base Number</span><span class="total n">${n}</span></div>`;
+}
+const stepperHTML = (val, max, label) => `<div class="stepper" role="group" aria-label="${label}">
+  <button class="sq" data-act="x-minus" aria-label="One less" ${val <= 0 ? 'disabled' : ''}>−</button>
+  <output aria-live="polite">${val}</output>
+  <button class="sq" data-act="x-plus" aria-label="One more" ${val >= max ? 'disabled' : ''}>+</button>
+  <span class="unit">of ${plural(max, 'talent')}</span></div>`;
+
+/* ---------- Lessons ---------- */
+const LESSONS = [
+/* I. Foundations */
+{
+  id: 'big-picture', section: 0, title: 'Rome against you all',
+  blurb: 'Who you are, how you win, and the three ways Rome falls.',
+  scene: () => ({
+    items: {
+      treasury: chip('State Treasury', '100', { sub: 'talents' }),
+      unrest: chip('Unrest Level', '0'),
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 5, { t: 3, leader: true }),
+      fabius: sen('Fabius', 2, 4, 2, 9, 3, { t: 1 }),
+      aelius: sen('Aelius', 14, 3, 4, 7, 3, { t: 2 }),
+      julius: sen('Julius', 4, 4, 3, 9, 4, { t: 2, leader: true }),
+      manlius: sen('Manlius', 6, 3, 2, 7, 3, { t: 1 }),
+      valerius: sen('Valerius', 3, 1, 2, 10, 5, { t: 2, leader: true }),
+      sulpicius: sen('Sulpicius', 15, 3, 2, 8, 1),
+    },
+    zones: [
+      { id: 'revenue', ids: ['treasury'] },
+      { id: 'population', ids: ['unrest'] },
+      { id: 'you', title: 'Your faction', note: 'in front of you, off the board', tone: 'you', ids: ['cornelius', 'fabius', 'aelius'] },
+      { id: 'blue', title: 'Blue faction', dot: 'blue', half: true, ids: ['julius', 'manlius'] },
+      { id: 'bronze', title: 'Bronze faction', dot: 'bronze', half: true, ids: ['valerius', 'sulpicius'] },
+    ],
+    legend: true,
+  }),
+  steps: [
+    { type: 'info', title: 'You lead a faction',
+      text: `<p>Each player controls a <b>faction</b>: a group of Senators from Rome's leading families. Your Senators sit in front of you, off the board.</p>
+        <p>You compete for state offices, army commands, Concessions and new members, trying to become the dominant force in Rome.</p>`,
+      focus: ['cornelius', 'fabius', 'aelius'], ref: ['1.01', '1.04.2', '3.01.2'] },
+    { type: 'info', title: 'Rome is the other opponent',
+      text: `<p>The game itself plays against everyone. The board is Rome: wars arrive in the middle, the people's mood is tracked on the left, and the money on the right.</p>
+        <p>If Rome falls, <b>every player loses</b>. So rivals often have to cooperate, especially early on.</p>`,
+      ref: ['1.01'] },
+    { type: 'pick', title: 'Watch the money',
+      text: `<p>If Rome can't pay its bills, the Republic is bankrupt and everyone loses. Click the marker that tracks Rome's money.</p>`,
+      hl: ['treasury', 'unrest', 'b:activeWars'], answer: 'treasury',
+      right: 'The State Treasury, in State Revenue on the right of the board. It starts at 100 talents in the Early Republic, collects 100 more every Revenue Phase, and pays for wars and armies.',
+      wrong: { unrest: 'That’s the Unrest Level: how angry the people are. It matters, but it isn’t money.', 'b:activeWars': 'That space holds the wars. Wars drain money, but this isn’t the money itself.' },
+      wrongDefault: id => id.startsWith('b:') ? 'Not that part of the board. Look in State Revenue.' : 'That’s a Senator. Senators carry their own money, but Rome’s is kept on the board.',
+      ref: ['1.06.5', '1.06.53', '3.01.3'] },
+    { type: 'pick', title: 'Watch the wars',
+      text: `<p>Click the board space that ends the game for everyone if it holds 4 wars at the end of a Combat Phase.</p>`,
+      hl: ['treasury', 'unrest', 'b:activeWars'], answer: 'b:activeWars',
+      right: 'Active Wars, in the middle of the board. Four or more there at the end of a Combat Phase and the Republic collapses. Everyone loses.',
+      wrongDefault: 'Not that one. Find the space where Active Wars sit.',
+      ref: ['1.07.334', '1.12.3'] },
+    { type: 'pick', title: 'Watch the people',
+      text: `<p>Every turn, the dice decide how the people react to the Senate. Click the marker that makes a <b>People Revolt</b> more likely as it climbs.</p>`,
+      hl: ['treasury', 'unrest', 'b:activeWars'], answer: 'unrest',
+      right: 'The Unrest Level, on the Population Table. Each turn the HRAO rolls three dice, subtracts Unrest and checks that table. The worst result, People Revolt, means everyone loses.',
+      wrongDefault: 'Not that one. Think about the mood of the people.',
+      ref: ['1.08.2', '1.12.3'] },
+    { type: 'choice', title: 'How the game usually ends',
+      text: '<p>Suppose Rome survives. How does the game usually end?</p>',
+      options: [
+        { t: 'The first player with 10 Senators wins.', why: 'There’s no win for having the most Senators.' },
+        { t: 'The Era Ends card is revealed, and the faction with the most combined Influence wins.', ok: true,
+          why: 'The game ends at the end of the Forum Phase in which Era Ends appears. Influence is what counts, so treat it like victory points.' },
+        { t: 'The faction with the most talents wins.', why: 'Money helps you gain Influence, but Influence decides the winner.' },
+      ],
+      ref: ['1.12.1', '1.12.2'] },
+    { type: 'choice', title: 'A faster way to win',
+      text: '<p>A Senator in Rome reaches <b>35 Influence</b>. What happens?</p>',
+      options: [
+        { t: 'Nothing special until the Era Ends card appears.', why: '35 Influence is a win condition of its own.' },
+        { t: 'That Senator must stand for election as Censor.', why: 'Offices don’t come into it. This is a win condition.' },
+        { t: 'That Senator becomes Consul for Life at once, and the faction wins if Rome survives the rest of the turn.', ok: true,
+          why: 'A Senator with 21 or more Influence can also be voted Consul for Life in the Senate. Either way, that player wins if Rome lasts the turn.' },
+      ],
+      ref: ['1.09.821', '1.09.822', '1.12.4'] },
+    { type: 'info', title: 'Three ways Rome falls',
+      text: `<p>Everyone loses if any of these happen:</p>
+        <ul><li>The State Treasury can't pay what it owes (bankruptcy).</li>
+        <li>A <b>People Revolt</b> result on the Population Table.</li>
+        <li><b>4 or more Active Wars</b> at the end of a Combat Phase.</li></ul>
+        <p class="fine">The one exception is a player in open Revolt, covered in the Revolution lesson.</p>`,
+      focus: ['treasury', 'unrest', 'b:activeWars'], ref: ['1.12.3'] },
+  ],
+  recap: [
+    'Influence wins. Money, offices and victories are ways to get it.',
+    'Rome falls on bankruptcy, a People Revolt, or 4 Active Wars at the end of a Combat Phase. Then everyone loses.',
+    'A Senator with 35 Influence in Rome becomes Consul for Life and wins, if Rome survives the turn.',
+  ],
+},
+{
+  id: 'senator', section: 0, title: 'Reading a Senator card',
+  blurb: 'Every number on the card, what it does, and how to count votes.',
+  scene: () => ({
+    items: {
+      manlius: sen('Manlius', 6, 3, 2, 7, 3, { t: 2, leader: true, knights: 2, pop: 0 }),
+      sempronius: sen('Sempronius', 25, 1, 4, 6, 3, { t: 1, knights: 0, pop: 1 }),
+      sulpicius: sen('Sulpicius', 15, 3, 2, 8, 1, { t: 0, knights: 0, pop: 0 }),
+    },
+    zones: [{ id: 'you', title: 'Your faction', note: 'all in Rome', tone: 'you', ids: ['manlius', 'sempronius', 'sulpicius'] }],
+    extra: true, legend: true,
+  }),
+  steps: [
+    { type: 'info', title: 'Anatomy of a Senator',
+      text: `<p>Every Senator card has the same parts. Hover over any number to see what it means.</p>
+        <ul><li><b>#</b> ID number. It matches a Mortality chit.</li>
+        <li><b>MIL</b> Military: skill as a commander.</li>
+        <li><b>ORA</b> Oratory: political skill and voting power.</li>
+        <li><b>LOY</b> Loyalty: how hard this Senator is to lure away.</li>
+        <li><b>INF</b> Influence: prestige. It works like victory points and never drops below 0.</li>
+        <li><b>POP</b> Popularity with the people, from −9 to 9.</li>
+        <li><b>Knights</b> and <b>talents</b> are added on top during play.</li></ul>`,
+      focus: ['manlius', 'sempronius', 'sulpicius'], ref: ['1.07.31'] },
+    { type: 'pick', stats: true, title: 'Votes in the Senate',
+      text: '<p>Click the number that gives <b>Sempronius</b> votes in the Senate.</p>',
+      hl: ['sempronius'], answer: 'sempronius.ora',
+      right: 'Oratory. Each Senator in Rome casts votes equal to Oratory plus Knights.',
+      wrong: {
+        'sempronius.inf': 'Influence is prestige. It doesn’t add to ordinary votes.',
+        'sempronius.mil': 'Military matters when commanding an army, not when voting.',
+        'sempronius.loy': 'Loyalty only matters when someone tries to persuade this Senator.',
+        'sempronius.knights': 'Close. Knights add votes too, but Sempronius has none. Which number gives the main votes?',
+      },
+      wrongDefault: 'Look at Sempronius, in the middle.',
+      ref: ['1.09.141'] },
+    { type: 'pick', stats: true, title: 'Victory points',
+      text: '<p>Click any number that works like victory points.</p>',
+      answer: ['manlius.inf', 'sempronius.inf', 'sulpicius.inf'],
+      right: 'Influence. It rises with offices, victories and gifts to Rome. At game end, the faction with the most combined Influence wins.',
+      wrongDefault: 'Not that one. Which number measures prestige?',
+      ref: ['1.07.31', '1.12.2'] },
+    { type: 'number', title: 'Count your votes',
+      text: '<p>All three Senators are in Rome. The Voting Summary on the board is open below. Add up the votes for your whole faction.</p>',
+      open: ['voting'], focus: ['manlius', 'sempronius', 'sulpicius'],
+      em: { manlius: { for: ['ora', 'knights'] }, sempronius: { for: ['ora', 'knights'] }, sulpicius: { for: ['ora', 'knights'] } },
+      answer: 10, unit: 'votes',
+      hint: 'Manlius 2 + 2 Knights, Sempronius 4, Sulpicius 2.',
+      right: '10 votes. This is the rulebook’s own example. Turn your vote dial whenever the total changes.',
+      ref: ['1.04.2', '1.04.7', '1.09.141'] },
+    { type: 'pick', title: 'Your Faction Leader',
+      text: '<p>One Senator carries your Faction Leader marker. Click your Faction Leader.</p>',
+      answer: 'manlius',
+      right: 'Manlius. A Faction Leader collects 3 talents of income instead of 1, and other players can’t persuade a Faction Leader to switch sides.',
+      wrongDefault: 'Look for the words “Faction Leader” under the name.',
+      ref: ['1.06.11', '1.07.4'] },
+    { type: 'choice', title: 'Families and Statesmen',
+      text: `<p>Black-text cards are <b>Family</b> Senators. Red-text cards are <b>Statesmen</b>: famous individuals with better ratings and special powers, kept secret in your hand until played.</p>
+        <p>An opponent controls the Cornelius Family card. Can you play a Statesman from the Cornelius family?</p>`,
+      options: [
+        { t: 'Yes, and the Family card moves to you.', why: 'No. The opponent keeps the Family card, and that blocks your Statesman.' },
+        { t: 'No. A Statesman can’t be played while an opponent controls the matching Family card.', ok: true,
+          why: 'Right. If you control the Family card yourself, the Statesman goes on top of it and takes over its markers.' },
+        { t: 'Yes, but only during the Senate Phase.', why: 'Statesmen enter play at the start of the game or in the Revolution Phase, and this one is blocked anyway.' },
+      ],
+      ref: ['1.07.312'] },
+  ],
+  recap: [
+    'Votes = Oratory + Knights, for each Senator in Rome. The Voting Summary on the board lists the rest.',
+    'Influence is prestige and works like victory points.',
+    'The Faction Leader earns 3 talents a turn and can’t be persuaded away.',
+    'Statesmen (red text) are played from your hand and are blocked if a rival holds their Family card.',
+  ],
+},
+{
+  id: 'money', section: 0, title: 'Three kinds of money',
+  blurb: 'Personal, Faction and State Treasuries, and what each one pays for.',
+  scene: () => ({
+    items: {
+      treasury: chip('State Treasury', '100', { sub: 'talents' }),
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 5, { t: 4, leader: true }),
+      fabius: sen('Fabius', 2, 4, 2, 9, 3, { t: 1 }),
+      ft: chip('Your Faction Treasury', '6', { sub: 'talents, secret' }),
+      julius: sen('Julius', 4, 4, 3, 9, 4, { t: 2, leader: true }),
+      blueFT: chip('Blue Faction Treasury', 'Hidden', { secret: true, sub: 'secret' }),
+    },
+    zones: [
+      { id: 'revenue', ids: ['treasury'] },
+      { id: 'you', title: 'Your faction', tone: 'you', ids: ['cornelius', 'fabius', 'ft'] },
+      { id: 'blue', title: 'Blue faction', dot: 'blue', ids: ['julius', 'blueFT'] },
+    ],
+  }),
+  steps: [
+    { type: 'info', title: 'Three pots of money',
+      text: `<ul><li><b>Personal Treasury</b>: talents sitting on a Senator's card. Pays for bribes, extra votes, Knights and Games. Lost if that Senator dies.</li>
+        <li><b>Faction Treasury</b>: your secret box. Only used to counter-bribe other factions' Persuasion attempts, pay a rebel's Legions, or ransom a captive. Safe from death.</li>
+        <li><b>State Treasury</b>: Rome's money, on the board. Pays for wars, armies and Land Bills.</li></ul>`,
+      ref: ['1.04.1', '1.06.31', '1.06.5'] },
+    { type: 'pick', title: 'Safe from death',
+      text: '<p>Click the money that stays safe if one of your Senators dies.</p>',
+      answer: 'ft',
+      right: 'Your Faction Treasury. Talents on a Senator’s card are lost when that Senator dies.',
+      wrong: { cornelius: 'Talents on a Senator’s card are lost if that Senator dies.', fabius: 'Talents on a Senator’s card are lost if that Senator dies.', treasury: 'That’s Rome’s money, not yours.' },
+      wrongDefault: id => id.startsWith('b:') ? 'That’s part of the board. Your money is in front of you.' : 'That belongs to another faction.',
+      ref: ['1.06.31'] },
+    { type: 'pick', title: 'Paying a bribe',
+      text: '<p>Cornelius wants to bribe a Senator during a Persuasion attempt. Click the money that pays for it.</p>',
+      answer: 'cornelius',
+      right: 'Cornelius’s own Personal Treasury, the talents on the card. Bribes always come from the persuading Senator.',
+      wrong: { ft: 'The Faction Treasury can only resist another faction’s attempt. It can’t pay your own bribes.', fabius: 'Bribes come from the Senator making the attempt, and that’s Cornelius.', treasury: 'Rome’s money never pays for bribes.' },
+      wrongDefault: id => id.startsWith('b:') ? 'That’s part of the board, not Cornelius’s money.' : 'That belongs to another faction.',
+      ref: ['1.07.412', '1.06.31'] },
+    { type: 'pick', title: 'Rome’s income',
+      text: '<p>Each Revenue Phase, Rome collects 100 talents of annual revenue. Click where it goes.</p>',
+      answer: ['treasury', 'b:revenue'],
+      right: 'The State Treasury, in State Revenue. Players move its markers along the treasury track on the board.',
+      wrongDefault: 'Annual revenue belongs to Rome, not to any faction.',
+      ref: ['1.06.5'] },
+    { type: 'choice', title: 'Paying a rival',
+      text: '<p>In the Senate you promise another player 15 talents for their votes. When can you hand the money over?</p>',
+      options: [
+        { t: 'Immediately, as soon as they vote.', why: 'Talents can only change hands at one point in the turn.' },
+        { t: 'During the Revolution Phase.', why: 'That’s when cards can be traded. Money moves at a different time.' },
+        { t: 'Only during Redistribution, in the next Revenue Phase.', ok: true,
+          why: 'Deals made out loud are binding Public Agreements. Deals made in private can be broken.' },
+      ],
+      ref: ['1.04.6', '1.04.3', '1.04.4'] },
+    { type: 'choice', title: 'What’s secret',
+      text: '<p>What can the other players <b>not</b> see?</p>',
+      options: [
+        { t: 'The talents on your Senators’ cards.', why: 'Personal Treasuries are open for anyone to inspect.' },
+        { t: 'Your Faction Treasury and the Faction cards in your hand.', ok: true, why: 'Everything else, including discard piles, is open.' },
+        { t: 'Your faction’s vote total.', why: 'Votes are public. Keep your vote dial up to date.' },
+      ],
+      ref: ['1.04.9'] },
+  ],
+  recap: [
+    'Personal Treasury: on the card. Pays bribes, votes, Knights and Games. Lost on death.',
+    'Faction Treasury: secret and safe. Used for counter-bribes, rebel Legions and ransoms.',
+    'State Treasury: Rome’s money, on the board. If it can’t pay, everyone loses.',
+    'Money passes between players only during Redistribution in the Revenue Phase.',
+  ],
+},
+
+/* II. The turn */
+{
+  id: 'turn', section: 1, title: 'The turn at a glance',
+  blurb: 'The seven phases, and what happens in each.',
+  scene: () => ({
+    items: Object.fromEntries(PHASES.map((p, i) => [`ph${i}`, pill(p, { sub: `Phase ${['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][i]}` })])),
+    zones: [{ id: 'phases', title: 'One game turn', layout: 'pills', ids: PHASES.map((_, i) => `ph${i}`) }],
+  }),
+  steps: [
+    { type: 'info', title: 'Seven phases, every turn',
+      text: `<p>Each turn is one political year, played in seven phases:</p>
+        <ul><li><b>Mortality</b>: a Senator may die.</li><li><b>Revenue</b>: collect and pay money.</li>
+        <li><b>Forum</b>: initiatives, cards, Persuasion, Knights, Games.</li><li><b>Population</b>: the people react.</li>
+        <li><b>Senate</b>: elections, trials, laws and armies.</li><li><b>Combat</b>: fight the wars.</li>
+        <li><b>Revolution</b>: play cards, trade, maybe revolt.</li></ul>`,
+      ref: ['1.03'] },
+    { type: 'pick', title: 'Find the phase', text: '<p>In which phase do Senators die of natural causes? Click it.</p>',
+      answer: 'ph0', right: 'Mortality. One chit is drawn each turn, and the Senator with that ID number dies.', wrongDefault: 'Not that one. It’s the very first phase.', ref: ['1.05.2'] },
+    { type: 'pick', title: 'Find the phase', text: '<p>In which phase do you collect income?</p>',
+      answer: 'ph1', right: 'Revenue. Your Senators earn talents, and Rome pays its bills.', wrongDefault: 'Not that one. Look for where money comes in.', ref: ['1.06'] },
+    { type: 'pick', title: 'Find the phase', text: '<p>In which phase do you try to persuade Senators to join you?</p>',
+      answer: 'ph2', right: 'The Forum. Each initiative allows one Persuasion attempt.', wrongDefault: 'Not that one. Persuasion happens in the marketplace of Rome.', ref: ['1.07.4'] },
+    { type: 'pick', title: 'Find the phase', text: '<p>In which phase does the HRAO give the State of the Republic speech?</p>',
+      answer: 'ph3', right: 'Population. The speech is rolled on the Population Table and decides whether Unrest goes up or down.', wrongDefault: 'Not that one. It’s about the people.', ref: ['1.08.2'] },
+    { type: 'pick', title: 'Find the phase', text: '<p>In which phase are Consuls elected and armies sent to war?</p>',
+      answer: 'ph4', right: 'The Senate. It’s the heart of the game.', wrongDefault: 'Not that one. Where do Senators vote?', ref: ['1.09.1'] },
+    { type: 'pick', title: 'Find the phase', text: '<p>In which phase are Statesmen played and cards traded between players?</p>',
+      answer: 'ph6', right: 'Revolution. It’s the only phase where Faction cards can be traded.', wrongDefault: 'Not that one. It’s the last phase of the turn.', ref: ['1.11.1', '1.04.5'] },
+    { type: 'info', title: 'Who goes first: the HRAO',
+      text: `<p>Many rules mention the <b>HRAO</b>: the Highest Ranking Available Officer, meaning the Senator in Rome holding the top office.</p>
+        <p>Ranking: Dictator, Rome Consul, Field Consul, Censor, Master of Horse. If none of them is in Rome, the Senator in Rome with the most Influence takes the role.</p>
+        <p>When there's a question of who acts first, the HRAO goes first and play continues clockwise.</p>`,
+      ref: ['1.09.11', '1.04.8'] },
+  ],
+  recap: [
+    'Mortality, Revenue, Forum, Population, Senate, Combat, Revolution.',
+    'The HRAO is the top office-holder in Rome and usually acts first.',
+  ],
+},
+{
+  id: 'mortality', section: 1, phase: 0, title: 'Mortality',
+  blurb: 'Draw a chit, find the Senator, and send the card to the Curia.',
+  scene: () => ({
+    items: {
+      chit: { type: 'chit', label: '?' },
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 5, { t: 3, leader: true }),
+      fabius: sen('Fabius', 2, 4, 2, 9, 3, { t: 1 }),
+      aelius: sen('Aelius', 14, 3, 4, 7, 4, { t: 3, knights: 1 }),
+      julius: sen('Julius', 4, 4, 3, 9, 4, { t: 2, leader: true }),
+      claudius: sen('Claudius', 5, 2, 1, 7, 4, { t: 1 }),
+    },
+    zones: [
+      { id: 'curia', ids: [] },
+      { id: 'cup', title: 'Mortality chit', note: 'drawn from a cup', half: true, ids: ['chit'] },
+      { id: 'blue', title: 'Blue faction', dot: 'blue', half: true, ids: ['julius', 'claudius'] },
+      { id: 'you', title: 'Your faction', tone: 'you', ids: ['cornelius', 'fabius', 'aelius'] },
+    ],
+    legend: true,
+  }),
+  steps: [
+    { type: 'info', title: 'Wars first, then a chit',
+      text: `<p>At the start of the turn, any wars in the <b>Imminent Wars</b> space move to <b>Active Wars</b>.</p>
+        <p>Then one Mortality chit is drawn at random from the cup.</p>`,
+      focus: ['chit', 'b:imminent', 'b:activeWars'], ref: ['1.05.1', '1.05.2'] },
+    { type: 'pick', title: 'Who dies?',
+      enter: sc => { sc.items.chit.label = '14'; sc.arrive = 'chit'; },
+      text: '<p>The chit says <b>14</b>. Click the Senator who dies.</p>',
+      answer: 'aelius',
+      right: 'Aelius is #14. Match the chit to the small ID number at the top of each card.',
+      wrong: { chit: 'That’s the chit. Find the Senator whose ID matches it.' },
+      wrongDefault: id => id.startsWith('b:') ? 'Click a Senator.' : 'That Senator’s ID number isn’t 14.',
+      ref: ['1.05.21'],
+      after: sc => { const a = sc.items.aelius; sc.deltas.aelius = -a.t; a.t = 0; a.knights = 0; move(sc, 'aelius', 'curia'); sc.arrive = 'aelius'; } },
+    { type: 'info', title: 'Death clears the card',
+      text: `<p>Every marker comes off a dead Senator's card, including Knights, offices and the talents on it. Any Concessions go to the Curia.</p>
+        <p>A Family card without the Faction Leader marker goes to the <b>Repopulating Rome</b> space of the <b>Curia</b>, on the board. At the end of each Forum Phase the HRAO rolls for each card there, and on a 5 or 6 it returns to the Forum, ready to be persuaded again.</p>`,
+      focus: ['aelius', 'b:curia'], ref: ['1.05.3', '1.07.8'] },
+    { type: 'choice', title: 'If your leader dies',
+      text: '<p>Next turn chit #1 is drawn: Cornelius, your Faction Leader. What happens to the card?</p>',
+      options: [
+        { t: 'It goes to the Curia like any other Family card.', why: 'The Faction Leader is the exception.' },
+        { t: 'It stays in your faction. The family’s next leader takes over, and every marker except the Faction Leader marker is removed.', ok: true,
+          why: 'The family lives on with its printed ratings. All the Influence, offices and talents it had built up are gone.' },
+        { t: 'Your whole faction is eliminated.', why: 'Factions only disappear in rare cases involving assassination.' },
+      ],
+      ref: ['1.05.3', '1.07.311', '1.05.4'] },
+    { type: 'choice', title: 'No match',
+      text: '<p>Chit #12 is drawn, and nobody in play has ID 12.</p>',
+      options: [
+        { t: 'Draw again until someone dies.', why: 'No. The cup is not that cruel.' },
+        { t: 'Nothing happens.', ok: true, why: 'If the matching Senator isn’t in play, there’s no effect.' },
+      ],
+      ref: ['1.05.21'] },
+    { type: 'choice', title: 'Draw 2',
+      text: '<p>A “Draw 2” chit comes out of the cup. What happens?</p>',
+      options: [
+        { t: 'It goes back into the cup, and two more chits are drawn.', ok: true, why: 'It can even come out again, so three or more Senators can die in one turn.' },
+        { t: 'Two Senators of your choice die.', why: 'Deaths are always decided by drawing chits.' },
+        { t: 'Nothing happens this turn.', why: 'It means more chits, not fewer.' },
+      ],
+      ref: ['1.05.21'] },
+  ],
+  recap: [
+    'Imminent Wars become Active, then one Mortality chit is drawn.',
+    'The Senator with the matching ID dies and loses every marker and talent on the card.',
+    'A dead Faction Leader’s family stays in your faction. Other Family cards go to the Curia.',
+  ],
+},
+{
+  id: 'revenue', section: 1, phase: 1, title: 'Revenue',
+  blurb: 'Collect income, share it out, and balance Rome’s budget.',
+  scene: () => ({
+    items: {
+      treasury: chip('State Treasury', '60', { sub: 'talents' }),
+      punic: war('1st Punic War', { status: 'Active', hide: true }),
+      forces: chip('Legions + Fleets', '4 + 2'),
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 5, { t: 0, leader: true, knights: 1, pop: 1 }),
+      fabius: sen('Fabius', 2, 4, 2, 9, 3, { t: 0, knights: 0, pop: 0 }),
+      aelius: sen('Aelius', 14, 3, 4, 7, 3, { t: 0, knights: 2, pop: 0 }),
+      ft: chip('Your Faction Treasury', '0', { sub: 'talents, secret' }),
+    },
+    zones: [
+      { id: 'revenue', ids: ['treasury'] },
+      { id: 'activeWars', ids: ['punic'] },
+      { id: 'activeForces', ids: ['forces'] },
+      { id: 'you', title: 'Your faction', tone: 'you', ids: ['cornelius', 'fabius', 'aelius', 'ft'] },
+    ],
+    extra: true,
+  }),
+  steps: [
+    { type: 'number', title: 'Your faction’s income',
+      text: `<p>Base income is <b>3 talents for the Faction Leader</b> and <b>1 for every other Senator</b>. Each Knight adds 1 more.</p>
+        <p>How much does your faction collect?</p>`,
+      em: { cornelius: { for: ['knights'] }, aelius: { for: ['knights'] } },
+      focus: ['cornelius', 'fabius', 'aelius'],
+      answer: 8, unit: 'talents', hint: 'Cornelius 3 + 1 Knight, Fabius 1, Aelius 1 + 2 Knights.',
+      right: '8 talents. Senators holding Concessions also collect from them, but taking that money exposes them to prosecution.',
+      ref: ['1.06.11', '1.06.12', '1.07.32'],
+      after: sc => { sc.items.ft.value = '8'; sc.deltas.ft = 8; } },
+    { type: 'info', title: 'Redistribution',
+      text: `<p>Now move your money however you like between your Senators' Personal Treasuries and your Faction Treasury.</p>
+        <p>This is also the <b>only</b> time you can give talents to other players, for example to pay off a deal.</p>`,
+      focus: ['cornelius', 'fabius', 'aelius', 'ft'], ref: ['1.06.3', '1.04.6'] },
+    { type: 'number', title: 'Rome’s budget',
+      text: `<p>Now Rome. Use the State Revenue box on the board (open below). The State Treasury holds 60, there's one Active War, and Rome has 4 Legions and 2 Fleets.</p>
+        <p>What's left after this Revenue Phase?</p>`,
+      open: ['revenue'], focus: ['treasury', 'punic', 'forces'],
+      answer: 128, unit: 'talents', hint: '60 + 100 revenue − 20 for the war − 2 × 6 units.',
+      right: '128 talents. Land Bills in effect also cost money here, and Provinces can add taxes later in the game.',
+      ref: ['1.06.5', '1.06.53'],
+      after: sc => { sc.items.treasury.value = '128'; sc.deltas.treasury = 68; } },
+    { type: 'choice', title: 'Gifts to Rome',
+      text: '<p>Any Senator may contribute talents to the State Treasury. Fabius gives 25. How much Influence does Fabius gain?</p>',
+      open: ['revenue'],
+      options: [
+        { t: '1 Influence', why: '10 talents gives 1. Fabius gave more.' },
+        { t: '3 Influence', ok: true, why: '10 talents gives 1 Influence, 25 gives 3, and 50 or more gives 7.' },
+        { t: '5 Influence', why: 'Not quite. Check the contributions rows in State Revenue.' },
+      ],
+      ref: ['1.06.52'] },
+    { type: 'choice', title: 'When Rome can’t pay',
+      text: '<p>Rome owes more than the State Treasury holds. What happens?</p>',
+      options: [
+        { t: 'Players pay the difference from their Faction Treasuries.', why: 'Players can contribute before debits to avoid this, but once Rome can’t pay, it’s too late.' },
+        { t: 'Rome is bankrupt and every player loses.', ok: true,
+          why: 'The only exception is a player in open Revolt. The rulebook says to warn everyone when the Treasury drops below 50 or 20 talents.' },
+        { t: 'The most expensive war is cancelled.', why: 'Wars don’t go away because Rome is broke.' },
+      ],
+      ref: ['1.06.53', '1.12.3'] },
+  ],
+  recap: [
+    'Income: 3 talents for the Faction Leader, 1 for each other Senator, plus 1 per Knight and any Concessions.',
+    'Redistribution is your one chance to move money around, including to other players.',
+    'Rome: +100 a turn, −20 per Active War, −2 per Legion or Fleet. Bankruptcy loses the game.',
+    'Contributions: 10 talents = 1 Influence, 25 = 3, 50 = 7.',
+  ],
+},
+{
+  id: 'forum', section: 1, phase: 2, title: 'Forum: your initiative',
+  blurb: 'Initiative rolls, cards, Knights, Games and a new Faction Leader.',
+  scene: () => ({
+    items: {
+      deck: pill('Early Republic deck'),
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 5, { t: 4, leader: true, knights: 0, pop: 1 }),
+      aelius: sen('Aelius', 14, 3, 4, 7, 3, { t: 3, knights: 0, pop: 0 }),
+      a1: pill('Persuasion attempt'), a2: pill('Attract or pressure Knights'),
+      a3: pill('Sponsor Games'), a4: pill('Change Faction Leader'),
+    },
+    zones: [
+      { id: 'draw', ids: ['deck'] },
+      { id: 'acts', title: 'Initiative actions', layout: 'pills', ids: ['a3', 'a1', 'a4', 'a2'] },
+      { id: 'you', title: 'Your faction', tone: 'you', ids: ['cornelius', 'aelius'] },
+    ],
+    extra: true,
+  }),
+  steps: [
+    { type: 'info', title: 'Six initiatives',
+      text: `<p>The Forum Phase is played as a series of <b>initiatives</b>. The HRAO's faction goes first, then every other player in clockwise order.</p>
+        <p>There are always six initiatives in a turn. With fewer than six players, the extra ones are auctioned off: only Senators in Rome may bid, from a single Personal Treasury, and the winning faction takes a full initiative. If nobody bids, the HRAO's faction takes it.</p>`,
+      ref: ['1.07.2', '1.07.22'] },
+    { type: 'choice', title: 'The opening roll',
+      text: '<p>Each initiative starts with a roll of two dice. You roll a <b>7</b>. What happens?</p>',
+      open: ['events'],
+      options: [
+        { t: 'You draw two cards from the Draw Pile.', why: 'A 7 doesn’t mean extra cards.' },
+        { t: 'Your initiative ends.', why: 'You still get to take your actions.' },
+        { t: 'You roll three dice on the Random Events Table instead of drawing a card.', ok: true,
+          why: 'That table is open on the board below. Any roll other than 7 means you draw the top card of the Draw Pile.' },
+      ],
+      ref: ['1.07.2', '1.07.21'] },
+    { type: 'choice', title: 'Black or red',
+      text: '<p>You draw a card printed in <b>black</b> text. What do you do with it?</p>',
+      options: [
+        { t: 'Keep it secret in your hand.', why: 'That’s what you do with red-text Faction cards.' },
+        { t: 'Play it face up in the Forum right away.', ok: true,
+          why: 'Black text means a Forum card: new Senators go in the Forum, wars go in the war spaces. Red text means a Faction card you keep secretly.' },
+      ],
+      ref: ['1.07.3'] },
+    { type: 'sequence', title: 'Then, in this order',
+      text: '<p>After the card, you may take each of these actions once, in a fixed order. Click them in the right order.</p>',
+      order: ['a1', 'a2', 'a3', 'a4'],
+      right: 'Persuade, then Knights, then Games, then change Faction Leader. You can skip any of them.',
+      ref: ['1.07.2'] },
+    { type: 'custom', title: 'Attract a Knight',
+      enter: (sc, v) => { v.k = 0; v.snapK = clone(sc); },
+      focus: ['aelius'],
+      text: '<p>Aelius pays 0 to 5 talents from Aelius’s own treasury, then rolls one die. If <b>die + talents is 6 or more</b>, a Knight joins Aelius.</p>',
+      render: c => {
+        if (c.v.rolledK) return diceHTML([3], false);
+        return `${stepperHTML(c.v.k, Math.min(5, c.sc.items.aelius.t), 'Talents to pay')}
+          <div class="odds"><div class="grid6" aria-hidden="true">${[1, 2, 3, 4, 5, 6].map(d => `<span class="${d + c.v.k >= 6 ? 'win' : ''}">${d}</span>`).join('')}</div>
+          <p><b>${Math.min(6, c.v.k + 1)} of 6</b> die rolls succeed.</p></div>
+          <div class="controls"><button class="btn" data-act="x-roll">${c.v.k ? `Pay ${plural(c.v.k, 'talent')} and roll` : 'Roll without paying'}</button></div>`;
+      },
+      act: {
+        minus: c => { c.v.k = Math.max(0, c.v.k - 1); c.render(); },
+        plus: c => { c.v.k = Math.min(5, c.sc.items.aelius.t, c.v.k + 1); c.render(); },
+        roll: c => {
+          const a = c.sc.items.aelius, k = c.v.k;
+          c.v.rolledK = true; a.t -= k; if (k) c.sc.deltas.aelius = -k;
+          if (3 + k >= 6) {
+            a.knights += 1; c.sc.deltas['aelius.knights'] = 1;
+            c.done('good', `You rolled 3, plus ${plural(k, 'talent')} makes ${3 + k}. A Knight joins Aelius. Each Knight adds 1 vote and 1 talent of income every turn.`);
+          } else {
+            c.done('bad', `You rolled 3, plus ${plural(k, 'talent')} makes ${3 + k}. That’s short of 6, and the talents are spent anyway.`, `<button class="btn ghost" data-act="x-retry">Try again</button>`);
+          }
+        },
+        retry: c => { c.restore(c.v.snapK); },
+      },
+      ref: ['1.07.5'] },
+    { type: 'info', title: 'Or squeeze your Knights',
+      text: '<p>Instead of attracting a Knight, you may <b>pressure</b> your Knights: roll a die for each one you choose, take that many talents, and lose those Knights for good.</p>',
+      ref: ['1.07.51'] },
+    { type: 'choice', title: 'Sponsor Games',
+      text: '<p>A Senator can pay for Games from their Personal Treasury to gain Popularity and calm the people. The Games Table is open on the board. Cornelius has <b>15 talents</b> and wants to lower Unrest by 2. Which Games?</p>',
+      open: ['games'],
+      options: [
+        { t: 'Slice and Dice', why: 'Only 7 talents, but it lowers Unrest by just 1.' },
+        { t: 'Blood Fest', ok: true, why: '13 talents: +2 Popularity for Cornelius and −2 Unrest. The sponsor doesn’t even need to be in Rome.' },
+        { t: 'Gladiator Gala', why: 'That costs 18 talents, more than Cornelius has.' },
+      ],
+      ref: ['1.07.6'] },
+    { type: 'info', title: 'A new leader, then the end of the phase',
+      text: `<p><b>Change Faction Leader</b>: move your Faction Leader marker to any of your Senators.</p>
+        <p>After all six initiatives: every Senator holding a Major Office gets a <b>Major</b> marker (open to a Major Prosecution this turn), and the HRAO rolls a die for each Senator, Concession and Leader in the <b>Curia</b>. Senators and Concessions return to the Forum on a 5 or 6. Leaders without a matching war are discarded on a 5 or 6.</p>`,
+      focus: ['b:curia', 'b:forum'], ref: ['1.07.7', '1.07.8', '1.07.344'] },
+  ],
+  recap: [
+    'Six initiatives per turn: HRAO first, then clockwise, then auctions for any left over.',
+    'Roll 2d6: a 7 means the Random Events Table; anything else means draw a card. Black text is played to the board, red text goes to your hand.',
+    'Actions in order: Persuade, Knights, Games, Faction Leader.',
+    'Knights: pay 0 to 5 talents, roll one die, 6 or more total succeeds. Games: see the Games Table.',
+  ],
+},
+{
+  id: 'persuasion', section: 1, phase: 2, title: 'Forum: winning Senators over',
+  blurb: 'A full Persuasion attempt, with bribes, counter-bribes and the dice.',
+  scene: () => ({
+    items: {
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 8, { t: 2, leader: true }),
+      aelius: sen('Aelius', 14, 3, 4, 7, 3, { t: 4 }),
+      fabius: sen('Fabius', 2, 4, 2, 9, 3, { t: 1 }),
+      plautius: sen('Plautius', 17, 2, 1, 6, 1),
+      claudius: sen('Claudius', 5, 2, 1, 7, 4),
+      quinctius: sen('Quinctius', 18, 3, 2, 6, 1, { t: 2 }),
+      julius: sen('Julius', 4, 4, 3, 9, 6, { t: 3, leader: true }),
+      manlius: sen('Manlius', 6, 3, 2, 7, 3, { t: 3 }),
+      blueFT: chip('Blue Faction Treasury', 'Hidden', { secret: true, sub: 'secret' }),
+      valerius: sen('Valerius', 3, 1, 2, 10, 7, { t: 2, leader: true }),
+      sulpicius: sen('Sulpicius', 15, 3, 2, 8, 1, { t: 1 }),
+    },
+    zones: [
+      { id: 'forum', ids: ['plautius', 'claudius', 'quinctius'] },
+      { id: 'you', title: 'Your faction', tone: 'you', ids: ['cornelius', 'aelius', 'fabius'] },
+      { id: 'blue', title: 'Blue faction', dot: 'blue', half: true, ids: ['julius', 'manlius', 'blueFT'] },
+      { id: 'bronze', title: 'Bronze faction', dot: 'bronze', half: true, ids: ['valerius', 'sulpicius'] },
+    ],
+    legend: true,
+  }),
+  steps: [
+    { type: 'info', title: 'Win a Senator to your side',
+      text: `<p>Each initiative allows one Persuasion attempt. A Senator of yours who is in Rome can target:</p>
+        <ul><li>an unaligned Senator in the <b>Forum</b> on the board, or</li><li>a rival's Senator in Rome who isn't their Faction Leader.</li></ul>
+        <p>More Senators means more votes, more income and more candidates for office.</p>`,
+      focus: ['plautius', 'claudius', 'quinctius', 'b:forum'], ref: ['1.07.4'] },
+    { type: 'pick', title: 'Choose your persuader',
+      text: '<p>A persuader’s strength is <b>Oratory + Influence</b>. Click the Senator in your faction with the highest total.</p>',
+      hl: ['cornelius', 'aelius', 'fabius'], focus: ['cornelius', 'aelius', 'fabius'], answer: 'cornelius',
+      right: 'Cornelius: Oratory 3 + Influence 8 = <b>11</b>. Influence counts just as much as Oratory.',
+      wrong: {
+        aelius: 'Aelius: Oratory 4 + Influence 3 = <b>7</b>. The best Oratory, but low Influence pulls the total down.',
+        fabius: 'Fabius: Oratory 2 + Influence 3 = <b>5</b>. Someone else in your faction has more.',
+      },
+      wrongDefault: 'Only a Senator in your own faction can make the attempt.',
+      onRight: sc => { sc.tags.cornelius = 'Persuader'; },
+      ref: ['1.07.41'] },
+    { type: 'pick', title: 'Choose a target',
+      text: '<p>A target resists with <b>Loyalty + the talents in their Personal Treasury</b>. Click the easiest Senator to win over.</p>',
+      hl: ['plautius', 'claudius', 'quinctius'],
+      focus: ['plautius', 'claudius', 'quinctius', 'julius', 'manlius', 'valerius', 'sulpicius', 'b:forum'],
+      answer: 'plautius',
+      right: 'Plautius resists with only <b>6</b>: Loyalty 6 and no talents. That’s the weakest resistance on the table.',
+      wrong: {
+        claudius: 'Claudius resists with <b>7</b>: Loyalty 7 and no talents. Someone resists with less.',
+        quinctius: 'Quinctius has Loyalty 6 but holds 2 talents from an earlier failed bribe. Talents resist too, for <b>8</b> in all.',
+        manlius: 'Allowed, but a Senator who already belongs to a faction adds 7 to Loyalty. Manlius resists with 7 + 7 + 3 talents = <b>17</b>.',
+        sulpicius: 'Allowed, but a Senator who already belongs to a faction adds 7 to Loyalty. Sulpicius resists with 8 + 7 + 1 talent = <b>16</b>.',
+        julius: 'Julius is a Faction Leader. Faction Leaders can’t be persuaded.',
+        valerius: 'Valerius is a Faction Leader. Faction Leaders can’t be persuaded.',
+        blueFT: 'That’s the Blue faction’s secret treasury. You’ll see what it’s for in a moment.',
+      },
+      wrongDefault: id => id.startsWith('b:') ? 'Click a Senator.' : 'That Senator is already in your faction.',
+      onRight: (sc, v) => { sc.tags.plautius = 'Target'; v.targetT0 = sc.items.plautius.t; },
+      ref: ['1.07.4', '1.07.411'] },
+    { type: 'custom', title: 'Find the Base Number', ready: true,
+      em: { cornelius: { for: ['ora', 'inf'] }, plautius: { against: ['loy', 't'] } },
+      focus: ['cornelius', 'plautius'],
+      text: '<p>Take the persuader’s strength and subtract the target’s resistance. That gives the <b>Base Number</b>. Then roll two dice: equal to or under the Base Number succeeds.</p>',
+      render: c => `${pCalc(c.sc, c.v, null, 0)}${odds2d6(pBase(c.sc, c.v))}
+        <p class="fine">A natural roll of 10, 11 or 12 always fails. Once the Era Ends card has appeared, 9 fails too.</p>`,
+      ref: ['1.07.41', '1.12.1'] },
+    { type: 'custom', title: 'Offer a bribe',
+      enter: (sc, v) => { v.draft = 0; v.snap = clone(sc); v.snapV = { targetT0: v.targetT0 }; },
+      em: { cornelius: { for: ['t'] } },
+      focus: ['cornelius', 'plautius'],
+      text: '<p>Cornelius may spend talents from Cornelius’s own Personal Treasury. Each one adds 1 to the Base Number. You announce your target and your Base Number, with any bribe already counted.</p>',
+      render: c => {
+        const max = c.sc.items.cornelius.t;
+        return `${stepperHTML(c.v.draft, max, 'Bribe in talents')}
+          ${pCalc(c.sc, c.v, c.v.draft, 0)}${odds2d6(pBase(c.sc, c.v) + c.v.draft)}
+          <p class="fine">Every talent spent on the attempt, by anyone, ends up in the target’s Personal Treasury, whatever happens.</p>
+          <div class="controls"><button class="btn" data-act="x-offer">Announce a Base Number of ${pBase(c.sc, c.v) + c.v.draft}</button></div>`;
+      },
+      act: {
+        minus: c => { c.v.draft = Math.max(0, c.v.draft - 1); c.render(); },
+        plus: c => { c.v.draft = Math.min(c.sc.items.cornelius.t, c.v.draft + 1); c.render(); },
+        offer: c => {
+          c.v.bribe = c.v.draft; c.v.raise = 0;
+          c.sc.items.cornelius.t -= c.v.bribe;
+          c.next(c.v.bribe ? { cornelius: -c.v.bribe } : {});
+        },
+      },
+      ref: ['1.07.412', '1.07.414'] },
+    { type: 'custom', title: 'Rivals push back',
+      enter: (sc, v, St) => {
+        v.counter = 1; sc.tags.blueFT = '−1 talent';
+        St.fb = { kind: 'info', msg: 'Going clockwise, the Blue faction spends <b>1 talent</b> from its secret Faction Treasury to resist. The Bronze faction passes.' };
+      },
+      focus: ['cornelius', 'plautius', 'blueFT'],
+      text: '<p>Every other player may counter-bribe from their <b>Faction Treasury</b>. Each talent subtracts 1. Then it’s back to you: roll now, or spend more and let the others answer again.</p>',
+      render: c => {
+        const left = c.sc.items.cornelius.t;
+        const n = pBase(c.sc, c.v) + c.v.bribe + c.v.raise - c.v.counter;
+        return `${left ? stepperHTML(c.v.raise, left, 'Extra bribe in talents') : '<p class="fine">Cornelius has no talents left to add.</p>'}
+          ${pCalc(c.sc, c.v, c.v.bribe + c.v.raise, c.v.counter)}${odds2d6(n)}
+          ${c.v.raise ? '<p class="fine">In this example the rivals pass on your second round.</p>' : ''}
+          <div class="controls"><button class="btn" data-act="x-roll">Roll at ${n}</button></div>`;
+      },
+      act: {
+        minus: c => { c.v.raise = Math.max(0, c.v.raise - 1); c.render(); },
+        plus: c => { c.v.raise = Math.min(c.sc.items.cornelius.t, c.v.raise + 1); c.render(); },
+        roll: c => {
+          if (c.v.raise) c.sc.items.cornelius.t -= c.v.raise;
+          c.next(c.v.raise ? { cornelius: -c.v.raise } : {});
+        },
+      },
+      ref: ['1.07.413', '1.07.414'] },
+    { type: 'custom', title: 'Roll the dice',
+      enter: (sc, v) => { v.rolled = false; v.whatIf = false; },
+      focus: ['cornelius', 'plautius'],
+      render: c => {
+        const total = c.v.bribe + c.v.raise, n = pBase(c.sc, c.v) + total - c.v.counter;
+        if (!c.v.rolled) {
+          return `<p>Base Number <b>${n}</b>. Two dice: ${n >= 2 ? `${Math.min(n, 9)} or less wins` : 'no roll can win'}.</p>
+            <div class="dice" data-roll>${dieHTML(1)}${dieHTML(1)}</div>
+            <div class="controls"><button class="btn" data-act="x-roll">Roll 2d6</button></div>`;
+        }
+        const sum = PERSUADE_ROLL[0] + PERSUADE_ROLL[1], pot = total + c.v.counter;
+        const head = c.v.success
+          ? `<p>You rolled <b>${sum}</b> against a Base Number of <b>${n}</b>. Equal or under succeeds, so <b>Plautius joins your faction</b>.</p>
+             <p>Plautius keeps all ${plural(pot, 'talent')} spent on the attempt: ${total} from Cornelius and ${c.v.counter} from the Blue faction.</p>`
+          : `<p>You rolled <b>${sum}</b> against a Base Number of <b>${n}</b>. That’s over, so the attempt fails.</p>
+             <p>Plautius stays in the Forum and keeps the ${plural(pot, 'talent')} spent anyway, which makes Plautius harder to persuade next time.</p>`;
+        return `${diceHTML(PERSUADE_ROLL, true)}${head}${odds2d6(n, PERSUADE_ROLL)}
+          ${c.v.whatIf ? `<div class="fb info" role="status"><span class="lab">What if</span>With no bribe your Base Number would have been <b>${pBase(c.sc, c.v) - c.v.counter}</b>, and this same roll of ${sum} would have failed.</div>` : ''}`;
+      },
+      act: {
+        roll: c => c.rollDice(PERSUADE_ROLL, () => {
+          const total = c.v.bribe + c.v.raise, n = pBase(c.sc, c.v) + total - c.v.counter;
+          const sum = PERSUADE_ROLL[0] + PERSUADE_ROLL[1];
+          c.v.rolled = true;
+          c.v.success = sum <= n && sum <= 9;
+          const pot = total + c.v.counter;
+          c.sc.items.plautius.t += pot; c.sc.deltas.plautius = pot;
+          if (c.v.success) { move(c.sc, 'plautius', 'you'); c.sc.arrive = 'plautius'; c.sc.tags.plautius = 'Joined'; }
+          const extra = c.v.success
+            ? '<button class="btn ghost" data-act="x-whatif">What if I hadn’t bribed?</button>'
+            : '<button class="btn ghost" data-act="x-retry">Try the bribe again</button>';
+          c.done(null, null, extra);
+        }),
+        whatif: c => { c.v.whatIf = true; c.S.extra = ''; c.render(); },
+        retry: c => { c.restore(c.v.snap, 4, { targetT0: c.v.snapV.targetT0 }); },
+      },
+      ref: ['1.07.41', '1.07.412', '1.07.413'] },
+  ],
+  recap: [
+    'Strength: persuader’s Oratory + Influence, plus bribes from the persuader’s own talents.',
+    'Resistance: target’s Loyalty + talents held, +7 if the target already belongs to a faction. Faction Leaders can’t be targeted.',
+    'Rivals counter-bribe from their secret Faction Treasuries, and bidding goes round until everyone stops.',
+    'Roll 2d6 equal to or under the Base Number. A natural 10 or more always fails. All the money goes to the target.',
+  ],
+},
+{
+  id: 'population', section: 1, phase: 3, title: 'Population',
+  blurb: 'Unrest, the State of the Republic speech, and the Population Table.',
+  scene: () => ({
+    items: {
+      unrest: chip('Unrest Level', '2'),
+      drought: chip('Drought effects', '1'),
+      punic: war('1st Punic War', { status: 'Unprosecuted', hide: true }),
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 10, { t: 2, leader: true, pop: 2, knights: 0, office: 'Rome Consul' }),
+      fabius: sen('Fabius', 2, 4, 2, 9, 8, { t: 1, pop: 3, knights: 0, office: 'Censor' }),
+      julius: sen('Julius', 4, 4, 3, 9, 9, { t: 2, leader: true, pop: 0, knights: 1, office: 'Field Consul' }),
+    },
+    zones: [
+      { id: 'population', ids: ['unrest', 'drought'] },
+      { id: 'unprosecuted', ids: ['punic'] },
+      { id: 'you', title: 'Your faction', tone: 'you', ids: ['cornelius', 'fabius'] },
+      { id: 'blue', title: 'Blue faction', note: 'Julius is away at war', dot: 'blue', ids: ['julius'] },
+    ],
+    extra: true,
+  }),
+  steps: [
+    { type: 'number', title: 'Unrest rises first',
+      text: '<p>At the start of the Population Phase, Unrest goes up by 1 for each war in the <b>Unprosecuted War</b> space and 1 for each Drought effect. Unrest is 2 now. What is it after these?</p>',
+      focus: ['unrest', 'drought', 'punic'], answer: 4, hint: '2 + 1 for the war + 1 for the drought.',
+      right: 'Unrest is now 4. Move the marker on the Unrest track.',
+      ref: ['1.08.11', '1.08.12'],
+      after: sc => { sc.items.unrest.value = '4'; sc.deltas.unrest = 2; } },
+    { type: 'pick', title: 'Who gives the speech?',
+      text: '<p>The HRAO gives the State of the Republic speech. Julius, the Field Consul, is away at war. Click the HRAO.</p>',
+      hl: ['cornelius', 'fabius', 'julius'], answer: 'cornelius',
+      right: 'Cornelius, the Rome Consul, is the highest-ranking official in Rome.',
+      wrong: { fabius: 'The Censor ranks below the Consuls.', julius: 'Julius is away at war. The HRAO must be in Rome.' },
+      wrongDefault: 'Click a Senator.',
+      ref: ['1.08.2', '1.09.11'] },
+    { type: 'number', title: 'The speech',
+      text: () => `<p>The HRAO rolls three dice, <b>subtracts the Unrest Level</b> and <b>adds the HRAO's Popularity</b>.</p>
+        ${diceHTML([5, 4, 2], true)}<p>What's the modified roll?</p>`,
+      em: { cornelius: { for: ['pop'] } }, focus: ['cornelius', 'unrest'],
+      answer: 9, hint: '11 − 4 Unrest + 2 Popularity.',
+      right: '9. A popular HRAO and low Unrest both push the result toward good outcomes.',
+      ref: ['1.08.2'] },
+    { type: 'pick', title: 'Look it up',
+      text: '<p>The Population Table is open on the board. Click the row for a modified roll of <b>9</b>.</p>',
+      open: ['population'], rowTargets: 'population', focus: ['unrest', 'b:population'],
+      answer: 'population:9',
+      right: '9 means <b>+2 to the Unrest Level</b>. Unrest goes from 4 to 6.',
+      wrongDefault: id => id.startsWith('population:') ? 'That row is for a different roll. Find 9 in the first column.' : 'Use the Population Table on the board.',
+      ref: ['1.08.2'],
+      after: sc => { sc.items.unrest.value = '6'; sc.deltas.unrest = 2; } },
+    { type: 'choice', title: 'Reading the table',
+      text: '<p>Some rows add letters. Which result ends the game for every player?</p>',
+      open: ['population'],
+      options: [
+        { t: 'Mob', why: 'A Mob storms the Senate: six Mortality chits are drawn, and Senators in Rome with those numbers die. Terrible, but the game goes on.' },
+        { t: 'NR', why: 'No Recruitment: no new Legions or Fleets can be raised this turn.' },
+        { t: 'People Revolt, on a modified roll of −1 or less', ok: true, why: 'The government is overthrown and everyone loses, unless a player is in open Revolt, in which case that player wins.' },
+        { t: 'MS', why: 'Manpower Shortage: it makes raising forces harder, and it stacks.' },
+      ],
+      ref: ['1.08.2'] },
+    { type: 'info', title: 'Keeping the crowd calm',
+      text: `<ul><li><b>Lower Unrest:</b> Games and Land Bills (see their tables), and military victories (−1 each).</li>
+        <li><b>Raise Unrest:</b> Unprosecuted Wars and Drought effects (+1 each), Disasters (+1), Defeats (+2).</li></ul>
+        <p>Unrest can't go below 0, and there's no upper limit.</p>`,
+      open: ['games', 'landBills'],
+      ref: ['1.08.1', '1.07.6', '1.09.62', '1.10.4', '1.10.21', '1.10.2'] },
+  ],
+  recap: [
+    'Unrest +1 for each Unprosecuted War and each Drought effect.',
+    'The HRAO rolls 3d6, subtracts Unrest, adds Popularity, and checks the Population Table.',
+    'A modified roll of −1 or less is a People Revolt: everyone loses.',
+  ],
+},
+{
+  id: 'senate-basics', section: 1, phase: 4, title: 'Senate: running the meeting',
+  blurb: 'Who presides, the order of business, votes, Tribunes.',
+  scene: () => ({
+    items: {
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 10, { t: 4, leader: true, knights: 0, pop: 2, office: 'Rome Consul' }),
+      fabius: sen('Fabius', 2, 4, 2, 9, 4, { t: 1, knights: 1, pop: 0 }),
+      aelius: sen('Aelius', 14, 3, 4, 7, 3, { t: 0, knights: 0, pop: 0 }),
+      julius: sen('Julius', 4, 4, 3, 9, 9, { t: 2, leader: true, knights: 1, pop: 1, office: 'Field Consul' }),
+      manlius: sen('Manlius', 6, 3, 2, 7, 3, { t: 1, knights: 0, pop: 0 }),
+      b1: pill('Elect Consuls'), b2: pill('Dictator', { sub: 'only if needed' }), b3: pill('Elect Censor'),
+      b4: pill('Prosecutions'), b5: pill('Governors'), b6: pill('Other business'),
+    },
+    zones: [
+      { id: 'biz', title: 'Senate business', layout: 'pills', ids: ['b4', 'b1', 'b6', 'b3', 'b5', 'b2'] },
+      { id: 'you', title: 'Your faction', tone: 'you', ids: ['cornelius', 'fabius', 'aelius'] },
+      { id: 'blue', title: 'Blue faction', dot: 'blue', ids: ['julius', 'manlius'] },
+    ],
+    extra: true,
+  }),
+  steps: [
+    { type: 'pick', title: 'Who runs the meeting?',
+      text: '<p>The HRAO is the <b>Presiding Magistrate</b>: the only one who can make proposals without a Tribune, and who decides which faction votes when. Click the Presiding Magistrate.</p>',
+      answer: 'cornelius',
+      right: 'Cornelius, the Rome Consul, outranks the Field Consul. A smart Presiding Magistrate makes opponents vote first and friends vote last.',
+      wrong: { julius: 'The Field Consul ranks below the Rome Consul.' },
+      wrongDefault: 'Look for the highest office.',
+      ref: ['1.09.11', '1.09.12'] },
+    { type: 'sequence', title: 'Order of business',
+      text: '<p>The Senate handles its business in a fixed order. Click the items in that order.</p>',
+      order: ['b1', 'b2', 'b3', 'b4', 'b5', 'b6'],
+      wrong: { b2: 'A Dictator can only be chosen right after the Consuls are elected.', b4: 'Prosecutions are run by the Censor, who has to be elected first.', b6: 'Other business comes last.' },
+      right: 'Consuls, then a Dictator if needed, then the Censor, who runs Prosecutions. Then Governors, then everything else. The Presiding Magistrate can close the meeting once that’s all done.',
+      ref: ['1.09.2', '1.09.3', '1.09.4', '1.09.41', '1.09.5', '1.09.6'] },
+    { type: 'number', title: 'Counting your votes',
+      text: '<p>The Voting Summary is open on the board. Cornelius also spends 2 talents to buy 2 extra votes. How many votes does your faction cast?</p>',
+      open: ['voting'],
+      em: { cornelius: { for: ['ora'] }, fabius: { for: ['ora', 'knights'] }, aelius: { for: ['ora'] } },
+      focus: ['cornelius', 'fabius', 'aelius'],
+      answer: 12, unit: 'votes', hint: 'Cornelius 3 + 2 bought, Fabius 2 + 1 Knight, Aelius 4.',
+      right: '12 votes. Bought votes only last for that one vote.',
+      ref: ['1.09.141'] },
+    { type: 'choice', title: 'A tie',
+      text: '<p>A proposal gets 14 votes for and 14 against. Does it pass?</p>',
+      options: [
+        { t: 'Yes, ties go to the Presiding Magistrate.', why: 'There’s no tie-break for votes.' },
+        { t: 'No. It needs more than half the votes cast.', ok: true, why: 'A simple majority of over 50% is required.' },
+      ],
+      ref: ['1.09.143'] },
+    { type: 'choice', title: 'Tribunes',
+      text: '<p>What can a Tribune card do?</p>',
+      options: [
+        { t: 'Double your faction’s votes on one proposal.', why: 'Tribunes don’t add votes.' },
+        { t: 'Veto a vote, or force your own proposal to a vote.', ok: true,
+          why: 'Some votes can’t be vetoed: Consul for Life, any Dictator’s proposal, the Special Prosecution of an assassin, and the last eligible candidate for an office.' },
+        { t: 'Remove a Senator from office.', why: 'Officials can’t be removed or resign.' },
+      ],
+      ref: ['1.09.15', '1.09.151', '1.09.152'] },
+    { type: 'choice', title: 'A humiliating defeat',
+      text: '<p>The Presiding Magistrate’s proposal is voted down by <b>every</b> other player’s Senators in Rome. What happens?</p>',
+      options: [
+        { t: 'Nothing. Proposals fail all the time.', why: 'A unanimous defeat carries a cost.' },
+        { t: 'The Presiding Magistrate loses 1 Influence or steps down as Presiding Magistrate.', ok: true,
+          why: 'Stepping down keeps the office but hands the meeting to the next HRAO.' },
+      ],
+      ref: ['1.09.144'] },
+    { type: 'info', title: 'Daggers in the Senate',
+      text: `<p>While the Senate is in session, a faction may attempt one <b>Assassination</b> per turn: roll one die on the Assassination Table (open on the board), adding any Assassin cards played.</p>
+        <p>A caught assassin dies, and their Faction Leader loses 5 Influence and faces a Special Major Prosecution. The designer's advice: go easy on assassinations.</p>`,
+      open: ['assassination'],
+      ref: ['1.09.7', '1.09.72', '1.09.74'] },
+  ],
+  recap: [
+    'The HRAO presides and controls proposals and voting order.',
+    'Order: Consuls, Dictator (if needed), Censor, Prosecutions, Governors, Other business.',
+    'Votes = Oratory + Knights + bought votes. More than half the votes cast passes.',
+    'Tribunes veto or propose. Unanimous defeat costs the presiding Senator.',
+  ],
+},
+{
+  id: 'senate-offices', section: 1, phase: 4, title: 'Senate: offices, trials and armies',
+  blurb: 'Consuls, Dictator, Censor, prosecutions, Land Bills, recruiting and sending armies.',
+  scene: () => ({
+    items: {
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 10, { t: 4, leader: true, office: 'Rome Consul' }),
+      fabius: sen('Fabius', 2, 4, 2, 9, 4, { t: 1 }),
+      aelius: sen('Aelius', 14, 3, 4, 7, 3, { t: 0 }),
+      julius: sen('Julius', 4, 4, 3, 9, 9, { t: 2, leader: true, office: 'Field Consul' }),
+      manlius: sen('Manlius', 6, 3, 2, 7, 3, { t: 1 }),
+      gladiator: war('Gladiator Revolt', { status: 'Active', land: 6, support: 0, fleet: 0, d: [6, 11], s: [14, 16], leader: { name: 'Spartacus', bonus: 5 } }),
+    },
+    zones: [
+      { id: 'activeWars', ids: ['gladiator'] },
+      { id: 'you', title: 'Your faction', tone: 'you', ids: ['cornelius', 'fabius', 'aelius'] },
+      { id: 'blue', title: 'Blue faction', dot: 'blue', ids: ['julius', 'manlius'] },
+    ],
+  }),
+  steps: [
+    { type: 'info', title: 'Electing Consuls',
+      text: `<p>The first business is always the Consuls. The Presiding Magistrate nominates <b>pairs</b> of aligned Senators in Rome, and each pair wins or loses together.</p>
+        <p>The winners each gain <b>5 Influence</b> and agree between themselves who becomes Rome Consul and who becomes Field Consul. If they can't agree, they roll for it. The outgoing Consuls get Prior Consul markers. The board's Influence summary (open) lists every office.</p>`,
+      open: ['influence'], ref: ['1.09.2', '1.09.21', '1.09.22'] },
+    { type: 'pick', title: 'Not eligible',
+      text: '<p>Click a Senator who <b>can’t</b> be elected Consul this turn.</p>',
+      answer: ['cornelius', 'julius'],
+      right: id => `${id === 'cornelius' ? 'Cornelius' : 'Julius'} is a current Consul, and current Consuls can’t be re-elected this turn.`,
+      wrong: { gladiator: 'That’s a war, not a Senator.' },
+      wrongDefault: id => id.startsWith('b:') ? 'Click a Senator.' : 'That Senator is aligned and in Rome, so eligible.',
+      ref: ['1.09.2'],
+      after: sc => {
+        const c = sc.items;
+        c.cornelius.office = null; c.cornelius.prior = true;
+        c.julius.office = null; c.julius.prior = true;
+        c.aelius.office = 'Rome Consul'; c.fabius.office = 'Field Consul';
+        c.aelius.inf += 5; c.fabius.inf += 5;
+        sc.deltas['aelius.inf'] = 5; sc.deltas['fabius.inf'] = 5;
+      } },
+    { type: 'info', title: 'The vote is in',
+      text: '<p>Aelius and Fabius are elected and gain 5 Influence each. Aelius takes Rome Consul and becomes Presiding Magistrate. Cornelius and Julius step down with Prior Consul markers.</p>',
+      focus: ['aelius', 'fabius', 'cornelius', 'julius'], ref: ['1.09.22'] },
+    { type: 'choice', title: 'When Rome needs a Dictator',
+      text: '<p>Right after the Consuls, Rome may get a Dictator. When is that allowed?</p>',
+      open: ['influence'],
+      options: [
+        { t: 'Whenever the Consuls ask for one.', why: 'Rome has to be in real danger first.' },
+        { t: 'When Rome faces 3 or more Active Wars, or one war with combined Land and Fleet Strength of 20 or more.', ok: true,
+          why: 'The Dictator gains 7 Influence, appoints a Master of Horse (+3 Influence), and can’t have proposals vetoed.' },
+        { t: 'Only if a Consul has died.', why: 'It depends on the wars, not on the Consuls.' },
+      ],
+      ref: ['1.09.3', '1.09.33'] },
+    { type: 'pick', title: 'Electing the Censor',
+      text: '<p>A Censor must be an aligned Senator in Rome with a <b>Prior Consul</b> marker and no other Major Office. Click a Senator who can be elected Censor.</p>',
+      answer: ['cornelius', 'julius'],
+      right: 'Prior Consul and no current office. The Censor gains 5 Influence and runs the Prosecutions.',
+      wrong: { aelius: 'Aelius was just elected Consul, and has no Prior Consul marker either.', fabius: 'Fabius was just elected Consul, and has no Prior Consul marker either.', manlius: 'Manlius has never been Consul.', gladiator: 'That’s a war.' },
+      wrongDefault: 'Click a Senator.',
+      ref: ['1.09.4'] },
+    { type: 'choice', title: 'Prosecutions',
+      text: '<p>How many Prosecutions may the Censor run in a turn?</p>',
+      open: ['appeal'],
+      options: [
+        { t: 'As many as the Senate will vote for.', why: 'There’s a strict limit.' },
+        { t: 'Up to two Minor Prosecutions, or one Major.', ok: true,
+          why: 'Minor: Senators with a Corrupt or Major marker, or a Concession with its corrupt bar showing. Conviction costs 5 Popularity, 5 Influence, the Prior Consul marker and all Concessions. Major: Senators who held a Major Office last turn, and conviction means execution. The accused adds their Influence to the votes against conviction, and may roll on the Popular Appeal Table (open on the board).' },
+      ],
+      ref: ['1.09.41', '1.09.412', '1.09.413', '1.09.42', '1.09.421', '1.09.441', '1.09.442'] },
+    { type: 'choice', title: 'Land Bills',
+      text: '<p>Other business can include Concessions, Land Bills and armies. The Land Bills Table is open on the board. A <b>Type II</b> Land Bill passes. What happens?</p>',
+      open: ['landBills'],
+      options: [
+        { t: 'Unrest −1, and the State pays 20 talents once.', why: 'That’s Type I.' },
+        { t: 'Unrest −2, the sponsor gains 2 Popularity and the co-sponsor 1, and the State pays 5 talents every turn.', ok: true,
+          why: 'Anyone who voted against loses 1 Popularity. Type II and III bills stay in effect until repealed.' },
+        { t: 'Unrest −3, and the State pays 10 talents every turn.', why: 'That’s Type III.' },
+      ],
+      ref: ['1.09.62', '1.09.621'] },
+    { type: 'number', title: 'Raising forces',
+      text: '<p>The Senate votes to raise 3 Legions and 2 Fleets from the Force Pool. How much does the State Treasury pay right away?</p>',
+      focus: ['b:forcePool', 'b:activeForces', 'b:revenue'],
+      answer: 50, unit: 'talents', hint: 'Each new unit costs 10 talents.',
+      right: '50 talents now. The new units move to Active Forces, and cost 2 talents each in every Revenue Phase.',
+      ref: ['1.09.63', '1.06.53'] },
+    { type: 'pick', title: 'Who goes to war',
+      text: '<p>Only a Consul or a Dictator can lead an army. Click the Senator who must be sent before the Rome Consul.</p>',
+      answer: 'fabius',
+      right: 'Fabius, the Field Consul. The Field Consul goes to war first, or together with the Rome Consul.',
+      wrong: { aelius: 'Aelius is the Rome Consul. Someone has to go first.' },
+      wrongDefault: 'Only the Consuls or a Dictator can command.',
+      ref: ['1.09.641'] },
+    { type: 'choice', title: 'Minimum force',
+      em: { fabius: { for: ['mil'] } }, focus: ['fabius', 'gladiator'],
+      text: '<p>The Senate wants to send Fabius (Military 4) with 6 Legions against the Gladiator Revolt: Land 6, plus 5 for Spartacus. Can it send Fabius without Fabius’s consent?</p>',
+      options: [
+        { t: 'Yes. The Senate can send a Consul anywhere.', why: 'Not with a force that’s too small.' },
+        { t: 'No. 6 Legions + 4 Military = 10, less than the war’s 11.', ok: true,
+          why: 'A Commander can only be sent without consent if the force, including the Commander’s Military, matches or beats the war and its Leader.' },
+      ],
+      ref: ['1.09.643'] },
+    { type: 'info', title: 'Consul for Life',
+      text: '<p>After the Consular elections, any Senator in Rome with <b>21 or more Influence</b> can be nominated Consul for Life, once per turn, and it can’t be vetoed. The nominee adds their Influence to their votes. A Senator who reaches <b>35 Influence</b> becomes Consul for Life automatically.</p>',
+      ref: ['1.09.821', '1.09.822'] },
+  ],
+  recap: [
+    'Consuls are elected in pairs and gain 5 Influence each. Current Consuls can’t be re-elected.',
+    'A Dictator only when Rome faces 3+ Active Wars or one war of 20+ combined strength.',
+    'The Censor needs a Prior Consul marker, and runs up to 2 Minor or 1 Major Prosecution.',
+    'Land Bills lower Unrest but cost Rome money. New units cost 10 talents each. Field Consul goes to war first.',
+  ],
+},
+{
+  id: 'combat', section: 1, phase: 5, title: 'Combat',
+  blurb: 'Fleet support, battle strength, the dice, and the Combat Results Table.',
+  scene: () => ({
+    items: {
+      unrest: chip('Unrest Level', '3'),
+      legions: chip('Marius’s army', '9', { sub: 'Legions, no Fleets' }),
+      marius: sen('Marius', 0, 4, 3, 7, 6, { t: 2, office: 'Consul' }),
+      gladiator: war('Gladiator Revolt', { status: 'Active', land: 6, support: 0, fleet: 0, d: [6, 11], s: [14, 16], leader: { name: 'Spartacus', bonus: 5 } }),
+    },
+    zones: [
+      { id: 'activeWars', ids: ['gladiator'] },
+      { id: 'population', ids: ['unrest'] },
+      { id: 'rome', title: 'The Commander', note: 'forces sit on the Commander’s card', ids: ['marius', 'legions'] },
+    ],
+  }),
+  steps: [
+    { type: 'info', title: 'Fleets first',
+      text: `<p>A Land Battle can only be fought if the force has at least as many Fleets as the war's <b>Fleet Support</b> number.</p>
+        <p>If a war shows an enemy <b>Fleet Strength</b>, a Naval Battle has to be won before its army can be attacked.</p>
+        <p class="fine">This lesson uses the rulebook’s own worked example.</p>`,
+      focus: ['gladiator', 'marius', 'legions'], ref: ['1.10.11', '1.10.12'] },
+    { type: 'number', title: 'Your edge',
+      text: '<p>Marius (Military 4) leads 9 Legions against the Gladiator Revolt: Land Strength 6, plus 5 for its Leader, Spartacus. Add Legions and Military, then subtract the war’s strength. What’s the modifier?</p>',
+      em: { marius: { for: ['mil'] } }, focus: ['marius', 'gladiator', 'legions'],
+      answer: 2, hint: '9 Legions + 4 Military = 13. The war is 6 + 5 = 11.',
+      right: '+2. This gets added to the dice roll.',
+      ref: ['1.10.11', '1.07.342'] },
+    { type: 'choice', title: 'Military is capped',
+      text: '<p>If Marius had only <b>3 Legions</b>, what would the army’s total strength be?</p>',
+      options: [
+        { t: '7: 3 Legions + 4 Military', why: 'A Commander’s Military can’t add more than the army’s own strength.' },
+        { t: '6: 3 Legions + 3 of the Military rating', ok: true, why: 'Military counts only up to the army’s strength. Veteran Legions count double.' },
+        { t: '3: Military doesn’t count with small armies', why: 'It still counts, up to a limit.' },
+      ],
+      ref: ['1.10.11'] },
+    { type: 'custom', title: 'Roll three dice',
+      enter: (sc, v) => { v.rolledC = false; },
+      focus: ['marius', 'gladiator', 'legions'],
+      text: '<p>Roll 3d6. First check the <b>unmodified</b> roll against the war’s Disaster (D) and Standoff (S) numbers. If it doesn’t match, add your modifier and use the Combat Results Table.</p>',
+      render: c => c.v.rolledC
+        ? `${diceHTML([3, 3, 4], true)}<p>10 isn’t a Disaster (6, 11) or Standoff (14, 16) number. So add the modifier: 10 + 2 = <b>12</b>.</p>`
+        : `<div class="dice" data-roll>${dieHTML(1)}${dieHTML(1)}${dieHTML(1)}</div><div class="controls"><button class="btn" data-act="x-roll">Roll 3d6</button></div>`,
+      act: { roll: c => c.rollDice([3, 3, 4], () => { c.v.rolledC = true; c.done(null, null); }) },
+      ref: ['1.10.11', '1.10.21', '1.10.31'] },
+    { type: 'pick', title: 'Look it up',
+      text: '<p>The Combat Results Table is open on the board. Click the row for a modified roll of <b>12</b>.</p>',
+      open: ['combat'], rowTargets: 'combat', focus: ['marius', 'legions', 'b:combat'],
+      answer: 'combat:12',
+      right: '<b>Stalemate</b>, losing 1 Legion and 1 Fleet. Marius has no Fleets, so loses 1 Legion, then draws 1 Mortality chit (one per unit lost) to see if Marius dies. Marius stays in the field as Proconsul, and one surviving Legion becomes a Veteran.',
+      wrongDefault: id => id.startsWith('combat:') ? 'That row is for a different total. Find 12 in the first column.' : 'Use the Combat Results Table on the board.',
+      ref: ['1.10.3', '1.10.5', '1.10.7', '1.10.8'],
+      after: sc => { sc.items.legions.value = '8'; sc.deltas.legions = -1; sc.tags.marius = 'Proconsul'; } },
+    { type: 'choice', title: 'Disaster',
+      text: '<p>What if the dice had shown <b>11</b>, before adding anything?</p>',
+      open: ['combat'],
+      options: [
+        { t: 'A Victory: 11 + 2 = 13.', why: 'Disaster and Standoff numbers are checked before the modifier, and they skip the table. And 13 would only be a Stalemate.' },
+        { t: 'A Disaster: lose half the force, rounded up, which is 5 Legions.', ok: true,
+          why: 'Unrest also rises by 1. A Standoff (14 or 16 here) loses a quarter, rounded up: 3 Legions.' },
+      ],
+      ref: ['1.10.21', '1.10.31'] },
+    { type: 'choice', title: 'Victory',
+      text: '<p>Next turn, Marius wins (a modified 14 or more). Commanders gain Popularity and Influence equal to half the war’s <b>printed</b> strength, rounded up. How much does Marius gain of each?</p>',
+      open: ['combat'],
+      options: [
+        { t: '6, because 11 halved and rounded up is 6.', why: 'Use the printed strength, not the strength boosted by Spartacus.' },
+        { t: '3, because 6 halved is 3.', ok: true,
+          why: 'A Victory also lowers Unrest by 1. Normal wars add Spoils of War to the State Treasury, but Revolts give no Spoils.' },
+        { t: 'Nothing. Only Consuls gain from victories.', why: 'The victorious Commander always gains.' },
+      ],
+      ref: ['1.10.4', '1.07.333'] },
+    { type: 'choice', title: 'Defeat',
+      text: '<p>What does a <b>Defeat</b> (a modified 7 or less) mean?</p>',
+      open: ['combat'],
+      options: [
+        { t: 'The Commander is killed, the force takes the losses shown, and Unrest rises by 2.', ok: true, why: 'Survivors stay on the war card until the Senate recalls or reinforces them.' },
+        { t: 'The force retreats to Rome with no losses.', why: 'Defeat is the worst result on the table.' },
+      ],
+      ref: ['1.10.2'] },
+    { type: 'info', title: 'Ignored wars',
+      text: `<p>An Active War that nobody fights moves to the <b>Unprosecuted War</b> space: +1 Unrest every Population Phase, on top of the 20 talents it costs each Revenue Phase.</p>
+        <p>And if <b>4 Active Wars</b> remain at the end of a Combat Phase, Rome falls.</p>`,
+      focus: ['b:unprosecuted', 'b:activeWars', 'gladiator'], ref: ['1.10.9', '1.07.334', '1.12.3'] },
+  ],
+  recap: [
+    'Bring enough Fleets for Fleet Support. Naval Battles come before Land Battles.',
+    'Modifier = Legions (Veterans double) + Military (capped at the army’s strength) − war strength.',
+    'Check Disaster and Standoff numbers on the raw 3d6 roll first, then use the Combat Results Table.',
+    'Victory: +half the printed strength in Popularity and Influence, −1 Unrest. Defeat: Commander dies, +2 Unrest.',
+  ],
+},
+{
+  id: 'revolution', section: 1, phase: 6, title: 'Revolution',
+  blurb: 'Play and trade cards, the hand limit, and civil war.',
+  scene: () => ({
+    items: {
+      h1: pill('Statesman'), h2: pill('Concession'), h3: pill('Tribune'), h4: pill('Assassin'),
+      h5: pill('Secret Bodyguard'), h6: pill('Tribune'), h7: pill('Concession'),
+    },
+    zones: [{ id: 'hand', title: 'Your hand', note: 'Faction cards, secret', layout: 'pills', ids: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7'] }],
+  }),
+  steps: [
+    { type: 'info', title: 'Play your cards',
+      text: '<p>Starting with the HRAO and going clockwise, each player may play Statesmen and assign Concessions to their own Senators. The Senator doesn’t need to be in Rome.</p>',
+      ref: ['1.11.1'] },
+    { type: 'number', title: 'Hand limit',
+      text: '<p>You hold 7 Faction cards. How many must you play, discard or trade away?</p>',
+      answer: 2, unit: 'cards', hint: 'The limit is 5.',
+      right: '2. The limit is 5 Faction cards at the end of this step.',
+      ref: ['1.11.2'] },
+    { type: 'choice', title: 'Trading',
+      text: '<p>When can Faction cards actually change hands between players?</p>',
+      options: [
+        { t: 'Any time, as part of a deal.', why: 'You can agree a deal any time, but the cards only move at one point in the turn.' },
+        { t: 'Only during the Revolution Phase.', ok: true, why: 'You can show cards and agree terms earlier, but the swap waits until now.' },
+        { t: 'During Redistribution in the Revenue Phase.', why: 'That’s when talents change hands.' },
+      ],
+      ref: ['1.04.5', '1.11.2'] },
+    { type: 'info', title: 'Civil war',
+      text: `<p>Last, each victorious Commander must either lay down their command or <b>declare a Revolt</b>.</p>
+        <p>A would-be Rebel rolls a die for each Legion to see if it follows: <b>5 or 6</b> in the Early Republic, as printed under Active Forces on the board. The Senate must then send an army against the Rebel. If the Rebel beats it, the Rebel wins the game.</p>
+        <p class="fine">The designer suggests saving this for the Late Republic. It’s rare in the Early Republic.</p>`,
+      open: ['activeForces'], ref: ['1.11.3', '1.11.31', '1.11.35', '1.11.373'] },
+    { type: 'choice', title: 'Checking for a winner',
+      text: '<p>When is victory checked?</p>',
+      options: [
+        { t: 'At the very end of every Revolution Phase, and when the Era Ends card appears.', ok: true,
+          why: 'Era Ends finishes the game at the end of that Forum Phase. A Consul for Life also wins once the turn ends with Rome still standing.' },
+        { t: 'Only when the deck runs out.', why: 'In this edition, the Era Ends card ends the game.' },
+      ],
+      ref: ['1.12.1', '1.12.4'] },
+  ],
+  recap: [
+    'Play Statesmen and Concessions, HRAO first.',
+    'Keep at most 5 Faction cards. Cards are only traded in this phase.',
+    'Victorious Commanders may revolt. Rare and risky in the Early Republic.',
+  ],
+},
+
+/* III. Putting it together */
+{
+  id: 'setup', section: 2, title: 'Setting up the Early Republic',
+  blurb: 'What goes where on the board, the temporary Consul, and advice for your first game.',
+  scene: () => ({
+    items: {
+      treasury: chip('State Treasury', '100', { sub: 'talents' }),
+      unrest: chip('Unrest Level', '0'),
+      forces: chip('Legions', '4'),
+      deck: pill('Early Republic deck'),
+      punic: war('1st Punic War', { status: 'Inactive', hide: true }),
+      cornelius: sen('Cornelius', 1, 4, 3, 9, 5),
+      fabius: sen('Fabius', 2, 4, 2, 9, 3),
+      aelius: sen('Aelius', 14, 3, 4, 7, 3),
+    },
+    zones: [
+      { id: 'revenue', ids: ['treasury'] },
+      { id: 'population', ids: ['unrest'] },
+      { id: 'activeForces', ids: ['forces'] },
+      { id: 'draw', ids: ['deck'] },
+      { id: 'you', title: 'Your faction', note: 'three random Family Senators', tone: 'you', ids: ['cornelius', 'fabius', 'aelius'] },
+    ],
+  }),
+  steps: [
+    { type: 'info', title: 'What everyone starts with',
+      text: `<ul><li>State Treasury <b>100</b> talents, Unrest Level <b>0</b>, and <b>4 Legions</b> in Active Forces.</li>
+        <li>Each player is dealt <b>3 Family Senators</b> face up.</li>
+        <li>Each player gets <b>3 Faction cards</b> in hand. Any Forum card dealt is set aside and replaced.</li>
+        <li>No Provinces yet.</li></ul>`,
+      focus: ['treasury', 'unrest', 'forces', 'cornelius', 'fabius', 'aelius'],
+      ref: ['3.01.3', '3.01.4', '3.01.5', '3.01.8'] },
+    { type: 'pick', title: 'Place the first war',
+      text: '<p>The 1st Punic War starts on the board. Click the space where it goes.</p>',
+      hl: ['b:inactive', 'b:activeWars', 'b:imminent', 'b:unprosecuted'], answer: 'b:inactive',
+      right: 'Inactive Wars. It won’t attack Rome until something activates it or the Senate attacks it.',
+      wrong: { 'b:activeWars': 'It starts quieter than that.', 'b:imminent': 'Imminent Wars is for a war that matches one already in play.', 'b:unprosecuted': 'Only Active Wars nobody fought end up there.' },
+      wrongDefault: 'Click one of the war spaces in the middle of the board.',
+      ref: ['3.01.4', '1.07.331'],
+      after: sc => { move(sc, 'punic', 'inactive'); sc.arrive = 'punic'; } },
+    { type: 'choice', title: 'A temporary Rome Consul',
+      text: '<p>Rome starts with a temporary Rome Consul. How is that Senator chosen?</p>',
+      options: [
+        { t: 'The player who goes first chooses.', why: 'It’s random.' },
+        { t: 'Draw Mortality chits until one matches a Senator in play.', ok: true,
+          why: 'That Senator gets the Rome Consul and Prior Consul markers and +5 Influence, and holds office until Consuls are elected in the first Senate Phase.' },
+        { t: 'The Senator with the most Influence.', why: 'It’s random.' },
+      ],
+      ref: ['3.01.6'] },
+    { type: 'pick', title: 'Choose your Faction Leader',
+      text: '<p>Starting with the temporary Rome Consul’s player and going clockwise, everyone places a Faction Leader marker. Click the Senator you want to lead your faction.</p>',
+      hl: ['cornelius', 'fabius', 'aelius'], answer: '*',
+      right: (id, sc) => `${sc.items[id].name} leads your faction: 3 talents of income a turn, and no rival can persuade ${sc.items[id].name} away. Pick a Senator you couldn’t bear to lose.`,
+      wrongDefault: 'Click one of your Senators.',
+      onRight: (sc, v, id) => { sc.items[id].leader = true; },
+      ref: ['3.01.7', '1.06.11', '1.07.4'] },
+    { type: 'info', title: 'Opening cards and the end of the game',
+      text: `<p>Then each player, starting with the temporary Rome Consul, may play Statesmen and Concessions from their hand. No trading until the first Revolution Phase.</p>
+        <p>The <b>Era Ends</b> card is shuffled with 12 other cards into the bottom of the Draw Pile, so nobody knows exactly when the game will end.</p>`,
+      focus: ['deck', 'b:draw'], ref: ['3.01.9', '3.01.4'] },
+    { type: 'info', title: 'Advice from the designer',
+      text: `<ul><li><b>Stick together.</b> Don't make early enemies. Nobody is usually in a position to win before turn six.</li>
+        <li><b>Beat the Punic Wars early</b>, with as much force as you can. Stalemates give matching wars and Hannibal time to arrive.</li>
+        <li><b>Build a big army early.</b> Manpower shortages tend to hit when wars pile up.</li>
+        <li><b>Sponsor Games</b> with your own money. It calms Rome and makes fewer enemies than Land Bills.</li>
+        <li><b>Watch the temporary Rome Consul.</b> As the only Senator with Consular experience, that Senator becomes Censor automatically on turn 1. Don't let that faction keep power cheaply.</li>
+        <li><b>Aim to win on Influence</b> when the Era Ends card appears. Other paths are too risky for a first game.</li></ul>`,
+      ref: ['Player’s Notes'] },
+  ],
+  recap: [
+    '100 talents, Unrest 0, 4 Legions, 1st Punic War in Inactive Wars.',
+    'Three Senators and three Faction cards each, a random temporary Rome Consul, then pick your Faction Leader.',
+    'Cooperate early, beat the Punic Wars, keep Unrest down, and play for Influence. The Board tables appendix has every table in one place.',
+  ],
+},
+{
+  id: 'final', section: 2, title: 'Final review', quiz: true, board: false,
+  blurb: 'Twelve questions across the whole game. Can you get them all first try?',
+  scene: () => ({ items: {}, zones: [] }),
+  steps: [
+    { type: 'number', title: 'Question 1',
+      text: '<p>Your Senator has Oratory 3 and Influence 6. The target is unaligned, with Loyalty 7, holding 1 talent. What’s the Base Number before any bribes?</p>',
+      answer: 1, hint: '3 + 6 = 9. Resistance is 7 + 1.', right: '9 − 8 = 1.', ref: ['1.07.41', '1.07.411'] },
+    { type: 'choice', title: 'Question 2',
+      text: '<p>Same persuader, but now the target belongs to a rival faction (and isn’t its leader). Base Number?</p>',
+      options: [
+        { t: '1', why: 'A Senator who already belongs to a faction adds 7 to Loyalty.' },
+        { t: '−6', ok: true, why: '9 − (7 + 7 + 1) = −6. You’d need a lot of bribes.' },
+        { t: '−13', why: 'The +7 is only added once.' },
+      ], ref: ['1.07.411'] },
+    { type: 'choice', title: 'Question 3',
+      text: '<p>Your Base Number is 12, and you roll a natural 10.</p>',
+      options: [
+        { t: 'Success: 10 is under 12.', why: 'A natural 10 or more always fails.' },
+        { t: 'Failure.', ok: true, why: 'A natural 10, 11 or 12 always fails, whatever the Base Number.' },
+      ], ref: ['1.07.41'] },
+    { type: 'choice', title: 'Question 4',
+      text: '<p>Unrest is 5 and the HRAO has Popularity 1. The State of the Republic roll is 8. What happens?</p>',
+      options: [
+        { t: 'No change to Unrest.', why: '8 − 5 + 1 = 4, which is well below the no-change rows.' },
+        { t: '+5 to the Unrest Level.', ok: true, why: 'A modified 4 on the Population Table is +5 to Unrest.' },
+        { t: 'People Revolt.', why: 'That takes a modified roll of −1 or less.' },
+      ], ref: ['1.08.2'] },
+    { type: 'number', title: 'Question 5',
+      text: '<p>A Senator in Rome has Oratory 4 and 3 Knights, and spends no talents. How many votes?</p>',
+      answer: 7, unit: 'votes', hint: 'Oratory + Knights.', right: '7 votes.', ref: ['1.09.141'] },
+    { type: 'choice', title: 'Question 6',
+      text: '<p>Who can be elected Censor?</p>',
+      options: [
+        { t: 'Any Senator in Rome.', why: 'Only if nobody with Consular experience is available, as on turn 1.' },
+        { t: 'An aligned Senator in Rome with a Prior Consul marker and no other Major Office.', ok: true, why: 'The Censor gains 5 Influence and runs the Prosecutions.' },
+        { t: 'The current Rome Consul.', why: 'The Consul already holds a Major Office.' },
+      ], ref: ['1.09.4'] },
+    { type: 'choice', title: 'Question 7',
+      text: '<p>The Senate raises 2 Legions. What do they cost?</p>',
+      options: [
+        { t: '20 talents now, then 2 per Legion every Revenue Phase.', ok: true, why: '10 to raise each unit, and 2 per unit in upkeep.' },
+        { t: '2 talents each, once.', why: 'That’s the upkeep, not the cost to raise.' },
+        { t: 'Nothing. Legions are free.', why: 'Rome pays for every unit.' },
+      ], ref: ['1.09.63', '1.06.53'] },
+    { type: 'number', title: 'Question 8',
+      text: '<p>A Commander with Military 5 leads 2 ordinary Legions. What’s the army’s strength, counting the Commander?</p>',
+      answer: 4, hint: 'Military can’t add more than the army’s own strength.', right: '2 Legions + 2 of the Military = 4.', ref: ['1.10.11'] },
+    { type: 'choice', title: 'Question 9',
+      text: '<p>A battle’s modified roll is 15, and the unmodified roll matched no Disaster or Standoff number. Result?</p>',
+      options: [
+        { t: 'Stalemate, no losses.', why: 'That’s 13.' },
+        { t: 'Victory, losing 3 Legions and 3 Fleets.', ok: true, why: 'From the Combat Results Table. Fleets are only lost if the force has them.' },
+        { t: 'Victory, no losses.', why: 'That takes 18 or more.' },
+      ], ref: ['1.10.4'] },
+    { type: 'choice', title: 'Question 10',
+      text: '<p>A Combat Phase ends with 4 Active Wars.</p>',
+      options: [
+        { t: 'The faction with the most Influence wins.', why: 'No one wins.' },
+        { t: 'Rome falls and everyone loses.', ok: true, why: 'This is one of the three ways Rome falls.' },
+        { t: 'The Senate must elect a Dictator.', why: 'It’s too late for that.' },
+      ], ref: ['1.12.3'] },
+    { type: 'choice', title: 'Question 11',
+      text: '<p>When can you give talents to another player?</p>',
+      options: [
+        { t: 'Any time.', why: 'Only once per turn.' },
+        { t: 'During Redistribution in the Revenue Phase.', ok: true, why: 'You can promise money any time, but it only moves then.' },
+        { t: 'During the Revolution Phase.', why: 'That’s for trading cards.' },
+      ], ref: ['1.04.6'] },
+    { type: 'choice', title: 'Question 12',
+      text: '<p>Which Senator can never be persuaded away by another faction?</p>',
+      options: [
+        { t: 'One with Loyalty 10.', why: 'High Loyalty helps, but enough bribes can still work.' },
+        { t: 'A Faction Leader.', ok: true, why: 'Faction Leaders are never valid targets.' },
+        { t: 'One holding an office.', why: 'Office-holders in Rome can still be targeted.' },
+      ], ref: ['1.07.4'] },
+  ],
+  recap: [
+    'If you missed any, the matching lesson is on the course map.',
+    'Keep the Board tables appendix open while you play: it has every table the Early Republic needs.',
+    'You’re ready for the Early Republic. Stick together, and good luck in the Senate.',
+  ],
+},
+];
+
+/* ---------- State ---------- */
+const KEY = 'ror-tutorial-v1';
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ done: [...S.done], last: S.li })); } catch (e) { /* storage unavailable */ } }
+const saved = load();
+const S = {
+  view: 'map', prevView: 'map', li: Number.isInteger(saved.last) ? saved.last : 0, si: 0, done: new Set(saved.done || []),
+  scene: null, vars: {}, ready: false, fb: null, tried: [], seq: [], picked: null, num: 0, wrongOnce: false,
+  shake: null, rolling: false, extra: '', complete: false, score: 0, qcount: 0, userOpen: new Set(),
+};
+
+const mapView = document.getElementById('map-view');
+const lessonView = document.getElementById('lesson-view');
+const appendixView = document.getElementById('appendix-view');
+const boardEl = document.getElementById('board');
+const tutorEl = document.getElementById('tutor');
+const layoutEl = document.getElementById('layout');
+
+const lesson = () => LESSONS[S.li];
+const curStep = () => lesson().steps[S.si];
+
+/* ---------- Views ---------- */
+function showView(name) {
+  if (name !== 'appendix') S.prevView = name;
+  S.view = name;
+  mapView.hidden = name !== 'map';
+  lessonView.hidden = name !== 'lesson';
+  appendixView.hidden = name !== 'appendix';
+  window.scrollTo(0, 0);
+}
+
+function renderMap() {
+  const n = S.done.size;
+  document.getElementById('meter').innerHTML = `<span class="bar"><span style="width:${Math.round(n / LESSONS.length * 100)}%"></span></span>${n} of ${LESSONS.length} lessons complete`;
+  const resume = document.getElementById('resume');
+  const next = LESSONS.findIndex(l => !S.done.has(l.id));
+  resume.textContent = n === 0 ? 'Start the first lesson' : next === -1 ? 'Review the final quiz' : `Continue: ${LESSONS[next].title}`;
+  document.getElementById('course').innerHTML = SECTIONS.map((sec, si) => `
+    <section class="sec">
+      <h2><span class="rn">${ROMAN[si]}.</span>${sec.name}</h2>
+      <p>${sec.blurb}</p>
+      <ol class="lessons">${LESSONS.map((l, i) => l.section !== si ? '' : `
+        <li><button class="lrow" data-lesson="${i}">
+          <span class="lnum">${i + 1}</span>
+          <span><span class="ltitle">${l.title}</span><span class="lblurb">${l.blurb}</span></span>
+          <span class="lstat${S.done.has(l.id) ? ' done' : ''}">${S.done.has(l.id) ? 'Done' : `${l.steps.length} steps`}</span>
+        </button></li>`).join('')}</ol>
+    </section>`).join('') + `
+    <section class="sec">
+      <h2><span class="rn">A.</span>Appendix</h2>
+      <p>For reference during play.</p>
+      <ol class="lessons"><li><button class="lrow" data-nav="appendix">
+        <span class="lnum">A</span>
+        <span><span class="ltitle">Board tables</span><span class="lblurb">Every table from the board that the Early Republic basic game uses, in one place.</span></span>
+        <span class="lstat">${APPENDIX.length} tables</span>
+      </button></li></ol>
+    </section>`;
+}
+
+function showMap() { renderMap(); showView('map'); }
+
+function showAppendix() {
+  document.getElementById('appendix').innerHTML = APPENDIX.map(id => {
+    const t = TABLES[id];
+    return `<section class="apx"><h2>${t.title}</h2><p class="when">${t.when}</p>${tableHTML(id, null)}
+      <p class="ruleref">Rulebook ${t.ref.map(r => `§${r}`).join(' · ')}</p></section>`;
+  }).join('');
+  showView('appendix');
+}
+
+/* ---------- Lesson flow ---------- */
+function startLesson(i) {
+  S.li = i; S.si = 0; S.complete = false; S.vars = {}; S.score = 0; S.qcount = 0; S.userOpen = new Set();
+  S.scene = Object.assign({ items: {}, zones: [], tags: {}, deltas: {}, extra: false, legend: false, arrive: null }, lesson().scene());
+  enterStep();
+  save();
+  const L = lesson();
+  document.getElementById('crumb').textContent = `Section ${ROMAN[L.section]} · Lesson ${i + 1} of ${LESSONS.length}`;
+  document.getElementById('lesson-title').textContent = L.title;
+  const ph = document.getElementById('phases');
+  ph.hidden = L.phase == null;
+  ph.innerHTML = PHASES.map((p, k) => `<li class="${k === L.phase ? 'now' : ''}"${k === L.phase ? ' aria-current="step"' : ''}>${p}</li>`).join('');
+  layoutEl.classList.toggle('solo', L.board === false);
+  boardEl.hidden = L.board === false;
+  showView('lesson');
+  render(true);
+}
+
+function enterStep() {
+  Object.assign(S, { ready: false, fb: null, tried: [], seq: [], picked: null, wrongOnce: false, extra: '' });
+  const step = curStep();
+  S.num = step.start ?? 0;
+  if (step.enter) step.enter(S.scene, S.vars, S);
+  if (step.type === 'info' || step.ready) S.ready = true;
+}
+
+function advance(deltas) {
+  const step = curStep();
+  S.scene.deltas = deltas || {};
+  if (step.after) step.after(S.scene, S.vars, S);
+  if (S.si + 1 >= lesson().steps.length) { finishLesson(); return; }
+  S.si++;
+  enterStep();
+  render(true);
+}
+
+function finishLesson() {
+  S.complete = true;
+  S.done.add(lesson().id);
+  save();
+  render(true);
+}
+
+function markCorrect() {
+  if (lesson().quiz) { S.qcount++; if (!S.wrongOnce) S.score++; }
+}
+
+/* Context handed to custom steps */
+function ctx() {
+  return {
+    S, sc: S.scene, v: S.vars, step: curStep(),
+    render: () => render(),
+    next: deltas => advance(deltas),
+    done: (kind, msg, extra) => { S.ready = true; S.fb = kind ? { kind, msg } : null; S.extra = extra || ''; render(); },
+    restore: (snap, stepIdx, vars) => {
+      S.scene = clone(snap);
+      if (stepIdx != null) { S.vars = Object.assign({}, vars || {}); S.si = stepIdx; }
+      else S.vars = {};
+      enterStep();
+      render(true);
+    },
+    rollDice: (vals, onDone) => {
+      if (S.rolling) return;
+      S.rolling = true;
+      const box = tutorEl.querySelector('[data-roll]');
+      tutorEl.querySelectorAll('[data-act="x-roll"]').forEach(b => { b.disabled = true; });
+      const finish = () => { S.rolling = false; onDone(); };
+      if (reduceMotion || !box) return finish();
+      let ticks = 0;
+      const timer = setInterval(() => {
+        box.innerHTML = vals.map(() => dieHTML(1 + Math.floor(Math.random() * 6))).join('');
+        if (++ticks >= 10) { clearInterval(timer); finish(); }
+      }, 70);
+    },
+  };
+}
+
+/* ---------- Board rendering ---------- */
+function boardCtx(step) {
+  const live = !S.ready && !S.complete;
+  const interactive = live && (step.type === 'pick' || step.type === 'sequence');
+  const stepOpen = S.complete ? [] : (fn(step.open, S.scene, S.vars) || []);
+  return {
+    targets: interactive && !step.stats && !step.rowTargets,
+    statTargets: interactive && !!step.stats,
+    rowTargets: interactive ? step.rowTargets || null : null,
+    hl: live ? (fn(step.hl, S.scene, S.vars) || []) : [],
+    focus: S.complete ? null : (fn(step.focus, S.scene, S.vars) || null),
+    em: S.complete ? {} : (fn(step.em, S.scene, S.vars) || {}),
+    tags: Object.assign({}, S.scene.tags),
+    seq: step.type === 'sequence' ? S.seq : [],
+    stepOpen,
+    open: BOARD_ORDER.filter(id => REGIONS[id].table && (stepOpen.includes(id) || S.userOpen.has(id))),
+  };
+}
+
+function attrs(id, c, base) {
+  const cls = [base];
+  if (c.hl.includes(id)) cls.push('hl');
+  if (c.focus && !c.focus.includes(id) && !c.seq.includes(id)) cls.push('dim');
+  if (S.shake === id) cls.push('shake');
+  if (S.scene.arrive === id) cls.push('arrive');
+  if (S.picked === id) cls.push('picked');
+  if (c.seq.includes(id)) cls.push('seq-done');
+  const t = c.targets ? ` data-target="${id}" tabindex="0" role="button"` : '';
+  return `class="${cls.join(' ')}"${t}`;
+}
+
+function tagHTML(id, c) {
+  const k = c.seq.indexOf(id);
+  if (k >= 0) return `<span class="tag num">${k + 1}</span>`;
+  return c.tags[id] ? `<span class="tag">${c.tags[id]}</span>` : '';
+}
+
+function deltaHTML(key) {
+  const d = S.scene.deltas[key];
+  return d ? ` <span class="delta ${d > 0 ? 'up' : 'down'}">${signed(d)}</span>` : '';
+}
+
+function senatorHTML(id, it, c) {
+  const em = c.em[id] || {};
+  const sc = k => ((em.for || []).includes(k) ? ' em-for' : (em.against || []).includes(k) ? ' em-against' : '');
+  const st = k => (c.statTargets ? ` data-target="${id}.${k}" tabindex="0" role="button"` : '');
+  const stats = STATS.map(([k, label, tip]) =>
+    `<span class="stat${sc(k)}" data-tip="${tip}"${st(k)}><span class="k">${label}</span><span class="v">${it[k]}${deltaHTML(`${id}.${k}`)}</span></span>`).join('');
+  const extra = S.scene.extra ? `<span class="stats two">
+      <span class="stat${sc('pop')}" data-tip="Popularity with the people, −9 to 9"${st('pop')}><span class="k">POP</span><span class="v">${signed(it.pop || 0)}</span></span>
+      <span class="stat${sc('knights')}" data-tip="Knights: +1 vote and +1 talent of income each"${st('knights')}><span class="k">KNIGHTS</span><span class="v">${it.knights || 0}${deltaHTML(`${id}.knights`)}</span></span>
+    </span>` : '';
+  const badges = [it.office, it.prior && 'Prior Consul', it.corrupt && 'Corrupt']
+    .filter(Boolean).map(b => `<span class="badge${b === it.office ? ' office' : ''}">${b}</span>`).join('');
+  const role = it.leader ? 'Faction Leader' : it.statesman ? 'Statesman' : '';
+  const aria = `${it.name}${it.leader ? ', Faction Leader' : ''}${it.office ? `, ${it.office}` : ''}. Military ${it.mil}, Oratory ${it.ora}, Loyalty ${it.loy}, Influence ${it.inf}, ${plural(it.t, 'talent')}.`;
+  return `<div ${attrs(id, c, 'card senator')} aria-label="${aria}">
+    ${tagHTML(id, c)}
+    <span class="head"><span class="nm">${it.name}</span>${it.num ? `<span class="idn" data-tip="ID number: matches a Mortality chit">#${it.num}</span>` : ''}</span>
+    <span class="role">${role}</span>
+    <span class="stats">${stats}</span>${extra}
+    <span class="purse${sc('t')}" data-tip="Personal Treasury"${st('t')}><span class="coin" aria-hidden="true"></span>${plural(it.t, 'talent')}${deltaHTML(id)}</span>
+    ${badges ? `<span class="badges">${badges}</span>` : ''}
+  </div>`;
+}
+
+function warHTML(id, w, c) {
+  const body = w.hide
+    ? '<span class="wsub">Strengths are printed on your card.</span>'
+    : `<span class="stats three">
+        <span class="stat" data-tip="Land Strength of the enemy army"><span class="k">LAND</span><span class="v">${w.land}${w.leader ? `<small> +${w.leader.bonus}</small>` : ''}</span></span>
+        <span class="stat" data-tip="Fleet Support: Roman Fleets needed before Legions can fight"><span class="k">SUPPORT</span><span class="v">${w.support}</span></span>
+        <span class="stat" data-tip="Enemy Fleet Strength: win a Naval Battle first"><span class="k">FLEET</span><span class="v">${w.fleet}</span></span>
+      </span>
+      <span class="ds"><span data-tip="Disaster: lose half your force">D ${w.d.join(', ')}</span><span data-tip="Standoff: lose a quarter of your force">S ${w.s.join(', ')}</span></span>
+      ${w.leader ? `<span class="wsub">Leader: ${w.leader.name} +${w.leader.bonus}</span>` : ''}`;
+  return `<div ${attrs(id, c, 'card war')} aria-label="${w.name}, ${w.status || 'war'}">${tagHTML(id, c)}<span class="nm">${w.name}</span><span class="role">${w.status || ''}</span>${body}</div>`;
+}
+
+function itemHTML(id, c) {
+  const it = S.scene.items[id];
+  if (!it) return '';
+  switch (it.type) {
+    case 'senator': return senatorHTML(id, it, c);
+    case 'war': return warHTML(id, it, c);
+    case 'chip': return `<div ${attrs(id, c, 'chip' + (it.secret ? ' secret' : ''))}>${tagHTML(id, c)}<span class="k">${it.label}</span><span class="v">${it.value}${deltaHTML(id)}</span>${it.sub ? `<span class="sub">${it.sub}</span>` : ''}</div>`;
+    case 'pill': return `<div ${attrs(id, c, 'pill')}>${tagHTML(id, c)}${it.label}${it.sub ? `<small>${it.sub}</small>` : ''}</div>`;
+    case 'chit': return `<div ${attrs(id, c, 'chit')} aria-label="Mortality chit ${it.label}">${tagHTML(id, c)}<span>${it.label}</span></div>`;
+  }
+  return '';
+}
+
+function tableHTML(tid, c) {
+  const t = TABLES[tid];
+  const rowsOn = c && c.rowTargets === tid;
+  const body = t.rows.map(r => {
+    const key = `${tid}:${r[0]}`;
+    const cls = c && S.picked === key ? ' class="picked"' : '';
+    const tg = rowsOn ? ` data-target="${key}" tabindex="0" role="button"` : '';
+    return `<tr${cls}${tg}>${r.map(x => `<td>${x}</td>`).join('')}</tr>`;
+  }).join('');
+  return `<div class="tblwrap"><table class="rtable"><thead><tr>${t.head.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>${t.note ? `<p class="tnote">${t.note}</p>` : ''}`;
+}
+
+function slotHTML(id, c) {
+  const r = REGIONS[id];
+  const zone = S.scene.zones.find(z => z.id === id);
+  const ids = zone ? zone.ids : [];
+  const isOpen = c.open.includes(id);
+  const key = `b:${id}`;
+  const focused = !c.focus || c.focus.includes(key) || ids.some(x => c.focus.includes(x)) || isOpen;
+  const cls = ['bslot', r.small ? 'small' : '', r.half ? 'half' : '', r.big ? 'big' : '', ids.length ? 'has-items' : '', isOpen ? 'is-open' : '',
+    c.hl.includes(key) ? 'hl' : '', focused ? '' : 'dim', S.shake === key ? 'shake' : '', S.picked === key ? 'picked' : ''].filter(Boolean).join(' ');
+  const tg = c.targets ? ` data-target="${key}" tabindex="0" role="button"` : '';
+  const canToggle = r.table && !c.targets && !c.rowTargets && !c.statTargets && !c.stepOpen.includes(id);
+  const toggle = canToggle ? `<button class="btoggle" data-toggle="${id}" aria-expanded="${isOpen}">${isOpen ? 'Hide' : 'Show'}</button>` : (isOpen ? '<span class="btoggle" aria-hidden="true">Open ↓</span>' : '');
+  const items = ids.length
+    ? `<div class="bitems ${ids.some(x => ['senator', 'war'].includes(S.scene.items[x] && S.scene.items[x].type)) ? 'cards' : 'chips'}">${ids.map(x => itemHTML(x, c)).join('')}</div>` : '';
+  return `<div class="${cls}"><div class="blabel"${tg}><h4>${r.title}${r.sub ? `<small>${r.sub}</small>` : ''}</h4>${toggle}</div>${items}</div>`;
+}
+
+function renderBoard() {
+  if (lesson().board === false) { boardEl.innerHTML = ''; return; }
+  const sc = S.scene, step = S.complete ? { type: 'info' } : curStep();
+  const c = boardCtx(step);
+  let h = `<div class="gameboard" aria-label="The game board">
+    <p class="gb-name">· The Republic of Rome ·</p>
+    <div class="gb-cols">${BOARD_COLS.map(col => `<div class="gb-col ${col.cls}">${col.ids.map(id => slotHTML(id, c)).join('')}</div>`).join('')}</div>
+    ${c.open.length ? `<div class="lookup">${c.open.map(id => {
+      const r = REGIONS[id], hide = !c.stepOpen.includes(id) && !c.rowTargets ? `<button class="btoggle" data-toggle="${id}">Hide</button>` : '';
+      return `<div class="lookup-card"><h4>${TABLES[r.table].title}${hide}</h4>${tableHTML(r.table, c)}</div>`;
+    }).join('')}</div>` : ''}
+  </div>`;
+  for (const z of sc.zones) {
+    if (REGIONS[z.id]) continue;
+    const layout = z.layout || (z.ids.every(id => sc.items[id] && sc.items[id].type === 'chip') ? 'chips' : 'cards');
+    h += `<div class="zone tone-${z.tone || 'plain'}${z.half ? ' half' : ''}">
+      <h3>${z.dot ? `<span class="dot dot-${z.dot}" aria-hidden="true"></span>` : ''}${z.title}${z.note ? ` <small>${z.note}</small>` : ''}</h3>
+      <div class="${layout}">${z.ids.length ? z.ids.map(id => itemHTML(id, c)).join('') : `<p class="empty">${z.empty || 'Empty'}</p>`}</div></div>`;
+  }
+  if (sc.legend) h += LEGEND;
+  boardEl.innerHTML = h;
+  S.shake = null;
+  sc.arrive = null;
+}
+
+/* ---------- Tutor rendering ---------- */
+function fbHTML() {
+  if (!S.fb) return '';
+  const lab = { good: 'Right', bad: 'Not quite', info: 'Note' }[S.fb.kind];
+  return `<div class="fb ${S.fb.kind}" role="status"><span class="lab">${lab}</span>${S.fb.msg}</div>`;
+}
+
+function choiceHTML(step) {
+  return `<div class="choices" role="group" aria-label="Answers">${step.options.map((o, i) => {
+    const tried = S.tried.includes(i), right = S.ready && o.ok;
+    return `<button class="opt${tried ? ' tried' : ''}${right ? ' right' : ''}" data-act="opt" data-i="${i}" ${S.ready || tried ? 'disabled' : ''}>${o.t}</button>`;
+  }).join('')}</div>`;
+}
+
+function numberHTML(step) {
+  const dis = S.ready ? 'disabled' : '';
+  return `<div class="numin">
+    <button class="sq" data-act="dec" aria-label="Minus one" ${dis}>−</button>
+    <input id="num-${lesson().id}-${S.si}" type="number" inputmode="numeric" value="${S.num}" aria-label="Your answer" ${dis}>
+    <button class="sq" data-act="inc" aria-label="Plus one" ${dis}>+</button>
+    ${step.unit ? `<span class="unit">${step.unit}</span>` : ''}
+  </div>`;
+}
+
+function completeHTML() {
+  const L = lesson(), next = LESSONS[S.li + 1];
+  return `<h2 tabindex="-1">Lesson complete</h2>
+    ${L.quiz ? `<p class="score">You got <b>${S.score} of ${S.qcount}</b> right on the first try.</p>` : ''}
+    <ul class="recap">${L.recap.map(r => `<li>${r}</li>`).join('')}</ul>
+    <div class="controls">
+      ${next ? `<button class="btn" data-act="next-lesson">Next: ${next.title}</button>` : '<button class="btn" data-nav="appendix">Open the board tables</button>'}
+      <button class="btn ghost" data-act="restart">Do it again</button>
+      <button class="btn ghost" data-nav="map">Course map</button>
+    </div>`;
+}
+
+function renderTutor() {
+  if (S.complete) { tutorEl.innerHTML = completeHTML(); return; }
+  const L = lesson(), step = curStep();
+  let h = `<ol class="dots" aria-label="Step ${S.si + 1} of ${L.steps.length}">${L.steps.map((_, i) =>
+    `<li class="${i < S.si ? 'done' : i === S.si ? 'now' : ''}"></li>`).join('')}</ol>`;
+  h += `<h2 tabindex="-1">${fn(step.title, S.scene, S.vars)}</h2>`;
+  const text = fn(step.text, S.scene, S.vars);
+  if (text) h += `<div class="txt">${text}</div>`;
+  if (step.type === 'choice') h += choiceHTML(step);
+  if (step.type === 'number') h += numberHTML(step);
+  if (step.type === 'custom') h += step.render(ctx());
+  h += fbHTML();
+  const last = S.si + 1 >= L.steps.length;
+  const btns = [];
+  if (step.type === 'number' && !S.ready) btns.push('<button class="btn" data-act="check">Check</button>');
+  if (S.ready) btns.push(`<button class="btn" data-act="continue">${last ? 'Finish lesson' : 'Continue'}</button>`);
+  if (S.extra) btns.push(S.extra);
+  if (btns.length) h += `<div class="controls">${btns.join('')}</div>`;
+  if (step.ref) h += `<p class="ruleref">Rulebook ${step.ref.map(r => /^\d/.test(r) ? `§${r}` : r).join(' · ')}</p>`;
+  tutorEl.innerHTML = h;
+}
+
+function render(stepChanged = false) {
+  const a = document.activeElement;
+  const focusTarget = a && a.dataset ? a.dataset.target : null;
+  const focusAct = a && a.dataset ? a.dataset.act : null;
+  const focusToggle = a && a.dataset ? a.dataset.toggle : null;
+  renderBoard();
+  renderTutor();
+  if (stepChanged) {
+    tutorEl.scrollTop = 0;
+    const h = tutorEl.querySelector('h2');
+    if (h) h.focus({ preventScroll: true });
+  } else if (focusTarget) {
+    const el = boardEl.querySelector(`[data-target="${focusTarget}"]`);
+    if (el) el.focus({ preventScroll: true });
+  } else if (focusToggle) {
+    const el = boardEl.querySelector(`[data-toggle="${focusToggle}"]`);
+    if (el) el.focus({ preventScroll: true });
+  } else if (focusAct) {
+    const el = tutorEl.querySelector(`[data-act="${focusAct}"]:not([disabled])`) || tutorEl.querySelector('[data-act="continue"]');
+    if (el) el.focus({ preventScroll: true });
+  }
+}
+
+/* ---------- Interaction ---------- */
+function onTarget(id) {
+  const step = curStep();
+  if (S.ready || S.complete) return;
+  if (step.type === 'pick') {
+    const ans = step.answer;
+    const you = S.scene.zones.find(z => z.id === 'you');
+    const ok = ans === '*' ? !!(you && you.ids.includes(id))
+      : Array.isArray(ans) ? ans.includes(id) : ans === id;
+    if (ok) {
+      S.ready = true; S.picked = id.includes(':') ? id : id.split('.')[0];
+      S.fb = { kind: 'good', msg: fn(step.right, id, S.scene, S.vars) };
+      if (step.onRight) step.onRight(S.scene, S.vars, id);
+      markCorrect();
+    } else {
+      S.wrongOnce = true;
+      S.shake = id.includes(':') ? null : id.split('.')[0];
+      const w = step.wrong && step.wrong[id];
+      S.fb = { kind: 'bad', msg: w ? fn(w, id, S.scene) : (fn(step.wrongDefault, id, S.scene) || 'Not that one. Read the question again.') };
+    }
+    render();
+  } else if (step.type === 'sequence') {
+    if (S.seq.includes(id)) return;
+    if (id === step.order[S.seq.length]) {
+      S.seq.push(id);
+      if (S.seq.length === step.order.length) { S.ready = true; S.fb = { kind: 'good', msg: step.right }; markCorrect(); }
+      else S.fb = { kind: 'good', msg: 'Yes. What comes next?' };
+    } else {
+      S.wrongOnce = true; S.shake = id;
+      S.fb = { kind: 'bad', msg: (step.wrong && step.wrong[id]) || 'Not yet. Something else comes first.' };
+    }
+    render();
+  }
+}
+
+function readNum() {
+  const input = tutorEl.querySelector('.numin input');
+  const v = input ? parseInt(input.value, 10) : NaN;
+  return Number.isNaN(v) ? S.num : v;
+}
+
+function checkNumber() {
+  const step = curStep();
+  S.num = readNum();
+  if (S.num === step.answer) {
+    S.ready = true; S.fb = { kind: 'good', msg: fn(step.right, S.scene, S.vars) || `Right: ${step.answer}.` };
+    markCorrect();
+  } else {
+    S.wrongOnce = true;
+    S.fb = { kind: 'bad', msg: `${S.num} isn’t it. ${step.hint || 'Try again.'}` };
+  }
+  render();
+}
+
+function choose(i) {
+  const step = curStep(), o = step.options[i];
+  if (o.ok) {
+    S.ready = true; S.fb = { kind: 'good', msg: o.why || step.right || 'Right.' };
+    markCorrect();
+  } else {
+    S.wrongOnce = true; S.tried.push(i);
+    S.fb = { kind: 'bad', msg: o.why || 'Not quite. Try another answer.' };
+  }
+  render();
+}
+
+document.addEventListener('click', e => {
+  const nav = e.target.closest('[data-nav]');
+  if (nav) {
+    const to = nav.dataset.nav;
+    if (to === 'map') showMap();
+    if (to === 'appendix') showAppendix();
+    if (to === 'back') { if (S.prevView === 'lesson') { showView('lesson'); render(); } else showMap(); }
+    if (to === 'resume') {
+      const next = LESSONS.findIndex(l => !S.done.has(l.id));
+      startLesson(next === -1 ? LESSONS.length - 1 : next);
+    }
+    return;
+  }
+  const row = e.target.closest('[data-lesson]');
+  if (row) { startLesson(Number(row.dataset.lesson)); return; }
+  const tog = e.target.closest('#board [data-toggle]');
+  if (tog) {
+    const id = tog.dataset.toggle;
+    if (S.userOpen.has(id)) S.userOpen.delete(id); else S.userOpen.add(id);
+    render();
+    return;
+  }
+  const tgt = e.target.closest('#board [data-target]');
+  if (tgt) { onTarget(tgt.dataset.target); return; }
+  const b = e.target.closest('#tutor [data-act]');
+  if (!b || b.disabled || S.rolling) return;
+  const act = b.dataset.act;
+  if (act === 'continue') return advance();
+  if (act === 'opt') return choose(Number(b.dataset.i));
+  if (act === 'check') return checkNumber();
+  if (act === 'inc') { S.num = readNum() + 1; return render(); }
+  if (act === 'dec') { S.num = readNum() - 1; return render(); }
+  if (act === 'next-lesson') return startLesson(S.li + 1);
+  if (act === 'restart') return startLesson(S.li);
+  if (act.startsWith('x-')) {
+    const step = curStep(), h = step.act && step.act[act.slice(2)];
+    if (h) h(ctx());
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('#board [data-target]')) {
+    e.preventDefault();
+    onTarget(e.target.dataset.target);
+  }
+  if (e.key === 'Enter' && e.target.matches && e.target.matches('.numin input')) {
+    e.preventDefault();
+    if (!S.ready) checkNumber();
+  }
+});
+
+renderMap();
+</script>
+</body>
+</html>
