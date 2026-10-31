@@ -14,7 +14,6 @@ function client() {
         await Promise.all([
           db.collection('movies').createIndex({ videoId: 1 }, { unique: true }),
           db.collection('movies').createIndex({ addedAt: -1 }),
-          db.collection('logins').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
         ]);
         return c;
       })

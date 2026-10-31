@@ -1,7 +1,5 @@
-// Reel's API. Everything but the session routes needs the sign-in cookie.
-//   GET    /api/movies/session          signed in? which services are set up
-//   POST   /api/movies/login            { password }
-//   POST   /api/movies/logout
+// Reel's API. It's open: there's no sign-in.
+//   GET    /api/movies/session          which services are set up
 //   GET    /api/movies                  every movie, plus the shelves in use
 //   POST   /api/movies/upload           { fileName, size, resumeId? } -> new movie + tus credentials
 //   GET    /api/movies/:id              one movie, refreshing its encoding status from Bunny
@@ -12,9 +10,7 @@
 //   GET    /api/movies/:id/play         a signed player link
 //   GET    /api/movies/tmdb?q=          TMDB matches, for fixing a wrong one
 import { ObjectId } from 'mongodb';
-import { createHash } from 'crypto';
 import { db } from '../../../src/reel/server/db';
-import { passwordMatches, sessionCookie, clearCookie, signedIn } from '../../../src/reel/server/auth';
 import * as bunny from '../../../src/reel/server/bunny';
 import * as tmdb from '../../../src/reel/server/tmdb';
 import { identify, guessFromFileName } from '../../../src/reel/server/identify';
@@ -55,39 +51,16 @@ async function refresh(movies, m) {
   return { ...m, ...patch };
 }
 
-async function login(req, res) {
-  const logins = (await db()).collection('logins');
-  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
-  const key = createHash('sha256').update(`reel:${ip}`).digest('hex');
-  const tries = await logins.findOne({ _id: key });
-  if (tries && tries.count >= 8) fail(429, 'Too many tries. Wait 15 minutes and try again.');
-  if (!passwordMatches(req.body?.password)) {
-    await logins.updateOne({ _id: key }, { $inc: { count: 1 }, $set: { expiresAt: new Date(Date.now() + 15 * 60000) } }, { upsert: true });
-    await new Promise(r => setTimeout(r, 800));
-    fail(401, "That's not the password.");
-  }
-  await logins.deleteOne({ _id: key });
-  res.setHeader('Set-Cookie', sessionCookie(req));
-  return { signedIn: true };
-}
-
-async function handle(req, res) {
+async function handle(req) {
   const route = req.query.route || [];
   const [first, action] = route;
   const method = req.method;
 
   if (first === 'session' && method === 'GET') {
     return {
-      signedIn: signedIn(req),
-      setup: { password: !!process.env.MOVIES_PASSWORD, database: !!process.env.MONGODB_URI, bunny: bunny.isConfigured(), tmdb: tmdb.hasTmdb(), claude: !!process.env.ANTHROPIC_API_KEY },
+      setup: { database: !!process.env.MONGODB_URI, bunny: bunny.isConfigured(), tmdb: tmdb.hasTmdb(), claude: !!process.env.ANTHROPIC_API_KEY },
     };
   }
-  if (first === 'login' && method === 'POST') return login(req, res);
-  if (first === 'logout' && method === 'POST') {
-    res.setHeader('Set-Cookie', clearCookie());
-    return { signedIn: false };
-  }
-  if (!signedIn(req)) fail(401, 'Sign in first.');
 
   const movies = (await db()).collection('movies');
 
@@ -177,7 +150,7 @@ async function handle(req, res) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
-    res.status(200).json(await handle(req, res));
+    res.status(200).json(await handle(req));
   } catch (err) {
     if (!err.status) console.error('reel:', err);
     res.status(err.status || 500).json({ error: err.status ? err.message : 'Something went wrong on the server.' });

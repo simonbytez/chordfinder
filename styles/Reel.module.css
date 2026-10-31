@@ -1,6 +1,5 @@
 /* Reel: a dark, cinematic movie library with marquee-gold accents. */
 .app,
-.login,
 .splash {
   --bg: #09090c;
   --surface: #141419;
@@ -25,26 +24,21 @@
 }
 
 .app button,
-.app input,
-.login button,
-.login input {
+.app input {
   font: inherit;
   color: inherit;
 }
 
-.app button,
-.login button {
+.app button {
   cursor: pointer;
 }
 
-.app button:disabled,
-.login button:disabled {
+.app button:disabled {
   cursor: default;
   opacity: 0.5;
 }
 
-.app :focus-visible,
-.login :focus-visible {
+.app :focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
@@ -240,7 +234,7 @@
   color: var(--text) !important;
 }
 
-/* ---------- Splash and sign-in ---------- */
+/* ---------- Splash ---------- */
 .splash {
   display: grid;
   place-items: center;
@@ -249,75 +243,6 @@
 .splash .logo {
   font-size: 72px;
   animation: fade 0.8s ease both;
-}
-
-.login {
-  position: relative;
-  display: grid;
-  overflow: hidden;
-  place-items: center;
-  padding: 24px 16px;
-  background:
-    radial-gradient(1200px 600px at 50% 120%, rgba(245, 184, 61, 0.1), transparent 60%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 120px),
-    var(--bg);
-}
-
-.loginGlow {
-  position: absolute;
-  top: -30vh;
-  left: 50%;
-  width: 90vw;
-  height: 80vh;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(255, 210, 122, 0.22), transparent);
-  filter: blur(20px);
-  transform: translateX(-50%);
-  animation: glow 7s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.loginCard {
-  position: relative;
-  display: grid;
-  gap: 14px;
-  width: min(400px, 100%);
-  text-align: center;
-  animation: pop 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-.loginLogo {
-  font-size: clamp(84px, 22vw, 128px);
-}
-
-.loginCard p {
-  margin: -6px 0 14px;
-  color: var(--muted);
-  font-size: 17px;
-}
-
-.loginCard input {
-  height: 56px;
-  padding: 0 18px;
-  border: 1px solid var(--line-2);
-  border-radius: 10px;
-  outline: 0;
-  background: rgba(255, 255, 255, 0.06);
-  font-size: 17px;
-}
-
-.loginCard input:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 4px rgba(245, 184, 61, 0.15);
-}
-
-.loginCard .btnPlay {
-  width: 100%;
-}
-
-.loginError {
-  color: #ffb1b3;
-  font-size: 14.5px;
 }
 
 .setupList {
@@ -1724,7 +1649,6 @@ button.trayItem:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .heroImg[data-on],
-  .loginGlow,
   .emptyGlow {
     animation: none;
   }

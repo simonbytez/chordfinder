@@ -2,7 +2,7 @@
 // uploads, and the movie page and player on top (/movies?m=id, ?watch=id).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
-import { Play, Info, Search, Upload, X, LogOut, Film } from 'lucide-react';
+import { Play, Info, Search, Upload, X, Film } from 'lucide-react';
 import { api } from '../lib/api';
 import * as uploads from '../lib/uploads';
 import { Row, Grid, Meta, LogoImg, art } from './Cards';
@@ -62,7 +62,7 @@ function Empty({ setup, setupList, onChoose }) {
   </div>;
 }
 
-export default function Library({ setup, setupList, onSignedOut }) {
+export default function Library({ setup, setupList }) {
   const router = useRouter();
   const [movies, setMovies] = useState(null);
   const [shelves, setShelves] = useState([]);
@@ -94,7 +94,7 @@ export default function Library({ setup, setupList, onSignedOut }) {
 
   useEffect(() => {
     api('').then(r => { setMovies(r.movies); setShelves(r.shelves); })
-      .catch(err => { if (err.status === 401) onSignedOut(); else { setMovies([]); say(err.message); } });
+      .catch(err => { setMovies([]); say(err.message); });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => uploads.subscribe(setSending), []);
@@ -148,11 +148,6 @@ export default function Library({ setup, setupList, onSignedOut }) {
     if (depth.current > 0) { depth.current--; router.back(); } else router.push('/movies', undefined, { shallow: true, scroll: false });
   };
 
-  async function signOut() {
-    await api('/logout', { method: 'POST' }).catch(() => {});
-    onSignedOut();
-  }
-
   const view = useMemo(() => {
     const all = movies || [];
     const ready = all.filter(m => m.status === 'ready');
@@ -197,9 +192,7 @@ export default function Library({ setup, setupList, onSignedOut }) {
         </div>
         <button type="button" className={s.btnAdd} onClick={() => fileRef.current.click()} disabled={!setup.bunny} title={setup.bunny ? 'Add movies' : 'Set up Bunny Stream first'}>
           <Upload size={18} /><span>Add movie</span>
-        </button>
-        <button type="button" className={s.iconBtn} onClick={signOut} title="Sign out" aria-label="Sign out"><LogOut size={19} /></button>
-      </div>
+        </button>      </div>
     </nav>
 
     {movies === null && <div className={s.splash}><Logo /></div>}
