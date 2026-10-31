@@ -19,6 +19,7 @@
     "firebase": "^11.3.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.469.0",
+    "mongodb": "^7.7.0",
     "next": "^12.0.8",
     "react": "17.0.2",
     "react-dom": "17.0.2",
@@ -26,7 +27,8 @@
     "react-redux": "^7.2.6",
     "react-router-dom": "^5.3.4",
     "reselect": "^4.1.5",
-    "tone": "^14.7.77"
+    "tone": "^14.7.77",
+    "tus-js-client": "^4.3.1"
   },
   "devDependencies": {
     "eslint": "8.7.0",
