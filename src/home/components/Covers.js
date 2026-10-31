@@ -136,6 +136,27 @@ export function Meeple() {
   </Canvas>;
 }
 
+// A film reel unspooling under marquee lights
+export function Reel() {
+  const holes = [0, 1, 2, 3, 4].map(i => {
+    const a = (i * 72 - 90) * Math.PI / 180;
+    return [120 + 27 * Math.cos(a), 92 + 27 * Math.sin(a)];
+  });
+  return <Canvas>
+    {[...Array(15).keys()].map(i => <circle key={i} cx={20 + i * 20} cy="20" r="3.5" fill={GOLD} opacity={i % 2 ? 0.45 : 0.95} />)}
+    <rect x="130" y="116" width="200" height="34" fill={INK} />
+    {[...Array(18).keys()].map(i => <g key={i}>
+      <rect x={142 + i * 11} y="119" width="6" height="4" rx="1" fill={CREAM} opacity=".75" />
+      <rect x={142 + i * 11} y="143" width="6" height="4" rx="1" fill={CREAM} opacity=".75" />
+    </g>)}
+    {[0, 1, 2].map(i => <rect key={i} x={176 + i * 50} y="126" width="40" height="14" rx="2" fill={CREAM} opacity={0.18 + i * 0.12} />)}
+    <path d="M236 128 L246 133 L236 138 Z" fill={GOLD} />
+    <circle cx="120" cy="92" r="52" fill={GOLD} />
+    {holes.map(([x, y]) => <circle key={`${x}`} cx={x} cy={y} r="12" fill="#6b1626" />)}
+    <circle cx="120" cy="92" r="7" fill="#6b1626" />
+  </Canvas>;
+}
+
 // A temple under a low sun
 export function Temple() {
   return <Canvas>

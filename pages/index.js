@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Frets, Congas, Counts, Keys, Steps, Board, Meeple, Temple, Notebook } from '../src/home/components/Covers';
+import { Frets, Congas, Counts, Keys, Steps, Board, Meeple, Reel, Temple, Notebook } from '../src/home/components/Covers';
 import styles from '../styles/Home.module.css';
 
 // Everything on the site, as cards. Add a product here to give it a card.
@@ -20,6 +20,8 @@ const PRODUCTS = [
     blurb: "Two-player strategy where you can't see the other side. Scout, plant listening devices and jammers, and hunt for their flag." },
   { href: '/tutor', name: 'Tabletop Tutor', kind: 'games', tag: 'Game tool', color: '#26285f', Cover: Meeple,
     blurb: "Drop in any board game's rulebook and Claude builds you lessons, quizzes and a cheat sheet. Ask it anything and keep notes." },
+  { href: '/movies', name: 'Reel', kind: 'family', tag: 'For Luke', color: '#6b1626', Cover: Reel,
+    blurb: 'Luke’s own movie library. Drop in a movie and it’s ready to stream, with its poster, cast and a spot on the right shelf.' },
   { href: '/republic-of-rome', file: true, name: 'Republic of Rome', kind: 'family', tag: 'For Ammon', color: '#5b3a8c', Cover: Temple,
     blurb: 'An interactive guide to the Republic of Rome board game.' },
   { href: '/tim-keller', file: true, name: 'Sermon Notebook', kind: 'family', tag: 'For Dad', color: '#8a5a3b', Cover: Notebook,
