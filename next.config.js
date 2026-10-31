@@ -2,10 +2,20 @@ module.exports = {
   productionBrowserSourceMaps: true,
   async rewrites() {
     return [
-      // The Republic of Rome tutorial is a self-contained page in public/ammon.
-      { source: '/ammon/republic-of-rome', destination: '/ammon/republic-of-rome.html' },
-      // The Tim Keller sermon notebook is a self-contained page in public/dad.
-      { source: '/dad/tim-keller', destination: '/dad/tim-keller.html' },
+      // Self-contained pages in public/, served without the .html.
+      { source: '/republic-of-rome', destination: '/republic-of-rome.html' },
+      { source: '/tim-keller', destination: '/tim-keller.html' },
+    ];
+  },
+  async redirects() {
+    return [
+      // Old addresses from when these pages lived under /ammon and /dad. The full
+      // paths moved for good; the bare /ammon and /dad stay temporary so those
+      // names are free to use again.
+      { source: '/ammon/republic-of-rome', destination: '/republic-of-rome', permanent: true },
+      { source: '/dad/tim-keller', destination: '/tim-keller', permanent: true },
+      { source: '/ammon', destination: '/republic-of-rome', permanent: false },
+      { source: '/dad', destination: '/tim-keller', permanent: false },
     ];
   },
   webpack(config, { dev, isServer }) {

@@ -18,11 +18,13 @@ const PRODUCTS = [
     blurb: 'Write, save, share and generate rhythm patterns to practice.' },
   { href: '/realmsend', name: "Realm's End", kind: 'games', tag: 'Game', color: '#1f3b33', Cover: Board,
     blurb: "Two-player strategy where you can't see the other side. Scout, plant listening devices and jammers, and hunt for their flag." },
-  { href: '/ammon', name: 'Republic of Rome', kind: 'family', tag: 'For Ammon', color: '#5b3a8c', Cover: Temple,
+  { href: '/republic-of-rome', file: true, name: 'Republic of Rome', kind: 'family', tag: 'For Ammon', color: '#5b3a8c', Cover: Temple,
     blurb: 'An interactive guide to the Republic of Rome board game.' },
-  { href: '/dad', name: 'Sermon Notebook', kind: 'family', tag: 'For Dad', color: '#8a5a3b', Cover: Notebook,
+  { href: '/tim-keller', file: true, name: 'Sermon Notebook', kind: 'family', tag: 'For Dad', color: '#8a5a3b', Cover: Notebook,
     blurb: "Search Tim Keller's sermons, tie them to lessons and keep notes." },
 ];
+// Products marked `file` are static pages in public/ (see the rewrites in
+// next.config.js). They get a plain link, since next/link only knows pages/.
 
 const KINDS = [['all', 'All'], ['music', 'Music'], ['games', 'Games'], ['family', 'Family']];
 const KIND_KEY = 'boomcat:kind';
@@ -73,23 +75,23 @@ export default function Home() {
     </div>
 
     <ul className={styles.grid}>
-      {shown.map(({ href, name, tag, color, Cover, blurb }, i) =>
+      {shown.map(({ href, file, name, tag, color, Cover, blurb }, i) => {
+        const card = <a className={styles.card} href={href}>
+          <div className={styles.cover} style={{ background: color }}><Cover /></div>
+          <div className={styles.body}>
+            <h2 className={styles.name}>{name}</h2>
+            <p className={styles.blurb}>{blurb}</p>
+            <div className={styles.foot}>
+              <span className={styles.tag}>{tag}</span>
+              <svg className={styles.arrow} viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+            </div>
+          </div>
+        </a>;
         // Keyed on the filter too, so the cards deal in again when it changes
-        <li key={kind + href} className={styles.item} style={{ animationDelay: `${i * 40}ms` }}>
-          <Link href={href}>
-            <a className={styles.card}>
-              <div className={styles.cover} style={{ background: color }}><Cover /></div>
-              <div className={styles.body}>
-                <h2 className={styles.name}>{name}</h2>
-                <p className={styles.blurb}>{blurb}</p>
-                <div className={styles.foot}>
-                  <span className={styles.tag}>{tag}</span>
-                  <svg className={styles.arrow} viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
-                </div>
-              </div>
-            </a>
-          </Link>
-        </li>)}
+        return <li key={kind + href} className={styles.item} style={{ animationDelay: `${i * 40}ms` }}>
+          {file ? card : <Link href={href}>{card}</Link>}
+        </li>;
+      })}
     </ul>
   </div>;
 }
