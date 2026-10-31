@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "pages/api/tutor.js": { "maxDuration": 60 }
+  }
+}

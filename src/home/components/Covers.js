@@ -119,6 +119,23 @@ export function Board() {
   </Canvas>;
 }
 
+// A meeple with a die, asking a question
+export function Meeple() {
+  const pips = [[-11, -11], [11, -11], [0, 0], [-11, 11], [11, 11]];
+  const star = (x, y, r) => `M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r} Z`;
+  return <Canvas>
+    <path d={`${star(70, 52, 9)} ${star(262, 128, 7)} ${star(92, 140, 5)}`} fill={GOLD} />
+    <circle cx="128" cy="62" r="16" fill="#ff8a5b" />
+    <path d="M102 158 L113 116 L92 104 Q84 94 96 89 L118 86 Q128 80 138 86 L160 89 Q172 94 164 104 L143 116 L154 158 Q154 164 147 164 L135 164 L128 138 L121 164 L109 164 Q102 164 102 158 Z" fill="#ff8a5b" />
+    <g transform="rotate(12 205 126)">
+      <rect x="181" y="102" width="48" height="48" rx="10" fill={CREAM} />
+      {pips.map(([dx, dy]) => <circle key={`${dx},${dy}`} cx={205 + dx} cy={126 + dy} r="4.5" fill={INK} />)}
+    </g>
+    <path d="M176 30 H250 Q262 30 262 42 V64 Q262 76 250 76 H198 L184 88 L186 76 H176 Q164 76 164 64 V42 Q164 30 176 30 Z" fill={CREAM} />
+    <text x="213" y="64" textAnchor="middle" fontSize="32" fontWeight="800" fill={INK}>?</text>
+  </Canvas>;
+}
+
 // A temple under a low sun
 export function Temple() {
   return <Canvas>
