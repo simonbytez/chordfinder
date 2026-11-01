@@ -107,12 +107,12 @@ function nameFromFiles(files) {
 }
 
 // Starts a tutorial from files or pasted text. Returns the new game's id.
-export async function startNew({ files = [], text = '', name = '', depth = 'standard' }) {
+export async function startNew({ files = [], text = '', name = '' }) {
   const now = Date.now();
   const game = {
     id: db.newId(), createdAt: now, updatedAt: now,
     title: name || nameFromFiles(files), tagline: '', emoji: '', color: '',
-    status: 'reading', stage: 'Opening the rules', progress: 0.01, depth,
+    status: 'reading', stage: 'Opening the rules', progress: 0.01,
     sources: [], outline: null, plan: [], sections: {}, done: {},
     study: { read: {}, quiz: {} },
   };
@@ -181,7 +181,7 @@ async function build(entry, files) {
     // 2. Plan the lessons
     if (!entry.game.outline) {
       set({ status: 'planning', stage: 'Reading the rulebook and planning your lessons', progress: 0.12, thinking: '' }, true);
-      const json = await run('outline', { rules, depth: entry.game.depth }, {
+      const json = await run('outline', { rules }, {
         signal, onThink,
         onText: (t, all) => {
           const o = partialJson(all.slice(all.indexOf('{')));
@@ -248,9 +248,9 @@ export async function patchGame(id, change) {
 }
 
 // Starts the outline and lessons over from the saved rulebook
-export async function rebuild(id, depth) {
+export async function rebuild(id) {
   await patchGame(id, g => ({
-    ...g, depth: depth || g.depth, outline: null, plan: [], sections: {}, done: {}, draftLessons: null,
+    ...g, outline: null, plan: [], sections: {}, done: {}, draftLessons: null,
     status: 'planning', stage: 'Starting over', progress: 0.12, error: null, study: { read: {}, quiz: {} },
   }));
   return resume(id);

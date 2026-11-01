@@ -72,11 +72,10 @@ function buildRequest(body) {
   const common = { ...base, system, output_config: { effort } };
 
   if (task === 'outline') {
-    const depth = ['quick', 'standard', 'deep'].includes(body.depth) ? body.depth : 'standard';
     // Structured output always starts a fresh object, so a cut-off plan continues as plain JSON text
-    if (partial) return { ...common, max_tokens: 16000, messages: withPartial(outlinePrompt(depth)) };
+    if (partial) return { ...common, max_tokens: 16000, messages: withPartial(outlinePrompt()) };
     return { ...common, max_tokens: 16000, output_config: { effort, format: { type: 'json_schema', schema: OUTLINE_SCHEMA } },
-      messages: [{ role: 'user', content: outlinePrompt(depth) }] };
+      messages: [{ role: 'user', content: outlinePrompt() }] };
   }
   if (task === 'section') {
     const { outline, section } = body;

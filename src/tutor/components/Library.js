@@ -9,17 +9,6 @@ import { kindOf } from '../lib/extract';
 import { Modal, toast } from './ui';
 import s from '../../../styles/Tutor.module.css';
 
-const DEPTHS = [
-  ['quick', 'Quick', '4–5 lessons'],
-  ['standard', 'Standard', '6–8 lessons'],
-  ['deep', 'Deep', '9–12 lessons'],
-];
-const DEPTH_KEY = 'tabletop-tutor:depth';
-
-function savedDepth() {
-  try { return localStorage.getItem(DEPTH_KEY) || 'standard'; } catch { return 'standard'; }
-}
-
 export function studyStats(game) {
   const lessons = (game.plan || []).filter(p => p.kind === 'lesson');
   const learned = lessons.filter(p => game.study?.read?.[p.key]).length;
@@ -63,7 +52,6 @@ function GameCard({ game, onOpen, onDelete, onExport }) {
 export default function Library({ onOpen }) {
   const [games, setGames] = useState(null);
   const [query, setQuery] = useState('');
-  const [depth, setDepth] = useState('standard');
   const [dragging, setDragging] = useState(false);
   const [pasting, setPasting] = useState(false);
   const [paste, setPaste] = useState({ name: '', text: '' });
@@ -71,8 +59,6 @@ export default function Library({ onOpen }) {
   const [storage, setStorage] = useState(null);
   const fileRef = useRef(null);
   const restoreRef = useRef(null);
-
-  useEffect(() => { setDepth(savedDepth()); }, []);
 
   const load = useCallback(async () => {
     const list = (await db.all('games')).map(g => liveGame(g.id) || settle(g));
@@ -105,22 +91,17 @@ export default function Library({ onOpen }) {
     };
   });
 
-  function chooseDepth(d) {
-    setDepth(d);
-    try { localStorage.setItem(DEPTH_KEY, d); } catch {}
-  }
-
   async function begin(files) {
     const usable = files.filter(kindOf);
     if (!usable.length) return toast('That kind of file won’t work. Use a PDF, photos of the pages, or a text file.', 'error');
     if (usable.length < files.length) toast(`Skipped ${files.length - usable.length} file${files.length - usable.length === 1 ? '' : 's'} it can't read.`);
-    try { onOpen(await startNew({ files: usable, depth })); } catch (err) { toast(err.message, 'error'); }
+    try { onOpen(await startNew({ files: usable })); } catch (err) { toast(err.message, 'error'); }
   }
 
   async function beginPaste() {
     if (paste.text.trim().length < 200) return toast('Paste a bit more of the rules first.', 'error');
     setPasting(false);
-    onOpen(await startNew({ text: paste.text, name: paste.name.trim(), depth }));
+    onOpen(await startNew({ text: paste.text, name: paste.name.trim() }));
   }
 
   async function exportOne(game) {
@@ -164,7 +145,7 @@ export default function Library({ onOpen }) {
 
     <div className={s.libHero}>
       <h1>Drop in a rulebook.<br /><span>Learn the game.</span></h1>
-      <p>Claude reads the rules and builds you a tutorial while you watch, with lessons, quizzes and a cheat sheet. Ask it anything about the game, keep notes, and take it all with you as a PDF.</p>
+      <p>Claude reads the rules and builds you a tutorial while you watch, with as many lessons as the game takes to master, plus quizzes and a cheat sheet. Ask it anything about the game, keep notes, and take it all with you as a PDF.</p>
     </div>
 
     <div className={s.drop} data-dragging={dragging || undefined}>
@@ -174,12 +155,6 @@ export default function Library({ onOpen }) {
       <div className={s.dropActions}>
         <button type="button" className={s.btnPrimary} onClick={() => fileRef.current.click()}><Upload size={17} />Choose files</button>
         <button type="button" className={s.btnGhost} onClick={() => setPasting(true)}><ClipboardPaste size={17} />Paste the rules</button>
-      </div>
-      <div className={s.depth} role="radiogroup" aria-label="How detailed">
-        {DEPTHS.map(([key, label, hint]) => <button key={key} type="button" role="radio" aria-checked={depth === key}
-          className={s.depthOption} onClick={() => chooseDepth(key)}>
-          <strong>{label}</strong><span>{hint}</span>
-        </button>)}
       </div>
       <input ref={fileRef} type="file" multiple hidden accept=".pdf,application/pdf,image/*,.txt,.md,text/plain"
         onChange={e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) begin(f); }} />

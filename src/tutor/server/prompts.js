@@ -15,10 +15,10 @@ export function rulebookBlock(rules) {
   return `<rulebook>\n${rules}\n</rulebook>`;
 }
 
-const LESSON_COUNTS = { quick: '4 or 5', standard: '6 to 8', deep: '9 to 12' };
+export function outlinePrompt() {
+  return `Plan a tutorial that teaches this game from scratch to someone who has never played it.
 
-export function outlinePrompt(depth) {
-  return `Plan a tutorial that teaches this game from scratch. Use ${LESSON_COUNTS[depth] || LESSON_COUNTS.standard} lessons.
+Decide how many lessons the game needs. Use as many as it takes for the learner to finish the tutorial with no questions left, able to play a whole game without opening the rulebook, and no more. Each lesson is a focused read of 500 to 900 words, so a light game might need 3 or 4 lessons and a heavy one 15 or more. Before you settle on the list, check that every rule beyond setup and components belongs to some lesson's topics, including the end of the game, scoring and the exceptions, and split any lesson that would cram in more than one big system.
 
 Order the lessons so a learner can start playing as early as possible: the goal and the shape of a turn first, then each system in the order players meet it during play, and edge cases, advanced rules and variants last. Setup, components and the quick reference are written separately, so don't make lessons for them.
 
@@ -42,6 +42,7 @@ export const OUTLINE_SCHEMA = {
     goal: { type: 'string', description: 'One sentence on how you win.' },
     lessons: {
       type: 'array',
+      description: 'As many lessons as this game needs, in teaching order.',
       items: {
         type: 'object',
         additionalProperties: false,

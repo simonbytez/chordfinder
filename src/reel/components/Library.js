@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { Play, Info, Search, Upload, X, Film } from 'lucide-react';
 import { api } from '../lib/api';
 import * as uploads from '../lib/uploads';
+import { AccountMenu, ChangePassword } from './Account';
 import { Row, Grid, Meta, LogoImg, art } from './Cards';
 import Detail from './Detail';
 import Player from './Player';
@@ -62,7 +63,7 @@ function Empty({ setup, setupList, onChoose }) {
   </div>;
 }
 
-export default function Library({ setup, setupList }) {
+export default function Library({ setup, setupList, onSignedOut }) {
   const router = useRouter();
   const [movies, setMovies] = useState(null);
   const [shelves, setShelves] = useState([]);
@@ -72,6 +73,7 @@ export default function Library({ setup, setupList }) {
   const [dragging, setDragging] = useState(false);
   const [sending, setSending] = useState([]);
   const [toast, setToast] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
   const fileRef = useRef(null);
   const searchRef = useRef(null);
   const moviesRef = useRef([]);
@@ -94,7 +96,7 @@ export default function Library({ setup, setupList }) {
 
   useEffect(() => {
     api('').then(r => { setMovies(r.movies); setShelves(r.shelves); })
-      .catch(err => { setMovies([]); say(err.message); });
+      .catch(err => { if (err.status === 401) onSignedOut(); else { setMovies([]); say(err.message); } });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => uploads.subscribe(setSending), []);
@@ -148,6 +150,11 @@ export default function Library({ setup, setupList }) {
     if (depth.current > 0) { depth.current--; router.back(); } else router.push('/movies', undefined, { shallow: true, scroll: false });
   };
 
+  async function signOut() {
+    await api('/logout', { method: 'POST' }).catch(() => {});
+    onSignedOut();
+  }
+
   const view = useMemo(() => {
     const all = movies || [];
     const ready = all.filter(m => m.status === 'ready');
@@ -192,7 +199,9 @@ export default function Library({ setup, setupList }) {
         </div>
         <button type="button" className={s.btnAdd} onClick={() => fileRef.current.click()} disabled={!setup.bunny} title={setup.bunny ? 'Add movies' : 'Set up Bunny Stream first'}>
           <Upload size={18} /><span>Add movie</span>
-        </button>      </div>
+        </button>
+        <AccountMenu onChangePassword={() => setChangingPassword(true)} onSignOut={signOut} />
+      </div>
     </nav>
 
     {movies === null && <div className={s.splash}><Logo /></div>}
@@ -218,6 +227,8 @@ export default function Library({ setup, setupList }) {
     {detail && !watching && <Detail movie={detail} related={related} setup={setup} onClose={back} onOpen={id => router.replace(`/movies?m=${id}`, undefined, { shallow: true, scroll: false })}
       onPlay={play} onChanged={upsert} onDeleted={id => { setMovies(list => list.filter(m => m.id !== id)); back(); say('Deleted.'); }} />}
     {watching && <Player movie={watching} restart={router.query.restart === '1'} onClose={back} onProgress={upsert} />}
+    {changingPassword && <ChangePassword onClose={() => setChangingPassword(false)}
+      onChanged={() => { setChangingPassword(false); say('Password changed. Use the new one on your other devices.'); }} />}
     {toast && <div className={s.toast} role="status"><span>{toast}</span><button type="button" onClick={() => setToast('')} aria-label="Dismiss"><X size={16} /></button></div>}
   </div>;
 }

@@ -327,9 +327,8 @@ export default function GameView({ id, onBack }) {
 
     {confirm === 'rebuild' && <Modal title="Rebuild the tutorial?" onClose={() => setConfirm(null)}
       footer={<><button type="button" className={s.btnGhost} onClick={() => setConfirm(null)}>Cancel</button>
-        {['quick', 'standard', 'deep'].map(d => <button key={d} type="button" className={d === game.depth ? s.btnPrimary : s.btnGhost}
-          onClick={() => { setConfirm(null); setFollow(true); rebuild(id, d); window.scrollTo(0, 0); }}>{d[0].toUpperCase() + d.slice(1)}</button>)}</>}>
-      <p>Claude writes the lessons again from the saved rulebook. Your notes and chat stay; lesson progress and quiz answers start over. Pick how detailed it should be.</p>
+        <button type="button" className={s.btnPrimary} onClick={() => { setConfirm(null); setFollow(true); rebuild(id); window.scrollTo(0, 0); }}><RotateCw size={16} />Rebuild</button></>}>
+      <p>Claude plans and writes the lessons again from the saved rulebook. Your notes and chat stay; lesson progress and quiz answers start over.</p>
     </Modal>}
   </div>;
 }

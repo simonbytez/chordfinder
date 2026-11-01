@@ -1,5 +1,8 @@
-// Reel's API. It's open: there's no sign-in.
-//   GET    /api/movies/session          which services are set up
+// Reel's API. Everything but the session routes needs the sign-in cookie.
+//   GET    /api/movies/session          signed in? which services are set up
+//   POST   /api/movies/login            { password }
+//   POST   /api/movies/logout
+//   POST   /api/movies/password         { current, next } change the password
 //   GET    /api/movies                  every movie, plus the shelves in use
 //   POST   /api/movies/upload           { fileName, size, resumeId? } -> new movie + tus credentials
 //   GET    /api/movies/:id              one movie, refreshing its encoding status from Bunny
@@ -10,7 +13,9 @@
 //   GET    /api/movies/:id/play         a signed player link
 //   GET    /api/movies/tmdb?q=          TMDB matches, for fixing a wrong one
 import { ObjectId } from 'mongodb';
+import { createHash } from 'crypto';
 import { db } from '../../../src/reel/server/db';
+import { MIN_LENGTH, hasPassword, passwordMatches, setPassword, sessionCookie, clearCookie, signedIn } from '../../../src/reel/server/auth';
 import * as bunny from '../../../src/reel/server/bunny';
 import * as tmdb from '../../../src/reel/server/tmdb';
 import { identify, guessFromFileName } from '../../../src/reel/server/identify';
@@ -51,16 +56,59 @@ async function refresh(movies, m) {
   return { ...m, ...patch };
 }
 
-async function handle(req) {
+// Checks a password, locking an address out for 15 minutes after 8 wrong tries
+async function checkPassword(req, guess) {
+  const logins = (await db()).collection('logins');
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const key = createHash('sha256').update(`reel:${ip}`).digest('hex');
+  const tries = await logins.findOne({ _id: key });
+  if (tries && tries.count >= 8) fail(429, 'Too many tries. Wait 15 minutes and try again.');
+  if (!(await passwordMatches(guess))) {
+    await logins.updateOne({ _id: key }, { $inc: { count: 1 }, $set: { expiresAt: new Date(Date.now() + 15 * 60000) } }, { upsert: true });
+    await new Promise(r => setTimeout(r, 800));
+    return false;
+  }
+  await logins.deleteOne({ _id: key });
+  return true;
+}
+
+async function login(req, res) {
+  if (!(await checkPassword(req, req.body?.password))) fail(401, "That's not the password.");
+  res.setHeader('Set-Cookie', await sessionCookie(req));
+  return { signedIn: true };
+}
+
+async function changePassword(req, res) {
+  const next = String(req.body?.next || '');
+  if (next.length < MIN_LENGTH) fail(400, `Make the new password at least ${MIN_LENGTH} characters.`);
+  if (next.length > 200) fail(400, 'That password is too long.');
+  if (!(await checkPassword(req, req.body?.current))) fail(403, "That's not the current password.");
+  await setPassword(next);
+  // The old cookie was signed with the old password, so this device gets a new one
+  res.setHeader('Set-Cookie', await sessionCookie(req));
+  return { changed: true };
+}
+
+async function handle(req, res) {
   const route = req.query.route || [];
   const [first, action] = route;
   const method = req.method;
 
   if (first === 'session' && method === 'GET') {
+    const [ok, password] = await Promise.all([signedIn(req), hasPassword()]);
     return {
-      setup: { database: !!process.env.MONGODB_URI, bunny: bunny.isConfigured(), tmdb: tmdb.hasTmdb(), claude: !!process.env.ANTHROPIC_API_KEY },
+      signedIn: ok,
+      setup: { password, database: !!process.env.MONGODB_URI, bunny: bunny.isConfigured(), tmdb: tmdb.hasTmdb(), claude: !!process.env.ANTHROPIC_API_KEY },
     };
   }
+  if (first === 'login' && method === 'POST') return login(req, res);
+  if (first === 'logout' && method === 'POST') {
+    res.setHeader('Set-Cookie', clearCookie());
+    return { signedIn: false };
+  }
+  if (!(await signedIn(req))) fail(401, 'Sign in first.');
+
+  if (first === 'password' && method === 'POST') return changePassword(req, res);
 
   const movies = (await db()).collection('movies');
 
@@ -150,7 +198,7 @@ async function handle(req) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
-    res.status(200).json(await handle(req));
+    res.status(200).json(await handle(req, res));
   } catch (err) {
     if (!err.status) console.error('reel:', err);
     res.status(err.status || 500).json({ error: err.status ? err.message : 'Something went wrong on the server.' });
