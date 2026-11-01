@@ -3,11 +3,12 @@
 //   rules  - the rulebook text for each game (kept apart because it's big)
 //   chats  - the Ask conversation for each game
 //   notes  - saved tips and the player's own notes, indexed by game
+//   art    - pictures cut from each game's rulebook (and its pages, until they're scanned)
 // IndexedDB survives clearing the browser's cache, and asking for persistent
 // storage keeps the browser from evicting it when space runs low. Clearing
 // "site data" still removes it, which is what the backup file is for.
 const DB_NAME = 'tabletop-tutor';
-const STORES = ['games', 'rules', 'chats', 'notes'];
+const STORES = ['games', 'rules', 'chats', 'notes', 'art'];
 export const BACKUP_APP = 'tabletop-tutor';
 
 let opening;
@@ -15,13 +16,16 @@ let opening;
 function open() {
   if (!opening) {
     opening = new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = () => {
+      const req = indexedDB.open(DB_NAME, 2);
+      req.onupgradeneeded = e => {
         const db = req.result;
-        db.createObjectStore('games', { keyPath: 'id' });
-        db.createObjectStore('rules', { keyPath: 'id' });
-        db.createObjectStore('chats', { keyPath: 'id' });
-        db.createObjectStore('notes', { keyPath: 'id' }).createIndex('gameId', 'gameId');
+        if (e.oldVersion < 1) {
+          db.createObjectStore('games', { keyPath: 'id' });
+          db.createObjectStore('rules', { keyPath: 'id' });
+          db.createObjectStore('chats', { keyPath: 'id' });
+          db.createObjectStore('notes', { keyPath: 'id' }).createIndex('gameId', 'gameId');
+        }
+        if (e.oldVersion < 2) db.createObjectStore('art', { keyPath: 'id' });
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => { opening = null; reject(req.error); };
@@ -68,6 +72,7 @@ export async function deleteGame(id) {
   tx.objectStore('games').delete(id);
   tx.objectStore('rules').delete(id);
   tx.objectStore('chats').delete(id);
+  tx.objectStore('art').delete(id);
   const notes = tx.objectStore('notes');
   const keys = await done(notes.index('gameId').getAllKeys(id));
   keys.forEach(k => notes.delete(k));
@@ -89,7 +94,7 @@ export async function protect() {
   return { persisted, usage };
 }
 
-// A backup holds whole games: details, rulebook, chat and notes
+// A backup holds whole games: details, rulebook, pictures, chat and notes
 export async function exportGames(ids) {
   const games = (await all('games')).filter(g => !ids || ids.includes(g.id));
   const out = [];
@@ -99,6 +104,7 @@ export async function exportGames(ids) {
       rules: (await get('rules', game.id))?.text || '',
       chat: (await get('chats', game.id))?.messages || [],
       notes: await notesFor(game.id),
+      art: (await get('art', game.id))?.figures || [],
     });
   }
   return { app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(), games: out };
@@ -107,13 +113,14 @@ export async function exportGames(ids) {
 export async function importGames(data) {
   if (!data || data.app !== BACKUP_APP || !Array.isArray(data.games)) throw new Error("That file isn't a Tabletop Tutor backup.");
   let count = 0;
-  for (const { game, rules, chat, notes } of data.games) {
+  for (const { game, rules, chat, notes, art } of data.games) {
     if (!game || !game.id) continue;
     // An unfinished build can't pick up where it left off on another device's files
     const fixed = ['reading', 'planning', 'writing'].includes(game.status) ? { ...game, status: 'paused' } : game;
     await put('games', fixed);
     if (rules) await put('rules', { id: game.id, text: rules });
     await put('chats', { id: game.id, messages: chat || [] });
+    if (art && art.length) await put('art', { id: game.id, figures: art, pages: [] });
     for (const note of notes || []) if (note && note.id) await put('notes', { ...note, gameId: game.id });
     count++;
   }

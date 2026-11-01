@@ -786,6 +786,41 @@
   padding: 28px 24px 96px;
 }
 
+/* While a lesson is being played, Ask and Notes slide in from the side */
+.gameGrid[data-play] {
+  display: block;
+  height: 0;
+  padding: 0;
+}
+
+.gameView .gameGrid[data-play] .side {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 120;
+  width: min(420px, 100vw);
+  height: auto;
+  max-height: none;
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.5);
+  transform: translateX(105%);
+  transition: transform 0.25s ease;
+}
+
+.gameView .gameGrid[data-play] .side[data-open] {
+  transform: none;
+}
+
+.gameGrid[data-play] .drawerClose {
+  display: inline-flex;
+}
+
+.gameView[data-play] .fabs {
+  display: flex;
+}
+
 .toc {
   position: sticky;
   top: 86px;
@@ -2108,6 +2143,28 @@
 .toast[data-kind='error'] {
   border-color: color-mix(in srgb, var(--bad) 60%, transparent);
   color: #ffd2d2;
+}
+
+.mdFigure {
+  margin: 14px 0;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.mdFigure img {
+  display: block;
+  width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+}
+
+.mdFigure figcaption {
+  padding: 7px 12px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 14px;
 }
 
 /* ---------- Narrower screens ---------- */

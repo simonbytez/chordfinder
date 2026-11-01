@@ -1,7 +1,7 @@
 // Draws parsed Markdown, including the tutorial's example/tip/watch boxes and
 // interactive quizzes. Blocks fade in as they first appear, so a streaming
 // section builds up on screen.
-import { useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import { BookOpen, Lightbulb, TriangleAlert, StickyNote, GraduationCap, Check, X } from 'lucide-react';
 import { parse, inline } from '../lib/markdown';
 import s from '../../../styles/Tutor.module.css';
@@ -11,6 +11,15 @@ const BOXES = {
   tip: { label: 'Tip', Icon: Lightbulb },
   watch: { label: 'Watch out', Icon: TriangleAlert },
 };
+
+// The game's rulebook pictures, by id
+export const ArtContext = createContext({});
+
+function Figure({ id, caption }) {
+  const art = useContext(ArtContext);
+  if (!art[id]) return null;
+  return <figure className={s.mdFigure}><img src={art[id]} alt={caption} />{caption && <figcaption>{caption}</figcaption>}</figure>;
+}
 
 export function Inline({ text }) {
   return inline(text).map(function node(n, i) {
@@ -65,6 +74,7 @@ function Block({ b, caret, quizProps }) {
   }
   if (b.type === 'quote') return <blockquote><Inline text={b.text} />{end}</blockquote>;
   if (b.type === 'hr') return <hr />;
+  if (b.type === 'figure') return <Figure id={b.id} caption={b.caption} />;
   if (b.type === 'table') {
     return <div className={s.tableWrap}><table>
       <thead><tr>{b.head.map((c, i) => <th key={i}><Inline text={c} /></th>)}</tr></thead>

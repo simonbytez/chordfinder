@@ -145,7 +145,7 @@ export default function Library({ onOpen }) {
 
     <div className={s.libHero}>
       <h1>Drop in a rulebook.<br /><span>Learn the game.</span></h1>
-      <p>Claude reads the rules and builds you a tutorial while you watch, with as many lessons as the game takes to master, plus quizzes and a cheat sheet. Ask it anything about the game, keep notes, and take it all with you as a PDF.</p>
+      <p>Claude reads the rules and sets up the game while you watch: a real board with the rulebook’s own art, and as many lessons as it takes to master it, played move by move. Ask it anything about the game, keep notes, and take the cheat sheet with you as a PDF.</p>
     </div>
 
     <div className={s.drop} data-dragging={dragging || undefined}>

@@ -1,24 +1,30 @@
-// One game's tutorial. While it builds, the progress bar, the contents and
-// each section fill in live; afterwards it's a place to study, ask Claude
-// questions and keep notes.
-import { useCallback, useEffect, useRef, useState } from 'react';
+// One game's tutorial. While it builds, the progress bar, the table and each
+// lesson fill in live; afterwards it's a place to play the lessons, read the
+// reference, ask Claude questions and keep notes.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Users, Clock, Baby, Trophy, Download, MoreHorizontal, Pause, Play, RotateCw, Trash2, FileText,
   NotebookPen, MessageCircle, List, LoaderCircle, CircleCheck, Circle, Check, Sparkles, TriangleAlert, Lock,
-  ArrowDown, X, GraduationCap,
+  ArrowDown, X, GraduationCap, Dices,
 } from 'lucide-react';
 import * as db from '../lib/db';
 import { subscribe, liveGame, settle, resume, stop, patchGame, rebuild } from '../lib/builder';
 import { downloadTutorial, downloadNotes } from '../lib/pdf';
 import { savePasscode } from '../lib/api';
-import Markdown from './Markdown';
+import { loadArt } from '../lib/art';
+import { layoutTable, normalizeBoard, normalizeLesson, stateAt } from '../lib/table';
+import Markdown, { ArtContext } from './Markdown';
+import Table from './Table';
+import LessonPlayer from './LessonPlayer';
 import AskPanel from './AskPanel';
 import NotesPanel from './NotesPanel';
 import { studyStats } from './Library';
 import { Menu, Modal, toast } from './ui';
 import s from '../../../styles/Tutor.module.css';
+import t from '../../../styles/Table.module.css';
 
 const WEIGHTS = ['', 'Light', 'Medium-light', 'Medium', 'Medium-heavy', 'Heavy'];
+const NO_FIGURES = [];
 const BUILDING = ['reading', 'planning', 'writing'];
 
 function useGame(id) {
@@ -91,7 +97,7 @@ function Hero({ game }) {
     {game.goal && <div className={`${s.goal} ${s.enter}`}><Trophy size={20} /><div><strong>How you win</strong><p>{game.goal}</p></div></div>}
     {game.status === 'ready' && stats.lessons > 0 && <div className={s.stats}>
       <div><strong>{stats.learned}<small>/{stats.lessons}</small></strong><span>lessons learned</span></div>
-      <div><strong>{stats.right}<small>/{stats.answered}</small></strong><span>quiz answers right</span></div>
+      <div><strong>{stats.right}<small>/{stats.answered}</small></strong><span>{Object.keys(game.lessons || {}).length ? 'moves right first time' : 'quiz answers right'}</span></div>
     </div>}
   </>;
 }
@@ -147,7 +153,39 @@ function SectionCard({ game, item, onLearned, onAnswer, onAsk }) {
   </article>;
 }
 
-export default function GameView({ id, onBack }) {
+const EMPTY_TABLE = { pieces: {}, counters: {}, banner: '', log: [] };
+
+// The table as it stands: being drawn while Claude designs it, then set for lesson one
+function TablePreview({ board, lesson, art, drawing, onPlay }) {
+  const layout = useMemo(() => layoutTable(board, { tray: !!(lesson && lesson.tray) }), [board, lesson]);
+  const state = useMemo(() => (lesson ? stateAt(lesson, 0) : EMPTY_TABLE), [lesson]);
+  return <div className={t.tablePreview}>
+    <Table board={board} layout={layout} state={state} art={art} caption={false} drawing={drawing} />
+    {onPlay && <button type="button" className={`${s.btnPrimary} ${t.previewCta}`} onClick={onPlay}><Play size={17} />Sit down and play</button>}
+  </div>;
+}
+
+function Course({ game, items, lessons, onPlay }) {
+  return <div className={t.lessonList}>
+    {items.map(item => {
+      const lesson = lessons[item.key];
+      const writing = game.current === item.key;
+      const played = game.study?.play?.[item.key];
+      const draft = writing && game.lessonDraft && game.lessonDraft.key === item.key ? game.lessonDraft.titles : null;
+      const state = played?.done ? 'done' : writing ? 'writing' : lesson ? 'ready' : 'pending';
+      return <button key={item.key} type="button" className={t.lessonCard} data-state={state} disabled={!lesson} onClick={() => onPlay(item.key)}>
+        <small>
+          {played?.done ? <CircleCheck size={14} /> : writing ? <LoaderCircle size={14} className={s.spin} /> : <Dices size={14} />}
+          Lesson {item.index}{lesson ? ` · ${lesson.steps.length} moves` : writing ? ' · setting up' : ''}
+        </small>
+        <strong>{item.title}</strong>
+        <span>{draft && draft.length ? draft[draft.length - 1] : item.summary}</span>
+      </button>;
+    })}
+  </div>;
+}
+
+export default function GameView({ id, playing, onPlay, onBack }) {
   const game = useGame(id);
   const [notes, setNotes] = useState([]);
   const [rules, setRules] = useState(null);
@@ -159,9 +197,22 @@ export default function GameView({ id, onBack }) {
   const [passcode, setPasscode] = useState(null);
   const [code, setCode] = useState('');
   const [confirm, setConfirm] = useState(null);
+  const [art, setArt] = useState({});
   const lastScroll = useRef(0);
   const hasRules = !!game && game.status !== 'reading';
 
+  const figures = (game && game.figures) || NO_FIGURES;
+  useEffect(() => { loadArt(id).then(setArt); }, [id, figures]);
+  const rawBoard = game ? game.board || game.draftBoard : null;
+  const board = useMemo(() => (rawBoard ? normalizeBoard(rawBoard, figures) : null), [rawBoard, figures]);
+  const rawLessons = game ? game.lessons : null;
+  const lessons = useMemo(() => {
+    const out = {};
+    if (board && rawLessons) for (const [key, raw] of Object.entries(rawLessons)) out[key] = normalizeLesson(raw, board, figures);
+    return out;
+  }, [board, rawLessons, figures]);
+  const saveProgress = useCallback(p => { if (playing) patchGame(id, g => ({ ...g, study: { ...g.study, play: { ...g.study?.play, [playing]: p }, read: p.done ? { ...g.study?.read, [playing]: true } : g.study?.read } })); }, [id, playing]);
+  const saveResult = useCallback((step, right) => { if (playing) patchGame(id, g => ({ ...g, study: { ...g.study, quiz: { ...g.study?.quiz, [`${playing}:${step}`]: { choice: 0, right } } } })); }, [id, playing]);
   useEffect(() => { db.notesFor(id).then(list => setNotes(sortNotes(list))); }, [id]);
   useEffect(() => { if (hasRules) db.get('rules', id).then(r => setRules(r ? r.text : '')); }, [id, hasRules]);
   const title = game ? game.title : '';
@@ -179,8 +230,15 @@ export default function GameView({ id, onBack }) {
   }, []);
   const current = game && game.status === 'writing' ? game.current : null;
   const currentLength = current ? (game.sections?.[current] || '').length : 0;
+  // Once there's a board it's the thing to watch: pieces arrive and lessons light up
+  const atTable = !!game && BUILDING.includes(game.status) && !!(game.board || game.draftBoard);
   useEffect(() => {
-    if (!follow || !current) return;
+    if (!follow || !atTable) return;
+    const el = document.getElementById('table');
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 182, behavior: 'smooth' });
+  }, [follow, atTable]);
+  useEffect(() => {
+    if (!follow || !current || atTable) return;
     const now = Date.now();
     if (now - lastScroll.current < 300) return;
     lastScroll.current = now;
@@ -188,7 +246,7 @@ export default function GameView({ id, onBack }) {
     if (!el) return;
     const over = el.getBoundingClientRect().bottom - window.innerHeight + 120;
     if (over > 0) window.scrollBy({ top: over, behavior: 'smooth' });
-  }, [follow, current, currentLength]);
+  }, [follow, current, currentLength, atTable]);
 
   // Highlight the section being read in the contents
   const planKeys = game && game.plan ? game.plan.map(p => p.key).join() : '';
@@ -227,8 +285,12 @@ export default function GameView({ id, onBack }) {
 
   const jump = key => {
     setFollow(false);
-    const el = document.getElementById(`sec-${key}`);
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 76, behavior: 'smooth' });
+    if (lessons[key]) { onPlay(key); return; }
+    if (playing) onPlay(null);
+    setTimeout(() => {
+      const el = document.getElementById(`sec-${key}`);
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 76, behavior: 'smooth' });
+    }, playing ? 80 : 0);
   };
   const onLearned = key => patchGame(id, g => ({ ...g, study: { ...g.study, read: { ...g.study?.read, [key]: !g.study?.read?.[key] } } }));
   const onAnswer = (key, qi, choice, right) => patchGame(id, g => ({ ...g, study: { ...g.study, quiz: { ...g.study?.quiz, [`${key}:${qi}`]: { choice, right } } } }));
@@ -237,12 +299,18 @@ export default function GameView({ id, onBack }) {
     setDrawer(true);
     setDraft({ text: `About “${item.title}”: `, n: Date.now() });
   };
+  const planned = game.plan || [];
+  const lessonItems = planned.filter(p => p.kind === 'lesson' && (board || lessons[p.key]) && !(game.done?.[p.key] && !lessons[p.key]));
+  const textItems = planned.filter(p => !lessonItems.includes(p));
+  const playItem = playing && lessons[playing] ? planned.find(p => p.key === playing) : null;
+  const nextItem = playItem ? planned.find(p => p.kind === 'lesson' && p.index === playItem.index + 1 && lessons[p.key]) : null;
+  const firstLesson = lessonItems.find(p => lessons[p.key]);
   const anyText = (game.plan || []).some(p => game.sections?.[p.key]);
   const pdf = async (what) => {
     toast('Making your PDF…');
     try {
       if (what === 'notes') await downloadNotes(game, notes);
-      else await downloadTutorial(game, what === 'with-notes' ? notes : []);
+      else await downloadTutorial(game, what === 'with-notes' ? notes : [], art);
     } catch (err) { toast(err.message, 'error'); }
   };
   const exportGame = async () => {
@@ -251,9 +319,10 @@ export default function GameView({ id, onBack }) {
     toast('Saved a copy. Restore it from the library on any device.');
   };
   const building = BUILDING.includes(game.status);
-  const showBar = building || game.status === 'paused' || game.status === 'error';
+  // The rest can finish quietly while you're playing a lesson that's ready
+  const showBar = playItem ? game.status === 'error' : building || game.status === 'paused' || game.status === 'error';
 
-  return <div className={s.gameView} data-bar={showBar || undefined} style={game.color ? { '--accent': game.color } : undefined}>
+  return <ArtContext.Provider value={art}><div className={s.gameView} data-bar={showBar || undefined} data-play={playItem ? true : undefined} style={game.color ? { '--accent': game.color } : undefined}>
     <div className={s.gameTop}>
       <button type="button" className={s.btnGhost} onClick={onBack}><ArrowLeft size={17} /><span className={s.hideSmall}>Your games</span></button>
       <div className={s.gameTopTitle}><span>{game.emoji}</span>{game.title}</div>
@@ -275,11 +344,22 @@ export default function GameView({ id, onBack }) {
 
     {showBar && <BuildBar game={game} follow={follow} onFollow={v => { setFollow(v); lastScroll.current = 0; }} onPasscode={askPasscode} />}
 
-    <div className={s.gameGrid}>
-      <Toc game={game} active={active} onJump={jump} />
-      <main className={s.content}>
+    {playItem && <LessonPlayer key={playItem.key} item={playItem} lesson={lessons[playItem.key]} board={board} art={art} figures={figures} saved={game.study?.play?.[playItem.key]}
+      onSave={saveProgress} onResult={saveResult} onExit={() => onPlay(null)} next={nextItem} onNext={() => onPlay(nextItem.key)} onAsk={title => onAsk({ title })} />}
+
+    <div className={s.gameGrid} data-play={playItem ? true : undefined}>
+      {!playItem && <Toc game={game} active={active} onJump={jump} />}
+      {!playItem && <main className={s.content}>
         <Hero game={game} />
-        {(game.plan || []).map(item => <SectionCard key={item.key} game={game} item={item} onLearned={onLearned} onAnswer={onAnswer} onAsk={onAsk} />)}
+        {game.status === 'ready' && !game.board && hasRules && <div className={t.upgrade}>
+          <p>This tutorial was written before lessons became playable. Rebuild it to learn the game on a board.</p>
+          <button type="button" className={s.btnSmallPrimary} onClick={() => setConfirm('rebuild')}><RotateCw size={14} />Rebuild</button>
+        </div>}
+        {(board || lessonItems.length > 0) && <div id="table" className={t.course}>
+          {board && <TablePreview board={board} lesson={firstLesson ? lessons[firstLesson.key] : null} art={art} drawing={!game.board} onPlay={firstLesson ? () => onPlay(firstLesson.key) : null} />}
+          <Course game={game} items={lessonItems} lessons={lessons} onPlay={onPlay} />
+        </div>}
+        {textItems.map(item => <SectionCard key={item.key} game={game} item={item} onLearned={onLearned} onAnswer={onAnswer} onAsk={onAsk} />)}
         {!game.plan?.length && BUILDING.includes(game.status) && <div className={s.planning}>
           <div className={s.skeleton}><i /><i /><i /></div>
           <p>{game.status === 'reading' ? 'Reading the rules…' : 'Claude is reading the rulebook and planning your lessons. They’ll appear here as they’re written.'}</p>
@@ -288,7 +368,7 @@ export default function GameView({ id, onBack }) {
           <Trophy size={22} />
           <div><strong>That’s the whole tutorial.</strong><p>Grab the PDF for the table, or ask Claude about anything that’s still fuzzy.</p></div>
         </div>}
-      </main>
+      </main>}
       <aside className={s.side} data-open={drawer || undefined}>
         <div className={s.tabs} role="tablist">
           <button type="button" role="tab" aria-selected={tab === 'ask'} onClick={() => setTab('ask')}><MessageCircle size={16} />Ask Claude</button>
@@ -328,7 +408,7 @@ export default function GameView({ id, onBack }) {
     {confirm === 'rebuild' && <Modal title="Rebuild the tutorial?" onClose={() => setConfirm(null)}
       footer={<><button type="button" className={s.btnGhost} onClick={() => setConfirm(null)}>Cancel</button>
         <button type="button" className={s.btnPrimary} onClick={() => { setConfirm(null); setFollow(true); rebuild(id); window.scrollTo(0, 0); }}><RotateCw size={16} />Rebuild</button></>}>
-      <p>Claude plans and writes the lessons again from the saved rulebook. Your notes and chat stay; lesson progress and quiz answers start over.</p>
+      <p>Claude plans the lessons and sets up the table again from the saved rulebook. Your notes and chat stay; lesson progress and quiz answers start over.</p>
     </Modal>}
-  </div>;
+  </div></ArtContext.Provider>;
 }

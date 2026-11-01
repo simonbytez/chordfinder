@@ -1,6 +1,7 @@
 // A small Markdown parser for what Claude writes in a tutorial: headings,
 // paragraphs, lists, tables, quotes, and the tutorial's own blocks
-// (:::example, :::tip, :::watch, :::quiz). It parses half-written text too,
+// (:::example, :::tip, :::watch, :::quiz), and rulebook pictures, a line like
+// ![Caption](fig-3). It parses half-written text too,
 // so a section can be drawn while it streams in. The page and the PDF export
 // both render from the same blocks.
 
@@ -13,6 +14,7 @@ const TABLE_ROW = /^\s*\|.*\|?\s*$/;
 const TABLE_RULE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 const QUOTE = /^\s*>\s?(.*)$/;
 const RULE = /^\s*([-*_])(\s*\1){2,}\s*$/;
+const FIGURE = /^\s*!\[(.*?)\]\((fig-\d+)\)\s*$/;
 
 function cells(line) {
   return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
@@ -47,6 +49,9 @@ export function parse(src) {
     if (heading) { flush(); blocks.push({ type: 'h', level: heading[1].length, text: heading[2].replace(/\s*#+\s*$/, '') }); continue; }
 
     if (RULE.test(line)) { flush(); blocks.push({ type: 'hr' }); continue; }
+
+    const figure = line.match(FIGURE);
+    if (figure) { flush(); blocks.push({ type: 'figure', id: figure[2], caption: figure[1] }); continue; }
 
     const bullet = line.match(BULLET);
     const numbered = line.match(NUMBERED);

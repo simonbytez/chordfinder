@@ -71,8 +71,12 @@ function box(kind, title, content) {
   };
 }
 
-function blocks(list, accent) {
+function blocks(list, accent, art = {}) {
   return list.map(b => {
+    if (b.type === 'figure') {
+      if (!art[b.id]) return null;
+      return { stack: [{ image: art[b.id], fit: [PAGE_W - 2 * MARGIN, 280], alignment: 'center' }, ...(b.caption ? [{ text: clean(b.caption), color: MUTED, fontSize: 9, alignment: 'center', margin: [0, 3, 0, 0] }] : [])], margin: [0, 4, 0, 12], unbreakable: true };
+    }
     if (b.type === 'h') return { text: runs(b.text, accent), style: b.level <= 2 ? 'h2' : 'h3' };
     if (b.type === 'p') return { text: runs(b.text, accent), style: 'p' };
     if (b.type === 'ul') return { ul: b.items.map(t => ({ text: runs(t, accent), margin: [0, 1, 0, 2] })), style: 'list' };
@@ -91,7 +95,7 @@ function blocks(list, accent) {
         style: 'table',
       };
     }
-    if (b.type === 'callout') return box(b.kind, b.title, blocks(b.blocks, accent));
+    if (b.type === 'callout') return box(b.kind, b.title, blocks(b.blocks, accent, art));
     if (b.type === 'quiz') {
       const right = b.options.findIndex(o => o.correct);
       const answer = right >= 0 ? `${String.fromCharCode(65 + right)}. ${b.options[right].text}` : b.answer;
@@ -159,7 +163,7 @@ function noteContent(notes, accent) {
   ].filter(Boolean));
 }
 
-export async function downloadTutorial(game, notes = []) {
+export async function downloadTutorial(game, notes = [], art = {}) {
   const make = await pdfMake();
   const accent = game.color || '#6b4fd8';
   const content = [...cover(game, 'TABLETOP TUTOR')];
@@ -177,7 +181,7 @@ export async function downloadTutorial(game, notes = []) {
     content.push({ text: kicker, style: 'kicker', color: accent, pageBreak: 'before' });
     content.push({ text: clean(item.title), style: 'h1', tocItem: true });
     if (item.summary) content.push({ text: clean(item.summary), style: 'summary' });
-    content.push(...blocks(parse(text), accent));
+    content.push(...blocks(parse(text), accent, art));
   });
 
   if (notes.length) {

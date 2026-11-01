@@ -1,5 +1,6 @@
-// Tabletop Tutor's line to Claude. The page sends a task (plan an outline,
-// write a section, answer a question, transcribe scanned pages) and this route
+// Tabletop Tutor's line to Claude. The page sends a task (plan an outline, find
+// the rulebook's pictures, design the table, write a playable lesson or a
+// section, answer a question, transcribe scanned pages) and this route
 // builds the prompt, streams Claude's reply back as newline-delimited JSON:
 //   {"type":"think","text":...}  a slice of Claude's thinking summary
 //   {"type":"text","text":...}   a slice of the reply
@@ -13,7 +14,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createHash, timingSafeEqual } from 'crypto';
 import {
   SYSTEM, rulebookBlock, outlinePrompt, OUTLINE_SCHEMA, sectionPrompt, askPrompt,
-  TRANSCRIBE_SYSTEM, transcribePrompt, CONTINUE,
+  TRANSCRIBE_SYSTEM, transcribePrompt, CONTINUE, FIGURES_SYSTEM, figuresPrompt, boardPrompt, lessonPrompt,
 } from '../../src/tutor/server/prompts';
 
 export const config = { api: { bodyParser: { sizeLimit: '4.5mb' } } };
@@ -61,6 +62,16 @@ function buildRequest(body) {
     return { ...base, max_tokens: 32000, output_config: { effort: 'low' }, system: TRANSCRIBE_SYSTEM, messages: withPartial(content) };
   }
 
+  if (task === 'figures') {
+    const pages = Array.isArray(body.pages) ? body.pages.slice(0, 6) : [];
+    if (!pages.length || pages.some(p => !str(p.data, 4000000) || !/^image\/(jpeg|png|webp)$/.test(p.mediaType))) return 'Send between one and six page images.';
+    const content = [
+      ...pages.map(p => ({ type: 'image', source: { type: 'base64', media_type: p.mediaType, data: p.data } })),
+      { type: 'text', text: figuresPrompt(pages.map(p => ({ source: String(p.source || 'Rulebook').slice(0, 80), page: Number(p.page) || 1 }))) },
+    ];
+    return { ...base, max_tokens: 8000, output_config: { effort: 'low' }, system: FIGURES_SYSTEM, messages: withPartial(content) };
+  }
+
   const rules = str(body.rules, MAX_RULES);
   if (!rules) return 'The rulebook text is missing or longer than this tool takes.';
   const system = [
@@ -77,11 +88,28 @@ function buildRequest(body) {
     return { ...common, max_tokens: 16000, output_config: { effort, format: { type: 'json_schema', schema: OUTLINE_SCHEMA } },
       messages: [{ role: 'user', content: outlinePrompt() }] };
   }
+  if (task === 'board') {
+    const { outline } = body;
+    if (!outline || !Array.isArray(outline.lessons)) return 'Missing the outline.';
+    const figures = Array.isArray(body.figures) ? body.figures.slice(0, 60) : [];
+    const views = (Array.isArray(body.views) ? body.views.slice(0, 2) : []).filter(v => str(v.data, 2000000) && /^image\/(jpeg|png|webp)$/.test(v.mediaType));
+    const prompt = boardPrompt({ outline, figures, views });
+    const content = views.length ? [...views.map(v => ({ type: 'image', source: { type: 'base64', media_type: v.mediaType, data: v.data } })), { type: 'text', text: prompt }] : prompt;
+    return { ...common, max_tokens: 32000, messages: withPartial(content) };
+  }
+  if (task === 'lesson') {
+    const { outline, board, section } = body;
+    if (!outline || !board || !section) return 'Missing the outline, table or lesson.';
+    if (JSON.stringify(outline).length > 40000 || JSON.stringify(board).length > 80000) return 'The table is too big.';
+    const figures = Array.isArray(body.figures) ? body.figures.slice(0, 60) : [];
+    return { ...common, max_tokens: 32000, messages: withPartial(lessonPrompt({ outline, board, section, figures })) };
+  }
   if (task === 'section') {
     const { outline, section } = body;
     if (!outline || !Array.isArray(outline.lessons) || !section || !['overview', 'lesson', 'reference', 'teach'].includes(section.kind)) return 'Missing the outline or section.';
     if (JSON.stringify(outline).length > 40000) return 'The outline is too long.';
-    return { ...common, max_tokens: 32000, messages: withPartial(sectionPrompt({ outline, section })) };
+    const figures = Array.isArray(body.figures) ? body.figures.slice(0, 60) : [];
+    return { ...common, max_tokens: 32000, messages: withPartial(sectionPrompt({ outline, section, figures })) };
   }
   if (task === 'ask') {
     const question = str(body.question, 4000);

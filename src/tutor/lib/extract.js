@@ -1,7 +1,7 @@
 // Turns uploaded rules into text, in the browser: PDFs through pdf.js, text
 // files as they are. Pages with no text layer (scans) and photos of pages are
 // sent to Claude to transcribe. Every page is marked [Page N] so lessons can
-// cite it.
+// cite it. Pages with artwork are kept as images, for art.js to look through.
 import { run } from './api';
 
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
@@ -9,6 +9,8 @@ const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.
 // Keep each transcription request well under the host's 4.5 MB body limit
 const BATCH_BYTES = 3000000;
 const BATCH_PAGES = 4;
+const ART_WIDTH = 1500;
+const MAX_ART_PAGES = 30;
 
 let pdfjs;
 function loadPdfJs() {
@@ -42,12 +44,36 @@ function canvasJpeg(canvas) {
   return { mediaType: 'image/jpeg', data: url.slice(url.indexOf(',') + 1) };
 }
 
+// How much a page is pictures rather than print
+async function artScore(page, lib) {
+  const { fnArray } = await page.getOperatorList();
+  const { paintImageXObject, paintInlineImageXObject, paintImageMaskXObject, fill, eoFill, shadingFill } = lib.OPS;
+  let score = 0;
+  for (const fn of fnArray) {
+    if (fn === paintImageXObject || fn === paintInlineImageXObject) score += 20;
+    else if (fn === paintImageMaskXObject || fn === shadingFill) score += 4;
+    else if (fn === fill || fn === eoFill) score += 0.2;
+  }
+  return score;
+}
+
+async function renderJpeg(page, width, quality = 0.8) {
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: Math.min(3, width / base.width) });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+  const url = canvas.toDataURL('image/jpeg', quality);
+  return url.slice(url.indexOf(',') + 1);
+}
+
 async function readPdf(file, report) {
   const lib = await loadPdfJs();
   const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
   const pages = [];
   for (let n = 1; n <= doc.numPages; n++) {
-    report(`Reading ${file.name}: page ${n} of ${doc.numPages}`, n / doc.numPages);
+    report(`Reading ${file.name}: page ${n} of ${doc.numPages}`, 0.8 * n / doc.numPages);
     const page = await doc.getPage(n);
     const content = await page.getTextContent();
     let text = '';
@@ -67,7 +93,17 @@ async function readPdf(file, report) {
       await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
       image = canvasJpeg(canvas);
     }
-    pages.push({ n, text, image });
+    pages.push({ n, text, image, art: await artScore(page, lib).catch(() => 0) });
+    page.cleanup();
+  }
+  // The pages most worth a look: the front of a rulebook (components and setup)
+  // and whichever others carry the most artwork
+  const ranked = pages.filter(p => p.art >= 12 || p.image).sort((a, b) => (b.art + (b.n <= 6 ? 30 : 0)) - (a.art + (a.n <= 6 ? 30 : 0))).slice(0, MAX_ART_PAGES);
+  let done = 0;
+  for (const p of ranked.sort((a, b) => a.n - b.n)) {
+    report(`Saving the pictures from ${file.name}`, 0.8 + 0.2 * ++done / ranked.length);
+    const page = await doc.getPage(p.n);
+    p.full = await renderJpeg(page, ART_WIDTH);
     page.cleanup();
   }
   await doc.destroy();
@@ -91,7 +127,8 @@ async function readImage(file) {
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvasJpeg(canvas);
+    const out = canvasJpeg(canvas);
+    return { ...out, full: canvas.toDataURL('image/jpeg', 0.8).split(',')[1] };
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -103,6 +140,7 @@ export async function extract(files, { report, onThink, signal }) {
   const sources = [];
   const parts = [];
   const scans = [];
+  const pictures = [];
 
   for (let f = 0; f < files.length; f++) {
     const file = files[f];
@@ -111,12 +149,17 @@ export async function extract(files, { report, onThink, signal }) {
     if (kind === 'pdf') {
       const pages = await readPdf(file, step);
       const entry = { name: file.name, kind, pages: pages.length, scanned: 0, texts: pages.map(p => p.text) };
-      pages.forEach(p => { if (p.image) { scans.push({ entry, page: p.n, ...p.image }); entry.scanned++; } });
+      pages.forEach(p => {
+        if (p.image) { scans.push({ entry, page: p.n, ...p.image }); entry.scanned++; }
+        if (p.full) pictures.push({ source: file.name, page: p.n, data: p.full });
+      });
       sources.push(entry);
     } else if (kind === 'image') {
       step(`Opening ${file.name}`, 0.5);
       const entry = { name: file.name, kind, pages: 1, scanned: 1, texts: [''] };
-      scans.push({ entry, page: 1, ...(await readImage(file)) });
+      const img = await readImage(file);
+      scans.push({ entry, page: 1, data: img.data, mediaType: img.mediaType });
+      pictures.push({ source: file.name, page: 1, data: img.full });
       sources.push(entry);
     } else if (kind === 'text') {
       step(`Reading ${file.name}`, 0.5);
@@ -165,5 +208,5 @@ export async function extract(files, { report, onThink, signal }) {
     s.texts.forEach((t, i) => { if (s.kind !== 'text') parts.push(`[Page ${i + 1}]`); parts.push(t); });
   }
   const text = parts.join('\n').trim();
-  return { text, sources: sources.map(({ texts, ...rest }) => rest) };
+  return { text, sources: sources.map(({ texts, ...rest }) => rest), pictures: pictures.slice(0, MAX_ART_PAGES) };
 }

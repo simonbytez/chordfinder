@@ -21,7 +21,7 @@ const PRODUCTS = [
   { href: '/realmsend', name: "Realm's End", kind: 'games', tag: 'Game', color: '#1f3b33', Cover: Board,
     blurb: "Two-player strategy where you can't see the other side. Scout, plant listening devices and jammers, and hunt for their flag." },
   { href: '/tutor', name: 'Tabletop Tutor', kind: 'games', tag: 'Game tool', color: '#26285f', Cover: Meeple,
-    blurb: "Drop in any board game's rulebook and Claude builds you lessons, quizzes and a cheat sheet. Ask it anything and keep notes." },
+    blurb: "Drop in any board game's rulebook and Claude sets up the game and teaches it by playing, move by move, on a real board. Ask it anything and keep notes." },
   { href: '/movies', name: 'Reel', kind: 'family', tag: 'For Luke', color: '#6b1626', Cover: Reel,
     blurb: 'Luke’s own movie library. Drop in a movie and it’s ready to stream, with its poster, cast and a spot on the right shelf.' },
   { href: '/republic-of-rome', file: true, name: 'Republic of Rome', kind: 'family', tag: 'For Ammon', color: '#5b3a8c', Cover: Temple,

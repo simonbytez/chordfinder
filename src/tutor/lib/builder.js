@@ -1,10 +1,13 @@
-// Builds a tutorial: reads the rules, has Claude plan the lessons, then writes
-// each section in turn, saving as it goes so an interrupted build can resume.
+// Builds a tutorial: reads the rules, finds the rulebook's pictures, has Claude
+// plan the lessons and design the table, then writes each lesson as a scene to
+// play and the rest as text, saving as it goes so an interrupted build can resume.
 // Builds live here, outside React, so they keep going while you browse the
 // library; views subscribe to follow along.
 import * as db from './db';
 import { run, NeedsPasscode, NeedsSetup } from './api';
 import { extract } from './extract';
+import { scanArt, boardViews, parseJson } from './art';
+import { normalizeBoard, normalizeLesson, lessonToMarkdown } from './table';
 
 const live = new Map();          // game id -> { game, ctrl, saveAt }
 const watchers = new Map();      // game id -> Set of callbacks
@@ -12,7 +15,8 @@ const everyone = new Set();      // callbacks for any change (the library)
 const SAVE_EVERY = 2500;
 
 // Rough length of a finished section, for the progress bar
-const EXPECTED = { overview: 5000, lesson: 6000, reference: 4000, teach: 4500 };
+const EXPECTED = { overview: 5000, lesson: 9000, reference: 4000, teach: 4500 };
+const START = 0.3;   // the share of the bar used up by the time lessons are being written
 
 export function subscribe(id, fn) {
   if (!watchers.has(id)) watchers.set(id, new Set());
@@ -113,7 +117,7 @@ export async function startNew({ files = [], text = '', name = '' }) {
     id: db.newId(), createdAt: now, updatedAt: now,
     title: name || nameFromFiles(files), tagline: '', emoji: '', color: '',
     status: 'reading', stage: 'Opening the rules', progress: 0.01,
-    sources: [], outline: null, plan: [], sections: {}, done: {},
+    sources: [], outline: null, plan: [], sections: {}, done: {}, figures: [], board: null, lessons: {},
     study: { read: {}, quiz: {} },
   };
   await db.put('games', game);
@@ -166,8 +170,8 @@ async function build(entry, files) {
     if (!rules) {
       if (!files.length) throw new Error('The rulebook for this game is missing. Upload it again to rebuild.');
       set({ status: 'reading', stage: 'Opening the rules', progress: 0.01 }, true);
-      const { text, sources } = await extract(files, {
-        report: (stage, frac) => set({ stage, progress: 0.01 + 0.11 * frac }),
+      const { text, sources, pictures } = await extract(files, {
+        report: (stage, frac) => set({ stage, progress: 0.01 + 0.1 * frac }),
         onThink, signal,
       });
       if (text.replace(/\[(Source|Page)[^\]]*\]/g, '').replace(/\s/g, '').length < 200) {
@@ -175,42 +179,93 @@ async function build(entry, files) {
       }
       rules = text;
       await db.put('rules', { id, text });
+      if (pictures.length) await db.put('art', { id, figures: [], pages: pictures });
       set({ sources }, true);
+    }
+
+    // Find the board, cards and components in the rulebook's pictures. A tutorial
+    // can do without them, so a problem here doesn't stop the build.
+    if (!entry.game.artDone) {
+      set({ status: 'reading', stage: 'Looking through the rulebook’s pictures', progress: 0.11, thinking: '' }, true);
+      try {
+        const figures = await scanArt(id, { report: (stage, frac) => set({ stage, progress: 0.11 + 0.05 * frac }), onThink, signal });
+        set({ figures, artDone: true }, true);
+      } catch (err) {
+        if (signal.aborted || err instanceof NeedsPasscode || err instanceof NeedsSetup) throw err;
+        set({ artDone: true }, true);
+      }
     }
 
     // 2. Plan the lessons
     if (!entry.game.outline) {
-      set({ status: 'planning', stage: 'Reading the rulebook and planning your lessons', progress: 0.12, thinking: '' }, true);
+      set({ status: 'planning', stage: 'Reading the rulebook and planning your lessons', progress: 0.16, thinking: '' }, true);
       const json = await run('outline', { rules }, {
         signal, onThink,
         onText: (t, all) => {
           const o = partialJson(all.slice(all.indexOf('{')));
           if (!o) return;
           const lessons = Array.isArray(o.lessons) ? o.lessons.filter(l => l && l.title) : [];
-          set({ ...metaFrom(o), draftLessons: lessons.map(l => l.title), progress: 0.12 + Math.min(0.06, all.length / 40000) });
+          set({ ...metaFrom(o), draftLessons: lessons.map(l => l.title), progress: 0.16 + Math.min(0.05, all.length / 40000) });
         },
       });
       let outline;
       try { outline = JSON.parse(json.slice(json.indexOf('{'), json.lastIndexOf('}') + 1)); } catch { throw new Error("Claude's lesson plan came back garbled. Try again."); }
       if (!Array.isArray(outline.lessons) || !outline.lessons.length) throw new Error("Claude couldn't find enough rules to plan lessons from.");
-      set({ ...metaFrom(outline), outline, plan: planFrom(outline), draftLessons: null, progress: 0.18 }, true);
+      set({ ...metaFrom(outline), outline, plan: planFrom(outline), draftLessons: null, progress: 0.21 }, true);
     }
 
-    // 3. Write each section
     const { plan, outline } = entry.game;
     const slim = { title: outline.title, lessons: outline.lessons.map(l => ({ title: l.title, summary: l.summary })) };
+    const figures = entry.game.figures || [];
+
+    // 3. Design the table, drawing it as it arrives
+    if (!entry.game.board && !entry.game.noBoard) {
+      set({ status: 'planning', stage: 'Setting up the table', progress: 0.22, thinking: '' }, true);
+      think.text = '';
+      const views = await boardViews(id, figures);
+      let board = null;
+      for (let attempt = 0; attempt < 2 && !board; attempt++) {
+        const json = await run('board', { rules, outline: slim, figures, views }, {
+          signal, onThink,
+          onText: (t, all) => {
+            const o = partialJson(all.slice(Math.max(0, all.indexOf('{'))));
+            if (o) set({ draftBoard: o, progress: 0.22 + Math.min(0.07, all.length / 200000) });
+          },
+        });
+        try {
+          const raw = parseJson(json);
+          if (normalizeBoard(raw, figures).spaces.length) board = raw;
+        } catch {}
+      }
+      // Without a table the lessons are written as text instead
+      set(board ? { board, draftBoard: null, progress: START } : { noBoard: true, draftBoard: null, progress: START }, true);
+    }
+
+    // 4. Write each section
+    const table = entry.game.board ? normalizeBoard(entry.game.board, figures) : null;
     for (let i = 0; i < plan.length; i++) {
       const item = plan[i];
       if (entry.game.done[item.key]) continue;
       const label = item.kind === 'lesson' ? `Writing lesson ${item.index} of ${item.total}: ${item.title}` : `Writing ${item.title.toLowerCase()}`;
-      const base = 0.18 + 0.82 * i / plan.length;
+      const base = START + (1 - START) * i / plan.length;
       set({ status: 'writing', stage: label, current: item.key, thinking: '', progress: base, sections: { ...entry.game.sections, [item.key]: '' } }, true);
       think.text = '';
-      const text = await run('section', { rules, outline: slim, section: item }, {
+      const share = (1 - START) / plan.length;
+      const onProgress = all => base + share * Math.min(0.95, all.length / (EXPECTED[item.kind] || 5000));
+      if (item.kind === 'lesson' && table) {
+        const raw = await writeLesson(item, { rules, slim, figures, table, entry, signal, onThink, onProgress, set });
+        if (raw) {
+          const lesson = normalizeLesson(raw, table, figures);
+          set({ lessons: { ...entry.game.lessons, [item.key]: raw }, lessonDraft: null, sections: { ...entry.game.sections, [item.key]: lessonToMarkdown(lesson) }, done: { ...entry.game.done, [item.key]: true } }, true);
+          continue;
+        }
+        set({ lessonDraft: null });
+      }
+      const text = await run('section', { rules, outline: slim, section: item, figures }, {
         signal, onThink,
         onText: (t, all) => set({
           sections: { ...entry.game.sections, [item.key]: all },
-          progress: base + 0.82 / plan.length * Math.min(0.95, all.length / (EXPECTED[item.kind] || 5000)),
+          progress: onProgress(all),
         }),
       });
       set({ sections: { ...entry.game.sections, [item.key]: text.trim() }, done: { ...entry.game.done, [item.key]: true } }, true);
@@ -227,6 +282,32 @@ async function build(entry, files) {
     live.delete(id);
     notify(entry.game);
   }
+}
+
+// Trims the table to what a lesson's writer needs
+function tableBrief(board) {
+  const { regions, links, ...brief } = board;
+  return brief;
+}
+
+// One lesson as a scene to play. Returns its data, or null if Claude couldn't
+// produce a usable one (the lesson is then written as text).
+async function writeLesson(item, { rules, slim, figures, table, entry, signal, onThink, onProgress, set }) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const json = await run('lesson', { rules, outline: slim, board: tableBrief(entry.game.board), figures, section: item }, {
+      signal, onThink,
+      onText: (t, all) => {
+        const o = partialJson(all.slice(Math.max(0, all.indexOf('{'))));
+        const titles = o && Array.isArray(o.steps) ? o.steps.map(st => st && st.title).filter(Boolean) : [];
+        set({ lessonDraft: { key: item.key, titles }, progress: onProgress(all) });
+      },
+    });
+    try {
+      const raw = parseJson(json);
+      if (normalizeLesson(raw, table, figures).steps.length >= 3) return raw;
+    } catch {}
+  }
+  return null;
 }
 
 // Changes a game whether or not it's mid-build, so study progress made while
@@ -250,8 +331,8 @@ export async function patchGame(id, change) {
 // Starts the outline and lessons over from the saved rulebook
 export async function rebuild(id) {
   await patchGame(id, g => ({
-    ...g, outline: null, plan: [], sections: {}, done: {}, draftLessons: null,
-    status: 'planning', stage: 'Starting over', progress: 0.12, error: null, study: { read: {}, quiz: {} },
+    ...g, outline: null, plan: [], sections: {}, done: {}, draftLessons: null, board: null, draftBoard: null, noBoard: false, lessons: {}, lessonDraft: null,
+    status: 'planning', stage: 'Starting over', progress: 0.16, error: null, study: { read: {}, quiz: {}, play: {} },
   }));
   return resume(id);
 }
