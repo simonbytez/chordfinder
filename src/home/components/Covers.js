@@ -175,6 +175,28 @@ export function Temple() {
   </Canvas>;
 }
 
+// Two skeletons in an inside turn: hands joined overhead, her skirt flaring
+export function Bones() {
+  const bone = { stroke: CREAM, strokeWidth: 4.5, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' };
+  const ribs = (x, y) => [0, 1, 2].map(i => <path key={i} d={`M${x - 9 + i} ${y + i * 6} Q${x} ${y + 4 + i * 6} ${x + 9 - i} ${y + i * 6}`} {...bone} strokeWidth="3" />);
+  return <Canvas>
+    {[...Array(15).keys()].map(i => <circle key={i} cx={20 + i * 20} cy="172" r="2.5" fill={GOLD} opacity={i % 2 ? 0.35 : 0.8} />)}
+    {/* him: shorts, left hand raised to hers */}
+    <path d="M104 96 L136 96 L139 126 L123 126 L120 112 L117 126 L101 126 Z" fill={INK} />
+    <path d="M120 52 L120 98 M111 132 L106 149 L98 164 M129 132 L136 149 L144 163 M110 60 L99 79 L108 94 M130 60 L146 44 L160 28" {...bone} />
+    {ribs(120, 62)}
+    <circle cx="120" cy="40" r="11" fill={CREAM} />
+    <circle cx="124.5" cy="38" r="2.6" fill={INK} /><circle cx="117" cy="38" r="2.6" fill={INK} />
+    {/* her: skirt flaring as she turns */}
+    <path d="M190 98 L210 98 C220 108 232 122 240 132 C230 128 226 136 214 133 C204 138 196 131 186 136 C178 131 172 134 166 130 C174 120 182 108 190 98 Z" fill="#e5484d" />
+    <path d="M200 58 L200 99 M195 135 L191 150 L188 165 M206 134 L214 150 L222 162 M191 64 L178 46 L164 30 M209 64 L224 78 L236 70" {...bone} />
+    {ribs(200, 68)}
+    <circle cx="200" cy="47" r="10" fill={CREAM} />
+    <circle cx="196" cy="45" r="2.4" fill={INK} /><circle cx="203" cy="45" r="2.4" fill={INK} />
+    <circle cx="162" cy="28" r="5" fill={CREAM} />
+  </Canvas>;
+}
+
 // An open notebook with a ribbon in it
 export function Notebook() {
   return <Canvas>

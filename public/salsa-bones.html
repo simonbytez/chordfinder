@@ -1,0 +1,2354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Salsa Bones</title>
+<meta name="description" content="Two skeletons dance salsa On1 to a live band. Pick the moves: cross body lead, inside turn, outside turn, hammerlock.">
+<meta name="theme-color" content="#0d0a0b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root {
+    --bg: #0d0a0b; --ink: #f6efe6; --dim: rgba(246, 239, 230, 0.62); --faint: rgba(246, 239, 230, 0.32);
+    --panel: rgba(24, 16, 16, 0.58); --line: rgba(255, 236, 214, 0.14);
+    --red: #d42a48; --gold: #f2b84b;
+    --display: 'Bricolage Grotesque', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; overflow: hidden; }
+  canvas#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .panel { background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2); border-radius: 16px; }
+
+  header { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 16px; right: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; pointer-events: none; }
+  header > * { pointer-events: auto; }
+  .brand { display: flex; flex-direction: column; gap: 2px; }
+  .brand a { color: var(--dim); text-decoration: none; font-size: 13px; letter-spacing: 0.02em; }
+  .brand a:hover { color: var(--ink); }
+  .brand h1 { margin: 0; font: 800 28px/1 var(--display); letter-spacing: -0.01em; }
+  .brand h1 span { color: var(--red); }
+  .controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; align-items: center; padding: 6px; }
+  .chip { border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); border-radius: 999px; padding: 7px 12px; font-size: 13px; white-space: nowrap; }
+  .chip:hover { background: rgba(255, 255, 255, 0.1); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: #1a1010; border-color: var(--ink); }
+  .tempo { display: flex; align-items: center; gap: 8px; padding: 0 8px 0 10px; font-size: 13px; color: var(--dim); }
+  .tempo input { width: 96px; accent-color: var(--gold); }
+  .tempo b { color: var(--ink); font-variant-numeric: tabular-nums; min-width: 2.2em; display: inline-block; }
+
+  .beat { position: fixed; left: 50%; transform: translateX(-50%); top: calc(max(14px, env(safe-area-inset-top)) + 66px); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+  #count { display: flex; gap: 4px; padding: 6px 8px; }
+  #count span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; font: 700 16px/1 var(--display); color: var(--faint); transition: background 0.08s, color 0.08s; font-variant-numeric: tabular-nums; }
+  #count span.on { background: var(--red); color: #fff; }
+  #count span.pause.on { background: rgba(255, 255, 255, 0.16); color: var(--ink); }
+  .nowline { font-size: 13px; color: var(--dim); text-shadow: 0 1px 8px #000; }
+  .nowline b { color: var(--ink); font-weight: 600; }
+
+  footer { position: fixed; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 16px; pointer-events: none; }
+  footer > * { pointer-events: auto; }
+  #hint { color: var(--dim); }
+  #hint:not(:empty)::before { content: "—"; margin: 0 8px; color: var(--faint); }
+  .nowline { max-width: calc(100vw - 32px); text-align: center; }
+  #queue { font-size: 13px; color: var(--dim); background: rgba(13, 10, 11, 0.45); border-radius: 999px; padding: 3px 12px; display: flex; align-items: center; gap: 6px; text-shadow: 0 1px 8px #000; }
+  #queue b { color: var(--gold); font-weight: 600; }
+  #clearq { border: 0; background: rgba(255, 255, 255, 0.1); border-radius: 999px; width: 22px; height: 22px; font-size: 11px; line-height: 22px; padding: 0; }
+  #moves { display: flex; gap: 8px; padding: 8px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  #moves::-webkit-scrollbar { display: none; }
+  .move { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); border-radius: 12px; padding: 10px 14px; text-align: left; transition: background 0.15s, border-color 0.15s, transform 0.1s; }
+  .move:hover { background: rgba(255, 255, 255, 0.1); }
+  .move:active { transform: scale(0.97); }
+  .move .name { font: 700 16px/1.1 var(--display); }
+  .move .meta { font-size: 12px; color: var(--faint); }
+  .move.active { border-color: var(--red); background: rgba(212, 42, 72, 0.22); }
+  .move.active .meta { color: var(--dim); }
+
+  #start { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at center, rgba(13, 10, 11, 0.45), rgba(13, 10, 11, 0.88)); transition: opacity 0.5s; z-index: 5; padding: 16px; }
+  #start.gone { opacity: 0; pointer-events: none; }
+  .card { max-width: 420px; width: 100%; padding: 28px 26px 22px; text-align: center; }
+  .card h2 { margin: 0 0 6px; font: 800 40px/1 var(--display); letter-spacing: -0.02em; }
+  .card h2 span { color: var(--red); }
+  .card p { margin: 0 0 18px; color: var(--dim); }
+  .bar { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); overflow: hidden; margin: 0 0 16px; }
+  #progress { height: 100%; width: 0; background: linear-gradient(90deg, var(--red), var(--gold)); transition: width 0.2s; }
+  #go { width: 100%; border: 0; border-radius: 12px; padding: 14px; font: 700 17px/1 var(--display); background: var(--red); color: #fff; }
+  #go:disabled { opacity: 0.5; cursor: progress; }
+  #silent { margin-top: 10px; border: 0; background: none; color: var(--dim); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+  #loading { margin: 12px 0 0; font-size: 12px; color: var(--faint); }
+  .keys { margin-top: 14px; font-size: 12px; color: var(--faint); }
+  kbd { font: 600 11px/1 ui-monospace, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; color: var(--dim); }
+
+  @media (max-width: 760px) {
+    header { flex-direction: column; align-items: stretch; gap: 8px; }
+    .brand h1 { font-size: 22px; }
+    .controls { justify-content: flex-start; border-radius: 14px; }
+    .chip { padding: 6px 10px; font-size: 12px; }
+    .tempo input { width: 76px; }
+    .beat { top: calc(max(14px, env(safe-area-inset-top)) + 128px); }
+    #hint { display: none; }
+    #count span { width: 26px; height: 26px; font-size: 14px; }
+    .move { padding: 8px 12px; }
+    .move .name { font-size: 14px; }
+    .keys { display: none; }
+  }
+  /* short landscape screens: one header row, count on top, slim move bar */
+  @media (max-height: 520px) and (orientation: landscape) {
+    header { flex-direction: row; align-items: flex-start; }
+    .brand h1 { font-size: 20px; }
+    .controls { max-width: 50vw; padding: 4px; }
+    .tempo { display: none; }
+    .chip { padding: 5px 9px; font-size: 12px; }
+    .beat { top: calc(max(10px, env(safe-area-inset-top)) + 56px); }
+    #count span { width: 24px; height: 24px; font-size: 13px; }
+    #hint { display: none; }
+    .move { padding: 6px 10px; }
+    .move .name { font-size: 14px; }
+    .move .meta { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage" aria-label="Two skeletons dancing salsa"></canvas>
+
+<header>
+  <div class="brand">
+    <a href="/">← boomcat</a>
+    <h1>Salsa <span>Bones</span></h1>
+  </div>
+  <div class="controls panel" role="toolbar" aria-label="Playback">
+    <button class="chip" id="music" aria-pressed="false" title="Music on or off (space)">♪ Music</button>
+    <button class="chip" id="slow" aria-pressed="false" title="Slow motion (S)">Slow-mo</button>
+    <button class="chip" id="view" title="Camera (C)">Orbit</button>
+    <button class="chip" id="auto" aria-pressed="false" title="Let him lead (A)">Auto lead</button>
+    <label class="tempo">Tempo <input id="tempo" type="range" min="150" max="210" step="2"><b id="bpm">180</b></label>
+  </div>
+</header>
+
+<div class="beat">
+  <div id="count" class="panel" aria-label="Count"></div>
+  <div class="nowline"><b id="moveName">Basic</b> <span id="half"></span><span id="hint"></span></div>
+</div>
+
+<footer>
+  <div id="queue"></div>
+  <nav id="moves" class="panel" aria-label="Moves"></nav>
+</footer>
+
+<div id="start">
+  <div class="card panel">
+    <h2>Salsa <span>Bones</span></h2>
+    <p>Two skeletons dancing salsa On1. Pick their moves and each one starts on the next 1.</p>
+    <div class="bar"><div id="progress"></div></div>
+    <button id="go" disabled>Tuning the band…</button>
+    <button id="silent">Watch without sound</button>
+    <div id="loading">Loading congas, bongos, bell, güiro, bass and piano</div>
+    <div class="keys"><kbd>1</kbd>–<kbd>5</kbd> moves · <kbd>space</kbd> music · <kbd>S</kbd> slow-mo · <kbd>C</kbd> camera · drag to look around</div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ---- motion.js ----
+const __motion = (() => {
+// Salsa Bones motion engine. Two dancers, a leader and a follower, dance
+// on1 to the music's counts. Each move is written as counted footwork (which
+// foot steps where on 1, 2, 3, 5, 6, 7), turns and pivots, and hand holds.
+// That choreography becomes full-body motion:
+//   - feet are planted until they step, swing in a natural arc, and pivot on the ball
+//   - weight moves between the feet; the pelvis follows it (with Cuban hip motion)
+//     through critically damped springs, which gives real momentum and lag
+//   - legs and arms are solved with two-bone inverse kinematics
+//   - the spine counter-rotates so the chest stays with the partner
+//   - heads look at the partner and spot during turns
+//   - connected hands share one point, so both arms answer to each other
+// Plain math, no three.js, so it also runs in Node for testing.
+
+// ---------- vectors ----------
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const len = a => Math.hypot(a[0], a[1], a[2]);
+const norm = a => { const l = len(a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const madd = (a, b, s) => [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s];
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const smoother = t => { t = clamp(t, 0, 1); return t * t * t * (t * (6 * t - 15) + 10); };
+const lerpN = (a, b, t) => a + (b - a) * t;
+const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
+const RAD = Math.PI / 180;
+
+// Facing: yaw 0 looks along +z; positive yaw turns to the dancer's left.
+const fwdOf = yaw => [Math.sin(yaw), 0, Math.cos(yaw)];
+const leftOf = yaw => [Math.cos(yaw), 0, -Math.sin(yaw)];
+const UP = [0, 1, 0];
+
+// Rotates v about axis (unit) by angle
+function rotAxis(v, axis, ang) {
+  const c = Math.cos(ang), s = Math.sin(ang);
+  return add(add(mul(v, c), mul(cross(axis, v), s)), mul(axis, dot(axis, v) * (1 - c)));
+}
+
+// A frame is { o: origin, x, y, z } with x = y × z. Bones point along +y and face +z.
+function frame(o, y, zHint) {
+  const Y = norm(y);
+  let Z = sub(zHint, mul(Y, dot(zHint, Y)));
+  if (len(Z) < 1e-6) Z = sub([0, 0, 1], mul(Y, Y[2]));
+  Z = norm(Z);
+  return { o, x: cross(Y, Z), y: Y, z: Z };
+}
+
+function quatFromFrame(f) {
+  const m00 = f.x[0], m01 = f.y[0], m02 = f.z[0];
+  const m10 = f.x[1], m11 = f.y[1], m12 = f.z[1];
+  const m20 = f.x[2], m21 = f.y[2], m22 = f.z[2];
+  const tr = m00 + m11 + m22;
+  let x, y, z, w;
+  if (tr > 0) { const s = Math.sqrt(tr + 1) * 2; w = s / 4; x = (m21 - m12) / s; y = (m02 - m20) / s; z = (m10 - m01) / s; }
+  else if (m00 > m11 && m00 > m22) { const s = Math.sqrt(1 + m00 - m11 - m22) * 2; w = (m21 - m12) / s; x = s / 4; y = (m01 + m10) / s; z = (m02 + m20) / s; }
+  else if (m11 > m22) { const s = Math.sqrt(1 + m11 - m00 - m22) * 2; w = (m02 - m20) / s; x = (m01 + m10) / s; y = s / 4; z = (m12 + m21) / s; }
+  else { const s = Math.sqrt(1 + m22 - m00 - m11) * 2; w = (m10 - m01) / s; x = (m02 + m20) / s; y = (m12 + m21) / s; z = s / 4; }
+  return [x, y, z, w];
+}
+
+// Critically damped spring, solved exactly so any frame rate is stable
+function springTo(state, target, w, dt) {
+  const e = Math.exp(-w * dt);
+  for (let i = 0; i < target.length; i++) {
+    const d = state.x[i] - target[i];
+    const c = state.v[i] + w * d;
+    state.x[i] = target[i] + (d + c * dt) * e;
+    state.v[i] = (state.v[i] - w * c * dt) * e;
+  }
+  return state.x;
+}
+const spring = x => ({ x: x.slice(), v: x.map(() => 0) });
+
+// Two-bone IK: root a, target t, bone lengths, bend-direction hint
+function twoBone(a, t, l1, l2, pole) {
+  let d = sub(t, a);
+  const dist = clamp(len(d), Math.abs(l1 - l2) + 1e-3, l1 + l2 - 1e-4);
+  const dir = norm(d);
+  const cosA = clamp((l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist), -1, 1);
+  let perp = sub(pole, mul(dir, dot(pole, dir)));
+  if (len(perp) < 1e-6) perp = sub([0, 0, 1], mul(dir, dir[2]));
+  perp = norm(perp);
+  const mid = add(madd(a, dir, l1 * cosA), mul(perp, l1 * Math.sqrt(1 - cosA * cosA)));
+  return { mid, end: madd(a, dir, dist), reach: len(d) / (l1 + l2), bend: perp };
+}
+
+// ---------- bodies ----------
+const BODY = {
+  leader: {
+    name: 'leader', hipW: 0.088, thigh: 0.455, shin: 0.435, ankleH: 0.078, ball: 0.15, toe: 0.062, footW: 0.1,
+    pelvisUp: 0.072, pelvisBack: 0.05, lumbar: 0.21, thorax: 0.26, neck: 0.11, head: 0.2,
+    shoulderW: 0.185, upperArm: 0.3, forearm: 0.255, palm: 0.092, finger: [0.046, 0.028, 0.022], thumb: [0.045, 0.034, 0.027],
+  },
+  follower: {
+    name: 'follower', hipW: 0.09, thigh: 0.41, shin: 0.395, ankleH: 0.07, ball: 0.135, toe: 0.056, footW: 0.088,
+    pelvisUp: 0.068, pelvisBack: 0.048, lumbar: 0.19, thorax: 0.235, neck: 0.1, head: 0.185,
+    shoulderW: 0.165, upperArm: 0.275, forearm: 0.235, palm: 0.084, finger: [0.042, 0.025, 0.02], thumb: [0.04, 0.03, 0.024],
+  },
+};
+
+// ---------- moves ----------
+// Steps: { k: count, foot, fwd, side, turn, replace, spin, w: width }
+//   fwd/side: where the foot lands, relative to standing beside the other foot
+//   turn: degrees the body pivots on the other foot while stepping (+ is left)
+//   spin: degrees the body pivots on this foot after it lands, before the next step
+// Holds: { lh, fh, keys: [[count, place], ...] } leader hand to follower hand
+// Free hands: { leader: { R: [[count, pose]] }, follower: { L: [[count, pose]] } }
+// Counts run 1-8 (or 1-16); 9 is the next move's 1.
+const LOW = [[1, 'low'], [9, 'low']];
+
+const MOVES = {
+  basic: {
+    name: 'Basic', counts: 8, gap: 0.85,
+    leader: [{ k: 1, foot: 'L', fwd: 0.21 }, { k: 2, foot: 'R', replace: true }, { k: 3, foot: 'L', fwd: 0, close: true },
+      { k: 5, foot: 'R', fwd: -0.21 }, { k: 6, foot: 'L', replace: true }, { k: 7, foot: 'R', fwd: 0, close: true }],
+    follower: [{ k: 1, foot: 'R', fwd: -0.21 }, { k: 2, foot: 'L', replace: true }, { k: 3, foot: 'R', fwd: 0, close: true },
+      { k: 5, foot: 'L', fwd: 0.21 }, { k: 6, foot: 'R', replace: true }, { k: 7, foot: 'L', fwd: 0, close: true }],
+    holds: [{ lh: 'L', fh: 'R', keys: LOW }],
+  },
+  crossBody: {
+    name: 'Cross Body Lead', counts: 8, gap: 0.85,
+    leader: [{ k: 1, foot: 'L', fwd: 0.2 }, { k: 2, foot: 'R', replace: true },
+      { k: 3, foot: 'L', turn: 90, fwd: -0.02 }, { k: 5, foot: 'R', fwd: -0.1 },
+      { k: 6, foot: 'L', turn: 35, fwd: 0.02 }, { k: 7, foot: 'R', turn: 55, fwd: 0, close: true }],
+    follower: [{ k: 1, foot: 'R', fwd: -0.2 }, { k: 2, foot: 'L', replace: true },
+      { k: 3, foot: 'R', fwd: 0.3, side: 0.3 }, { k: 5, foot: 'L', fwd: 0.36, side: -0.1 },
+      { k: 6, foot: 'R', fwd: 0.32, side: -0.1, spin: 180 }, { k: 7, foot: 'L', fwd: -0.12, close: true }],
+    steer: 6, steerLeader: 7,
+    holds: [{ lh: 'L', fh: 'R', keys: [[1, 'low'], [3, 'low'], [5, 'lead'], [6, 'lead'], [7.3, 'low'], [9, 'low']] }],
+    free: {
+      leader: { R: [[1, 'rest'], [4.4, 'rest'], [5, 'back'], [5.6, 'back'], [6.1, 'rest']] },
+      follower: { L: [[1, 'style'], [4, 'style'], [4.7, 'tuck'], [6.5, 'tuck'], [7.3, 'style']] },
+    },
+  },
+  outsideTurn: {
+    name: 'Outside Turn', counts: 8, gap: 0.85,
+    leader: [{ k: 1, foot: 'L', fwd: 0.2 }, { k: 2, foot: 'R', replace: true }, { k: 3, foot: 'L', fwd: 0, close: true },
+      { k: 5, foot: 'R', fwd: 0 }, { k: 6, foot: 'L', replace: true }, { k: 7, foot: 'R', fwd: 0, close: true }],
+    follower: [{ k: 1, foot: 'R', fwd: -0.2 }, { k: 2, foot: 'L', replace: true }, { k: 3, foot: 'R', fwd: 0, close: true },
+      { k: 5, foot: 'L', fwd: 0.26, spin: -270 }, { k: 6, foot: 'R', fwd: 0, w: 0.12, spin: -90 }, { k: 7, foot: 'L', fwd: 0, close: true }],
+    steer: 6,
+    holds: [{ lh: 'L', fh: 'R', keys: [[1, 'low'], [3.5, 'low'], [5.1, 'over'], [6.8, 'over'], [7.7, 'low'], [9, 'low']] }],
+    free: { follower: { L: [[1, 'style'], [4.6, 'style'], [5.1, 'tuck'], [6.8, 'tuck'], [7.6, 'style']] } },
+  },
+  insideTurn: {
+    name: 'Inside Turn', counts: 8, gap: 0.85,
+    leader: [{ k: 1, foot: 'L', fwd: 0.2 }, { k: 2, foot: 'R', replace: true }, { k: 3, foot: 'L', fwd: 0, close: true },
+      { k: 5, foot: 'R', fwd: 0 }, { k: 6, foot: 'L', replace: true }, { k: 7, foot: 'R', fwd: 0, close: true }],
+    follower: [{ k: 1, foot: 'R', fwd: -0.2 }, { k: 2, foot: 'L', replace: true }, { k: 3, foot: 'R', fwd: 0, close: true },
+      { k: 5, foot: 'L', fwd: 0.26, spin: 270 }, { k: 6, foot: 'R', fwd: 0, w: 0.12, spin: 90 }, { k: 7, foot: 'L', fwd: 0, close: true }],
+    steer: 6,
+    holds: [{ lh: 'L', fh: 'R', keys: [[1, 'low'], [3.5, 'low'], [5.1, 'over'], [6.8, 'over'], [7.7, 'low'], [9, 'low']] }],
+    free: { follower: { L: [[1, 'style'], [4.6, 'style'], [5.1, 'tuck'], [6.8, 'tuck'], [7.6, 'style']] } },
+  },
+  hammerlock: {
+    name: 'Hammerlock', counts: 16, gap: 0.85,
+    phases: [{ at: 7, gap: 0.43, side: 0.09, from: 6 }, { at: 15, gap: 0.85, from: 14 }],
+    // he turns his chest into her and leans in to wrap his arm round her
+    posture: { leader: [[5, 0, 0], [6.2, 22, 7], [12.8, 22, 7], [13.8, 5, 2], [15, 0, 0]] },
+    leader: [{ k: 1, foot: 'L', fwd: 0.18 }, { k: 2, foot: 'R', replace: true }, { k: 3, foot: 'L', fwd: 0, close: true },
+      { k: 5, foot: 'R', fwd: -0.06 }, { k: 6, foot: 'L', replace: true }, { k: 7, foot: 'R', fwd: 0.06, close: true },
+      { k: 9, foot: 'L', fwd: 0.12 }, { k: 10, foot: 'R', replace: true }, { k: 11, foot: 'L', fwd: 0, close: true },
+      { k: 13, foot: 'R', fwd: -0.2 }, { k: 14, foot: 'L', replace: true }, { k: 15, foot: 'R', fwd: -0.16, close: true }],
+    follower: [{ k: 1, foot: 'R', fwd: -0.18 }, { k: 2, foot: 'L', replace: true }, { k: 3, foot: 'R', fwd: 0, close: true },
+      { k: 5, foot: 'L', fwd: 0.2, spin: 270 }, { k: 6, foot: 'R', fwd: 0, w: 0.12, spin: 90 }, { k: 7, foot: 'L', fwd: 0, close: true },
+      { k: 9, foot: 'R', fwd: -0.12 }, { k: 10, foot: 'L', replace: true }, { k: 11, foot: 'R', fwd: 0, close: true },
+      { k: 13, foot: 'L', fwd: -0.06, spin: -270 }, { k: 14, foot: 'R', fwd: 0, w: 0.12, spin: -90 }, { k: 15, foot: 'L', fwd: -0.14, close: true }],
+    holds: [
+      { lh: 'L', fh: 'R', keys: [[1, 'low'], [3.4, 'low'], [4.6, 'lowNear'], [5.55, 'lowNear']] },
+      { lh: 'R', fh: 'R', keys: [[5.55, 'fBack'], [12.9, 'fBack'], [13.3, 'fBackR'], [13.6, 'fRightHigh'], [13.95, 'over'], [14.75, 'over'], [15.4, 'low']] },
+      { lh: 'L', fh: 'L', keys: [[7.3, 'cross'], [12.5, 'cross']] },
+      { lh: 'L', fh: 'R', keys: [[15.25, 'low'], [17, 'low']] },
+    ],
+    free: {
+      follower: { L: [[1, 'style'], [4.6, 'style'], [5.1, 'tuck'], [6.9, 'tuck'], [7.3, 'style'], [12.6, 'style'], [13.1, 'tuck'], [14.8, 'tuck'], [15.6, 'style']] },
+      leader: { L: [[5.3, 'side'], [7, 'side'], [12.6, 'side'], [15, 'side'], [15.6, 'rest']] },
+    },
+  },
+};
+
+// ---------- building a move's timeline ----------
+// A dancer's state between moves: both feet (floor point under the ankle, and yaw),
+// body yaw, and which foot carries the weight.
+function cloneState(s) {
+  return { L: { p: s.L.p.slice(), yaw: s.L.yaw }, R: { p: s.R.p.slice(), yaw: s.R.yaw }, yaw: s.yaw, weight: s.weight };
+}
+
+const TOE_OUT = 6 * RAD;
+
+// Turns a move's step list into timed events for one dancer.
+// t0 is the beat of the move's count 1. `steer` ({ dp, dyaw, from }) bends the
+// later steps so the dancer ends up where the couple needs them.
+function planSteps(body, start, steps, t0, steer) {
+  const st = cloneState(start);
+  const feet = { L: [], R: [] };      // foot events: step / pivot / tuck, each with from/to states
+  const yawKeys = [];                  // body rotations { t0, t1, from, to }
+  const weights = [];                  // { t, a, b, foot }
+  const width = body.hipW * 2;
+  const other = f => (f === 'L' ? 'R' : 'L');
+  const side = (f, yaw) => (f === 'L' ? leftOf(yaw) : mul(leftOf(yaw), -1));
+  let lastWeightAway = { L: -Infinity, R: -Infinity };
+  // Steering: each phase's moving steps (counts from..to) share out a correction, so
+  // the dancer arrives exactly where they should. Each foot carries the share it has had.
+  const phases = (Array.isArray(steer) ? steer : steer ? [steer] : []).map(p => ({
+    ...p, steps: steps.filter(s => !s.replace && s.k >= p.from && s.k <= (p.to || 99)), applied: { L: 0, R: 0 }, yawApplied: 0,
+  }));
+  const states = {};
+
+  steps.forEach((s, i) => {
+    const t = t0 + s.k - 1;
+    const f = s.foot, o = other(f);
+    if (s.replace) {
+      weights.push({ t, a: 0.3, b: 0.12, foot: f });
+      lastWeightAway[o] = t;
+      st.weight = f;
+      states[s.k] = cloneState(st);
+      return;
+    }
+    const prevT = i > 0 ? t0 + steps[i - 1].k - 1 : t - 1;
+    let tLift = Math.max(t - 0.62, lastWeightAway[f] + 0.12, prevT + 0.12);
+    // A tucked foot (after a spin) is already off the floor
+    const prevEvent = feet[f][feet[f].length - 1];
+    if (prevEvent && prevEvent.type === 'tuck' && prevEvent.t1 > tLift - 0.01) tLift = prevEvent.t1;
+    const tLand = t - 0.02;
+    // Pivot on the other foot while stepping
+    if (s.turn) {
+      const from = st.yaw, to = st.yaw + s.turn * RAD;
+      yawKeys.push({ t0: tLift, t1: tLand, from, to });
+      const pv = { p: st[o].p.slice(), yaw: st[o].yaw };
+      const ball = madd(st[o].p, fwdOf(st[o].yaw), body.ball);
+      st[o].yaw += s.turn * RAD;
+      st[o].p = madd(ball, fwdOf(st[o].yaw), -body.ball);
+      feet[o].push({ type: 'pivot', t0: tLift, t1: tLand, from: pv, to: { p: st[o].p.slice(), yaw: st[o].yaw }, ball });
+      st.yaw = to;
+    }
+    const shares = phases.map(p => (p.steps.indexOf(s) >= 0 ? (p.steps.indexOf(s) + 1) / p.steps.length : 0));
+    phases.forEach((p, j) => {
+      if (shares[j] && Math.abs(p.dyaw) > 1e-4) {
+        const dy = p.dyaw * (shares[j] - p.yawApplied);
+        yawKeys.push({ t0: tLift, t1: tLand, from: st.yaw, to: st.yaw + dy });
+        st.yaw += dy;
+        p.yawApplied = shares[j];
+      }
+    });
+    let target = madd(madd(st[o].p, side(f, st.yaw), (s.w || width) + (s.side || 0)), fwdOf(st.yaw), s.fwd || 0);
+    phases.forEach((p, j) => {
+      if (!shares[j]) return;
+      target = madd(target, p.dp, shares[j] - p.applied[o]);
+      p.applied[f] = shares[j];
+    });
+    const from = prevEvent && prevEvent.type === 'tuck' ? prevEvent.end : { p: st[f].p.slice(), yaw: st[f].yaw };
+    const toYaw = st.yaw + (f === 'L' ? TOE_OUT : -TOE_OUT);
+    feet[f].push({ type: 'step', t0: tLift, t1: tLand, from, to: { p: target, yaw: toYaw } });
+    st[f] = { p: target, yaw: toYaw };
+    // Traveling steps carry the body along as the foot swings, like walking;
+    // steps in place change weight on the beat
+    const travel = Math.min(1, Math.hypot(target[0] - st[f].p[0], target[2] - st[f].p[2]) / 0.45);
+    weights.push({ t, a: 0.16 + 0.34 * travel, b: 0.24 - 0.06 * travel, foot: f });
+    lastWeightAway[o] = t;
+    st.weight = f;
+    // Spin on the landed foot until shortly before the next step
+    if (s.spin) {
+      const next = steps[i + 1];
+      const tEnd = next ? t0 + next.k - 1 - 0.18 : t + 0.8;
+      const ts = t + 0.06;
+      const from = st.yaw, to = st.yaw + s.spin * RAD;
+      yawKeys.push({ t0: ts, t1: tEnd, from, to, spin: true });
+      const pv = { p: st[f].p.slice(), yaw: st[f].yaw };
+      // pivot about the ball of the foot
+      const ball = madd(st[f].p, fwdOf(st[f].yaw), body.ball);
+      const newYaw = st[f].yaw + s.spin * RAD;
+      st[f] = { p: madd(ball, fwdOf(newYaw), -body.ball), yaw: newYaw };
+      feet[f].push({ type: 'pivot', t0: ts, t1: tEnd, from: pv, to: { p: st[f].p.slice(), yaw: newYaw }, ball, spin: true });
+      // the other foot lifts and turns with the body
+      const offset = (yaw) => madd(madd(ball, side(o, yaw), width * 0.55), fwdOf(yaw), -body.ball * 0.75);
+      const tuckEnd = { p: offset(to), yaw: to + (o === 'L' ? TOE_OUT : -TOE_OUT) };
+      feet[o].push({ type: 'tuck', t0: ts - 0.05, t1: tEnd, ball, from: { p: st[o].p.slice(), yaw: st[o].yaw }, yawFrom: from, yawTo: to, offset, end: tuckEnd });
+      st[o] = { p: tuckEnd.p.slice(), yaw: tuckEnd.yaw };
+      st.yaw = to;
+    }
+    states[s.k] = cloneState(st);
+  });
+  return { feet, yawKeys, weights, end: st, states };
+}
+
+// ---------- reading a timeline ----------
+function eventAt(list, t) {
+  let ev = null;
+  for (const e of list) { if (e.t0 <= t) ev = e; else break; }
+  return ev;
+}
+
+const angLerp = (a, b, t) => a + (b - a) * t;
+
+// Where a foot is: { p (floor point under ankle), yaw, lift (height), pitch (heel up), planted }
+function footAt(tl, foot, t, body, weightOn) {
+  const ev = eventAt(tl.feet[foot], t);
+  const base = ev ? ev.to : tl.start[foot];
+  if (!ev || t >= ev.t1) {
+    const unweighted = 1 - weightOn;
+    return { p: base.p.slice(), yaw: base.yaw, lift: 0, pitch: unweighted * 22 * RAD, planted: true };
+  }
+  const u = clamp((t - ev.t0) / (ev.t1 - ev.t0), 0, 1);
+  if (ev.type === 'pivot') {
+    const e = ev.spin ? smoother(u) : smooth(u);
+    const yaw = angLerp(ev.from.yaw, ev.to.yaw, e);
+    const ball = ev.ball || madd(ev.from.p, fwdOf(ev.from.yaw), body.ball);
+    return { p: madd(ball, fwdOf(yaw), -body.ball), yaw, lift: 0, pitch: (ev.spin ? 14 : 8) * RAD, planted: true };
+  }
+  if (ev.type === 'tuck') {
+    const yaw = angLerp(ev.yawFrom, ev.yawTo, smoother(u));
+    const raise = smooth(u * 4);
+    const target = ev.offset(yaw);
+    const p = lerp(ev.from.p, target, smooth(u * 3));
+    return { p, yaw: yaw + (foot === 'L' ? TOE_OUT : -TOE_OUT), lift: 0.06 * raise, pitch: 35 * RAD, planted: false };
+  }
+  // step: roll off the heel, swing low and land on the ball
+  const s = smoother(u);
+  const p = lerp(ev.from.p, ev.to.p, s);
+  const dist = Math.hypot(ev.to.p[0] - ev.from.p[0], ev.to.p[2] - ev.from.p[2]);
+  const lift = (0.018 + Math.min(0.045, dist * 0.18)) * Math.sin(Math.PI * u);
+  const swingPitch = (u < 0.25 ? lerpN(22, 30, u / 0.25) : lerpN(30, 6, (u - 0.25) / 0.75)) * RAD;
+  const pitch = lerpN(swingPitch, (1 - weightOn) * 22 * RAD, smooth((u - 0.8) / 0.2));
+  return { p, yaw: angLerp(ev.from.yaw, ev.to.yaw, s), lift, pitch, planted: false };
+}
+
+function yawAt(tl, t) {
+  let yaw = tl.start.yaw;
+  for (const k of tl.yawKeys) {
+    if (k.t0 > t) break;
+    const u = clamp((t - k.t0) / (k.t1 - k.t0), 0, 1);
+    yaw = angLerp(k.from, k.to, k.spin ? smoother(u) : smooth(u));
+  }
+  return yaw;
+}
+
+function weightRAt(tl, t) {
+  let w = tl.start.weight === 'R' ? 1 : 0;
+  for (const e of tl.weights) {
+    if (e.t - e.a > t) break;
+    const target = e.foot === 'R' ? 1 : 0;
+    w = lerpN(w, target, smooth((t - (e.t - e.a)) / (e.a + e.b)));
+  }
+  return w;
+}
+
+// Is the dancer mid-spin, and how far through?
+function spinAt(tl, t) {
+  for (const k of tl.yawKeys) {
+    if (!k.spin) continue;
+    if (t >= k.t0 - 0.25 && t <= k.t1 + 0.2) return { k, u: clamp((t - k.t0) / (k.t1 - k.t0), 0, 1) };
+  }
+  return null;
+}
+
+// ---------- the dance ----------
+class Dance {
+  constructor() {
+    this.bodies = { leader: BODY.leader, follower: BODY.follower };
+    const L = BODY.leader, F = BODY.follower;
+    const leaderStart = { L: { p: [L.hipW, 0, -0.42], yaw: TOE_OUT }, R: { p: [-L.hipW, 0, -0.42], yaw: -TOE_OUT }, yaw: 0, weight: 'R' };
+    const followerStart = { L: { p: [-F.hipW, 0, 0.42], yaw: Math.PI + TOE_OUT }, R: { p: [F.hipW, 0, 0.42], yaw: Math.PI - TOE_OUT }, yaw: Math.PI, weight: 'L' };
+    this.tl = {
+      leader: { start: cloneState(leaderStart), feet: { L: [], R: [] }, yawKeys: [], weights: [] },
+      follower: { start: cloneState(followerStart), feet: { L: [], R: [] }, yawKeys: [], weights: [] },
+    };
+    this.end = { leader: cloneState(leaderStart), follower: cloneState(followerStart) };
+    this.instances = [];     // { move, key, t0, t1 }
+    this.plannedUntil = 0;   // beat where the last planned move ends
+    this.queue = [];
+    this.state = { leader: null, follower: null };
+  }
+
+  // Adds the next move to the timeline, starting at the end of what's planned
+  plan(key) {
+    const move = MOVES[key];
+    const t0 = this.plannedUntil;
+    // Plan freely first. Then the leader's last steps close the door back onto the slot
+    // (the line the couple was dancing on), and the follower's are steered so she
+    // finishes facing him, the move's gap away.
+    const center = st => lerp(st.L.p, st.R.p, 0.5);
+    const sL = center(this.end.leader), sF = center(this.end.follower);
+    let axis = sub(sF, sL); axis[1] = 0; axis = norm(axis);
+    const dryL = planSteps(BODY.leader, this.end.leader, move.leader, t0, null);
+    const lcDry = center(dryL.end);
+    const onSlot = madd(sL, axis, dot(sub(lcDry, sL), axis));
+    const slotYaw = Math.atan2(axis[0], axis[2]);
+    const yawHome = Math.abs(wrap(slotYaw - dryL.end.yaw)) < Math.PI / 2 ? slotYaw : slotYaw + Math.PI;
+    const lead = move.steerLeader
+      ? planSteps(BODY.leader, this.end.leader, move.leader, t0, { dp: sub(onSlot, lcDry), dyaw: wrap(yawHome - dryL.end.yaw), from: move.steerLeader })
+      : dryL;
+    // Each phase: by count `at` she faces him `gap` away, steered over her steps from `from`
+    const lastK = move.follower[move.follower.length - 1].k;
+    const phaseList = move.phases || [{ at: lastK, gap: move.gap, from: move.steer || 5 }];
+    const steers = [];
+    const stateAt = (plan, k) => {
+      let st = null;
+      for (const c of Object.keys(plan.states).map(Number).sort((a, b) => a - b)) if (c <= k) st = plan.states[c];
+      return st;
+    };
+    for (const ph of phaseList) {
+      const dryF = planSteps(BODY.follower, this.end.follower, move.follower, t0, steers);
+      const ls = stateAt(lead, ph.at), fs = stateAt(dryF, ph.at);
+      const lc = lerp(ls.L.p, ls.R.p, 0.5), fc = lerp(fs.L.p, fs.R.p, 0.5);
+      const dp = sub(madd(madd(lc, fwdOf(ls.yaw), ph.gap), leftOf(ls.yaw), -(ph.side || 0)), fc); dp[1] = 0;
+      const dyaw = wrap(ls.yaw + Math.PI - fs.yaw);
+      steers.push({ dp, dyaw, from: ph.from, to: ph.at });
+      if (globalThis.__steerLog) globalThis.__steerLog.push({ key, dp, dyaw, yaw: fs.yaw });
+    }
+    const follow = planSteps(BODY.follower, this.end.follower, move.follower, t0, steers);
+    for (const [role, plan] of [['leader', lead], ['follower', follow]]) {
+      const tl = this.tl[role];
+      tl.feet.L.push(...plan.feet.L);
+      tl.feet.R.push(...plan.feet.R);
+      tl.yawKeys.push(...plan.yawKeys);
+      tl.weights.push(...plan.weights);
+      // keep only recent history
+      for (const f of ['L', 'R']) while (tl.feet[f].length > 40) tl.feet[f].shift();
+      while (tl.yawKeys.length > 60) tl.yawKeys.shift();
+      while (tl.weights.length > 80) tl.weights.shift();
+      this.end[role] = plan.end;
+    }
+    const inst = { key, move, t0, t1: t0 + move.counts };
+    this.instances.push(inst);
+    while (this.instances.length > 8) this.instances.shift();
+    this.plannedUntil = inst.t1;
+    return inst;
+  }
+
+  instanceAt(t) {
+    let found = null;
+    for (const m of this.instances) if (m.t0 <= t + 1e-9) found = m;
+    return found;
+  }
+
+  // Keeps the timeline planned ahead of the music; moves wait for the next phrase
+  ensure(t) {
+    while (this.plannedUntil < t + 1.5) this.plan(this.queue.length ? this.queue.shift() : 'basic');
+  }
+
+  // Everything about both dancers at beat t
+  update(t, dt) {
+    this.ensure(t);
+    const inst = this.instanceAt(t);
+    const k = inst ? t - inst.t0 + 1 : 1;
+    const out = {};
+    for (const role of ['leader', 'follower']) out[role] = this.lower(role, t, dt);
+    for (const role of ['leader', 'follower']) this.upper(role, out[role], out[role === 'leader' ? 'follower' : 'leader'], t, dt);
+    this.hands(out, inst, k, t, dt);
+    for (const role of ['leader', 'follower']) this.arms(role, out[role], dt);
+    out.count = ((Math.floor(t) % 8) + 8) % 8 + 1;
+    out.move = inst ? inst.move.name : 'Basic';
+    out.moveKey = inst ? inst.key : 'basic';
+    out.k = k;
+    return out;
+  }
+
+  // ---- legs, pelvis ----
+  lower(role, t, dt) {
+    const body = this.bodies[role];
+    const tl = this.tl[role];
+    let s = this.state[role];
+    const wR = weightRAt(tl, t);
+    const fL = footAt(tl, 'L', t, body, 1 - wR);
+    const fR = footAt(tl, 'R', t, body, wR);
+    const yaw = yawAt(tl, t);
+    const spin = spinAt(tl, t);
+
+    const ankleOf = f => {
+      // rotate the foot about its ball by the heel lift
+      const fwd = fwdOf(f.yaw);
+      const ball = add(madd(f.p, fwd, body.ball), [0, f.lift, 0]);
+      const back = add(mul(fwd, -body.ball * Math.cos(f.pitch)), [0, body.ball * Math.sin(f.pitch), 0]);
+      const up = add(mul(fwd, -body.ankleH * Math.sin(f.pitch)), [0, body.ankleH * Math.cos(f.pitch), 0]);
+      return { ankle: add(add(ball, back), up), ball, fwd };
+    };
+    const aL = ankleOf(fL), aR = ankleOf(fR);
+
+    // The pelvis rides over the weighted foot: over the arch normally, and right
+    // over the ball while spinning on it, so the body turns in place
+    const over = (f, sp) => madd(f.p, fwdOf(f.yaw), body.ball * (sp ? 1 : 0.4));
+    const pivotFoot = spin ? (wR > 0.5 ? 'R' : 'L') : null;
+    const support = lerp(over(fL, pivotFoot === 'L'), over(fR, pivotFoot === 'R'), wR);
+    const target = madd(support, fwdOf(yaw), 0.015);
+    if (!s) {
+      s = this.state[role] = {
+        pelvis: spring([target[0], target[2]]), yaw: spring([yaw]), chestYaw: spring([yaw]), headYaw: spring([yaw]), headPitch: spring([0]),
+        hand: {}, free: {}, cuban: spring([0, 0]), height: spring([0]),
+      };
+    }
+    const pxz = springTo(s.pelvis, [target[0], target[2]], spin ? 26 : 15, dt);
+    // keep yaw continuous through the spring
+    const yawS = springTo(s.yaw, [yaw], spin ? 40 : 16, dt)[0];
+    // Cuban motion: the standing hip settles out and up, the free knee bends
+    const lean = (wR - 0.5) * 2;
+    const cub = springTo(s.cuban, [lean, 0], 11, dt);
+    const pelvisYaw = yawS - cub[0] * 6 * RAD * (spin ? 0.2 : 1);
+    const roll = cub[0] * 5 * RAD * (spin ? 0.3 : 1);
+    const pitch = 4 * RAD;
+
+    // pelvis frame
+    let fw = fwdOf(pelvisYaw), lf = leftOf(pelvisYaw);
+    lf = rotAxis(lf, fw, -roll);
+    let up = norm(cross(fw, lf));
+    fw = rotAxis(fw, lf, pitch);
+    up = rotAxis(up, lf, pitch);
+
+    // Height: as tall as the legs allow, with soft knees
+    const L = body.thigh + body.shin;
+    const hipOff = (sgn) => mul(lf, sgn * body.hipW);
+    let yMax = Infinity;
+    for (const [a, sgn, f] of [[aL, 1, fL], [aR, -1, fR]]) {
+      const h = add([pxz[0], 0, pxz[1]], hipOff(sgn));
+      const dx = h[0] - a.ankle[0], dz = h[2] - a.ankle[2];
+      const reach = L * (f.planted ? 0.985 : 0.99);
+      const lim = a.ankle[1] + Math.sqrt(Math.max(0.05, reach * reach - dx * dx - dz * dz)) - h[1];
+      // the swinging leg doesn't hold the body down
+      yMax = Math.min(yMax, lim);
+    }
+    const stand = body.ankleH + L * 0.972;
+    if (!s.heightInit) { s.height.x[0] = Math.min(stand, yMax); s.heightInit = true; }
+    const y = Math.min(springTo(s.height, [Math.min(stand, yMax)], 22, dt)[0], yMax + 0.004);
+    const pelvis = [pxz[0], y, pxz[1]];
+
+    const hipL = add(pelvis, hipOff(1)), hipR = add(pelvis, hipOff(-1));
+    const kneeOut = (f, sgn) => norm(add(fwdOf(f.yaw), mul(leftOf(f.yaw), sgn * 0.12)));
+    const legL = twoBone(hipL, aL.ankle, body.thigh, body.shin, kneeOut(fL, 1));
+    const legR = twoBone(hipR, aR.ankle, body.thigh, body.shin, kneeOut(fR, -1));
+
+    return {
+      role, body, t, yaw: yawS, pelvisYaw, wR, spin, roll,
+      pelvis, pelvisFrame: { o: pelvis, x: lf, y: up, z: fw },
+      feet: { L: fL, R: fR }, ankles: { L: aL, R: aR },
+      legs: { L: { hip: hipL, knee: legL.mid, ankle: legL.end, reach: legL.reach }, R: { hip: hipR, knee: legR.mid, ankle: legR.end, reach: legR.reach } },
+    };
+  }
+
+  // Posture from the current move: [count, twist°, lean°] keys, blended
+  posture(role, t) {
+    let twist = 0, lean = 0;
+    for (const m of this.instances) {
+      const keys = m.move.posture && m.move.posture[role];
+      if (!keys || t < m.t0 || t > m.t1) continue;
+      const ks = keys.map(([c, a, b]) => [m.t0 + c - 1, a, b]);
+      if (t <= ks[0][0]) { twist = ks[0][1]; lean = ks[0][2]; continue; }
+      let i = 0;
+      while (i < ks.length - 1 && ks[i + 1][0] <= t) i++;
+      if (i >= ks.length - 1) { twist = ks[i][1]; lean = ks[i][2]; continue; }
+      const u = smooth((t - ks[i][0]) / (ks[i + 1][0] - ks[i][0]));
+      twist = lerpN(ks[i][1], ks[i + 1][1], u); lean = lerpN(ks[i][2], ks[i + 1][2], u);
+    }
+    return { twist: twist * RAD, lean: lean * RAD };
+  }
+
+  // ---- spine, head, shoulders ----
+  upper(role, me, partner, t, dt) {
+    const body = me.body, s = this.state[role];
+    const pose = this.posture(role, t);
+    const pf = me.pelvisFrame;
+    // The chest stays with the partner while the hips work underneath, except in turns
+    const toPartner = sub(partner.pelvis, me.pelvis);
+    const partnerYaw = Math.atan2(toPartner[0], toPartner[2]);
+    let chestTarget = me.yaw + clamp(wrap(partnerYaw - me.yaw), -55 * RAD, 55 * RAD) * 0.65;
+    if (me.spin) chestTarget = me.yaw;
+    chestTarget += pose.twist;
+    // unwrap toward the current value so the spring never takes the long way round
+    chestTarget = s.chestYaw.x[0] + wrap(chestTarget - s.chestYaw.x[0]);
+    const chestYaw = springTo(s.chestYaw, [chestTarget], me.spin ? 30 : 9, dt)[0];
+
+    const base = add(add(me.pelvis, mul(pf.y, body.pelvisUp)), mul(pf.z, -body.pelvisBack));
+    const segFrame = (o, yaw, pitch, roll) => {
+      let fw = fwdOf(yaw), lf = leftOf(yaw);
+      lf = rotAxis(lf, fw, -roll);
+      let up = norm(cross(fw, lf));
+      fw = rotAxis(fw, lf, pitch); up = rotAxis(up, lf, pitch);
+      return { o, x: lf, y: up, z: fw };
+    };
+    const lumYaw = me.pelvisYaw + wrap(chestYaw - me.pelvisYaw) * 0.4;
+    const lumbar = segFrame(base, lumYaw, -6 * RAD + pose.lean * 0.6, me.roll * 0.4);
+    const thBase = madd(base, lumbar.y, body.lumbar);
+    const breath = Math.sin(t * Math.PI * 0.5) * 0.4 * RAD;
+    const thorax = segFrame(thBase, chestYaw, 3 * RAD + breath + pose.lean, -me.roll * 0.25);
+    const neckBase = madd(thBase, thorax.y, body.thorax);
+    // Look at the partner's face; spot the partner in turns
+    const partnerHead = partner.headPos || add(partner.pelvis, [0, 0.62, 0]);
+    const myHead = madd(neckBase, thorax.y, body.neck);
+    const look = sub(partnerHead, myHead);
+    let headYawT = Math.atan2(look[0], look[2]);
+    const headPitchT = clamp(Math.atan2(look[1], Math.hypot(look[0], look[2])), -25 * RAD, 20 * RAD);
+    if (me.spin) {
+      // spotting: hold the partner, then whip the head round ahead of the body
+      const rel = wrap(me.yaw - headYawT);
+      headYawT = Math.abs(rel) < 100 * RAD ? headYawT : me.yaw + Math.sign(me.spin.k.to - me.spin.k.from) * 30 * RAD;
+    }
+    headYawT = chestYaw + clamp(wrap(headYawT - chestYaw), -75 * RAD, 75 * RAD);
+    headYawT = s.headYaw.x[0] + wrap(headYawT - s.headYaw.x[0]);
+    const headYaw = springTo(s.headYaw, [headYawT], me.spin ? 45 : 12, dt)[0];
+    const headPitch = springTo(s.headPitch, [headPitchT], 10, dt)[0];
+    const neck = segFrame(neckBase, lerpN(chestYaw, headYaw, 0.5), 14 * RAD - headPitch * 0.3, 0);
+    const headBase = madd(neckBase, neck.y, body.neck);
+    const head = segFrame(headBase, headYaw, -headPitch * 0.7, 0);
+    me.headPos = madd(headBase, head.y, body.head * 0.45);
+    me.headTop = madd(headBase, head.y, body.head);
+
+    // shoulders sit forward of the spine at the top of the ribcage
+    const top = madd(neckBase, thorax.y, -0.035);
+    const shoulder = sgn => add(add(top, mul(thorax.x, sgn * body.shoulderW)), mul(thorax.z, 0.045));
+    const sternum = add(madd(top, thorax.z, 0.065), mul(thorax.y, 0.006));
+    me.spine = { lumbar, thorax, neck, head, base, thBase, neckBase, headBase, sternum };
+    me.shoulders = { L: shoulder(1), R: shoulder(-1) };
+    me.chestYaw = chestYaw;
+    me.waistY = me.pelvis[1] + body.pelvisUp + 0.03;
+  }
+
+  // ---- hands: holds, reaching, free poses ----
+  hands(out, inst, k, t, dt) {
+    const L = out.leader, F = out.follower;
+    this._follower = F;
+    const place = (name, lh, fh) => {
+      const lc = L.pelvis, fc = F.pelvis;
+      const lFwd = fwdOf(L.chestYaw), fFwd = fwdOf(F.chestYaw);
+      const natural = (who, hand, f) => {
+        const sgn = hand === 'L' ? 1 : -1;
+        const sh = who.shoulders[hand];
+        return [sh[0] + f[0] * 0.33 + leftOf(who.chestYaw)[0] * sgn * 0.03, who.waistY + 0.05, sh[2] + f[2] * 0.33 + leftOf(who.chestYaw)[2] * sgn * 0.03];
+      };
+      const fy = F.yaw, fl = leftOf(fy), ff = fwdOf(fy);
+      const inF = (lx, fz, y) => [fc[0] + fl[0] * lx + ff[0] * fz, y, fc[2] + fl[2] * lx + ff[2] * fz];
+      switch (name) {
+        case 'low': return { p: lerp(natural(L, lh, lFwd), natural(F, fh, fFwd), 0.5), n: [0, 1, 0] };
+        case 'lead': { // the leader brings the follower across in front of him
+          // his hand is in front of him and out to his left, ahead of her path;
+          // her right arm reaches across her front to it
+          const th = L.spine.thorax, sh = L.shoulders[lh];
+          const his = add(add(sh, mul(th.z, 0.24)), mul(th.x, lh === 'L' ? 0.2 : -0.2));
+          const p = lerp(his, natural(F, fh, fFwd), 0.45);
+          return { p: [p[0], L.waistY + 0.08, p[2]], n: [0, 1, 0] };
+        }
+        case 'lowNear': {
+          const p = lerp(fc, lc, 0.45);
+          return { p: [p[0], F.waistY + 0.05, p[2]], n: [0, 1, 0] };
+        }
+        case 'over': {
+          const ang = F.yaw * 1;
+          const halo = [Math.cos(ang) * 0.06, 0, -Math.sin(ang) * 0.06];
+          const toL = norm(sub([lc[0], 0, lc[2]], [fc[0], 0, fc[2]]));
+          const top = F.headTop;
+          return { p: add(add([top[0], top[1] + 0.12, top[2]], halo), mul(toL, 0.14)), n: [0, -1, 0] };
+        }
+        case 'fBack': return { p: inF(0.04, -0.12, F.waistY + 0.09), n: norm(mul(ff, 1)), wrap: 1 };
+        case 'fBackR': return { p: inF(-0.14, -0.1, F.waistY + 0.14), n: norm(mul(ff, 1)), wrap: 1 };
+        case 'fRightHigh': return { p: inF(-0.34, 0.1, F.shoulders.R[1] + 0.26), n: [0, -1, 0] };
+        case 'cross': {
+          const p = lerp(lc, fc, 0.5);
+          return { p: [p[0], L.waistY + 0.02, p[2]], n: [0, 1, 0] };
+        }
+        default: return { p: lerp(natural(L, lh, lFwd), natural(F, fh, fFwd), 0.5), n: [0, 1, 0] };
+      }
+    };
+
+    const targets = { leader: {}, follower: {} };
+    const holdsNow = [];
+    // Holds from this move and the ones either side, so hands carry across moves
+    const near = this.instances.filter(m => m.t0 <= t + 1 && m.t1 >= t - 1);
+    for (const m of near) {
+      for (const h of m.move.holds || []) {
+        const keys = h.keys.map(([c, p]) => [m.t0 + c - 1, p]);
+        const a = keys[0][0], b = keys[keys.length - 1][0];
+        const continuesIn = this.instances.some(o => o !== m && o.t1 === m.t0 && (o.move.holds || []).some(x => x.lh === h.lh && x.fh === h.fh && o.t0 + x.keys[x.keys.length - 1][0] - 1 >= m.t0));
+        const continuesOut = this.instances.some(o => o !== m && o.t0 === m.t1 && (o.move.holds || []).some(x => x.lh === h.lh && x.fh === h.fh && o.t0 + x.keys[0][0] - 1 <= m.t1));
+        const reach = continuesIn ? 0 : 0.45, release = continuesOut ? 0 : 0.4;
+        if (t < a - reach || t > b + release) continue;
+        // place along the keys
+        let i = 0;
+        while (i < keys.length - 1 && keys[i + 1][0] <= t) i++;
+        let pt;
+        if (t <= keys[0][0]) pt = place(keys[0][1], h.lh, h.fh);
+        else if (i >= keys.length - 1) pt = place(keys[keys.length - 1][1], h.lh, h.fh);
+        else {
+          const [ta, pa] = keys[i], [tb, pb] = keys[i + 1];
+          const u = smooth((t - ta) / (tb - ta));
+          const A = place(pa, h.lh, h.fh), B = place(pb, h.lh, h.fh);
+          pt = { p: lerp(A.p, B.p, u), n: norm(lerp(A.n, B.n, u)), wrap: lerpN(A.wrap || 0, B.wrap || 0, u) };
+        }
+        // weight: fully held inside the span, blending at the reach and release ends
+        const w = t < a ? smooth((t - (a - reach)) / reach) : t > b ? 1 - smooth((t - b) / release) : 1;
+        holdsNow.push({ ...h, pt, w });
+      }
+    }
+    // a hand in two holds at once (a hand-over) takes the stronger
+    for (const h of holdsNow) {
+      const off = 0.018;
+      const lp = madd(h.pt.p, h.pt.n, -off), fp = madd(h.pt.p, h.pt.n, off);
+      for (const [who, hand, p, n] of [['leader', h.lh, lp, h.pt.n], ['follower', h.fh, fp, mul(h.pt.n, -1)]]) {
+        const cur = targets[who][hand];
+        if (!cur || cur.w < h.w) targets[who][hand] = { p, n, w: h.w, grip: h.w, wrap: who === 'leader' ? (h.pt.wrap || 0) * h.w : 0 };
+      }
+    }
+    // free hands
+    for (const [who, me] of [['leader', L], ['follower', F]]) {
+      for (const hand of ['L', 'R']) {
+        const pose = this.freePose(who, me, hand, near, t);
+        const tg = targets[who][hand];
+        if (!tg) targets[who][hand] = { ...pose, w: 0, grip: 0 };
+        else if (tg.w < 1) targets[who][hand] = { p: lerp(pose.p, tg.p, tg.w), n: norm(lerp(pose.n, tg.n, tg.w)), w: tg.w, grip: tg.w, elbowIn: pose.elbowIn * (1 - tg.w) };
+      }
+    }
+    // springs give hands weight and follow-through
+    for (const [who, me] of [['leader', L], ['follower', F]]) {
+      const s = this.state[who];
+      me.handTargets = {};
+      for (const hand of ['L', 'R']) {
+        const tg = targets[who][hand];
+        if (!s.hand[hand]) s.hand[hand] = spring(tg.p);
+        const p = springTo(s.hand[hand], tg.p, tg.w > 0.5 ? 30 : 13, dt).slice();
+        me.handTargets[hand] = { p, n: tg.n, grip: tg.grip, held: tg.w > 0.5, elbowIn: tg.elbowIn || 0, wrap: tg.wrap || 0 };
+      }
+    }
+  }
+
+  freePose(who, me, hand, near, t) {
+    const sgn = hand === 'L' ? 1 : -1;
+    const th = me.spine.thorax, sh = me.shoulders[hand];
+    const at = (lx, down, fwd) => add(add(add(sh, mul(th.x, sgn * lx)), mul(th.y, -down)), mul(th.z, fwd));
+    // which pose: from the move's free-hand keys
+    let pose = who === 'leader' ? 'rest' : 'style', blend = null;
+    for (const m of near) {
+      const keys = m.move.free && m.move.free[who] && m.move.free[who][hand];
+      if (!keys) continue;
+      const ks = keys.map(([c, p]) => [m.t0 + c - 1, p]);
+      if (t < ks[0][0] - 0.3 || t > ks[ks.length - 1][0] + 0.3) continue;
+      let i = 0;
+      while (i < ks.length - 1 && ks[i + 1][0] <= t) i++;
+      pose = ks[i][1];
+      if (i < ks.length - 1) blend = { to: ks[i + 1][1], u: smooth((t - ks[i][0]) / (ks[i + 1][0] - ks[i][0])) };
+    }
+    const sway = Math.sin(t * Math.PI) * 0.015;
+    const poses = {
+      rest: () => ({ p: at(0.04, 0.4, 0.17 + sway), n: mul(th.x, -sgn) }),
+      side: () => ({ p: at(0.07, 0.46, 0.04), n: mul(th.x, -sgn) }),
+      style: () => ({ p: at(0.1, 0.33, 0.22 + sway), n: norm(add(mul(th.y, -1), mul(th.x, -sgn * 0.3))) }),
+      tuck: () => ({ p: at(-0.1, 0.24, 0.16), n: mul(th.z, -1), elbowIn: 1 }),
+      back: () => {
+        // the leader's hand on the follower's shoulder blade as she passes
+        const F = this._follower;
+        if (!F) return poses.rest();
+        const fth = F.spine.thorax;
+        return { p: add(add(madd(F.spine.thBase, fth.y, 0.14), mul(fth.z, -0.11)), mul(fth.x, 0.05)), n: fth.z };
+      },
+    };
+    const A = poses[pose] ? poses[pose]() : poses.rest();
+    if (!blend || !poses[blend.to]) return { elbowIn: 0, ...A };
+    const B = poses[blend.to]();
+    return { p: lerp(A.p, B.p, blend.u), n: norm(lerp(A.n, B.n, blend.u)), elbowIn: lerpN(A.elbowIn || 0, B.elbowIn || 0, blend.u) };
+  }
+
+  // ---- arms ----
+  arms(role, me, dt) {
+    const body = me.body, th = me.spine.thorax;
+    me.arms = {};
+    for (const hand of ['L', 'R']) {
+      const sgn = hand === 'L' ? 1 : -1;
+      const tg = me.handTargets[hand];
+      let sh = me.shoulders[hand];
+      // shrug a little when the hand goes overhead
+      const rise = clamp((tg.p[1] - sh[1]) / 0.4, 0, 1);
+      sh = add(sh, add(mul(th.y, rise * 0.035), mul(th.x, sgn * rise * -0.01)));
+      // the palm centre is the target; the wrist sits behind it along the hand
+      const toT = norm(sub(tg.p, sh));
+      const handDir = norm(add(toT, mul(tg.n, -0.25)));
+      let wristT = madd(tg.p, handDir, -body.palm * 0.55);
+      if (!tg.held) {
+        const max = (body.upperArm + body.forearm) * 0.97, d = len(sub(wristT, sh));
+        if (d > max) wristT = madd(sh, norm(sub(wristT, sh)), max);
+      }
+      // elbows hang down and out, and come forward as the hand rises
+      const out = mul(th.x, sgn);
+      const above = clamp((wristT[1] - sh[1]) / 0.3, -1, 1);
+      const behind = clamp(-dot(sub(wristT, sh), th.z) / 0.25, 0, 1);
+      let pole = add(add(mul(out, (0.55 + behind * 0.5) * (1 - 0.8 * tg.elbowIn) - 0.1 * tg.elbowIn), mul([0, -1, 0], 0.9 - Math.max(0, above) * 0.9)), mul(th.z, -0.25 + Math.max(0, above) * 0.7 - behind * 0.4));
+      if (tg.wrap) pole = lerp(pole, add(add(mul(out, 1.1), mul(th.z, 0.45)), [0, -0.3, 0]), tg.wrap);
+      const ik = twoBone(sh, wristT, body.upperArm, body.forearm, norm(pole));
+      const forearm = norm(sub(ik.end, ik.mid));
+      // hand: mostly continues the forearm, turned so the palm faces its target
+      const hy = norm(lerp(forearm, handDir, 0.5));
+      me.arms[hand] = { shoulder: sh, elbow: ik.mid, wrist: ik.end, hand: frame(ik.end, hy, tg.n), grip: tg.grip, reach: ik.reach, target: tg, bend: ik.bend };
+    }
+  }
+}
+
+// ---------- bone frames for drawing ----------
+// Each bone: origin at its proximal joint, +y toward the next joint, +z to the front.
+function boneFrames(me) {
+  const b = me.body, sp = me.spine, out = {};
+  out.pelvis = me.pelvisFrame;
+  out.lumbar = sp.lumbar;
+  out.thorax = sp.thorax;
+  out.neck = sp.neck;
+  out.head = sp.head;
+  for (const side of ['L', 'R']) {
+    const leg = me.legs[side], f = me.feet[side], a = me.ankles[side];
+    const knee = norm(sub(leg.knee, leg.hip));
+    const kneeFwd = norm(add(fwdOf(f.yaw), mul(UP, 0.0)));
+    out['thigh' + side] = frame(leg.hip, sub(leg.knee, leg.hip), kneeFwd);
+    out['shin' + side] = frame(leg.knee, sub(leg.ankle, leg.knee), kneeFwd);
+    // feet: +y up from the ankle, +z toward the toes, pitched by the heel lift
+    const fwd = a.fwd;
+    const lf = leftOf(f.yaw);
+    const fz = rotAxis(fwd, lf, f.pitch), fy = rotAxis(UP, lf, f.pitch);
+    out['foot' + side] = { o: leg.ankle, x: cross(fy, fz), y: fy, z: fz };
+    // toes stay flat on the floor while the ball is down
+    const tz = f.planted || f.lift < 0.01 ? fwd : rotAxis(fwd, lf, f.pitch * 0.6);
+    const ty = f.planted || f.lift < 0.01 ? UP : rotAxis(UP, lf, f.pitch * 0.6);
+    out['toes' + side] = { o: a.ball, x: cross(ty, tz), y: ty, z: tz };
+    void knee;
+    const arm = me.arms[side];
+    const sgn = side === 'L' ? 1 : -1;
+    const elbowBack = arm.bend;
+    out['upperArm' + side] = frame(arm.shoulder, sub(arm.elbow, arm.shoulder), mul(elbowBack, -1));
+    out['forearm' + side] = frame(arm.elbow, sub(arm.wrist, arm.elbow), mul(elbowBack, -1));
+    out['hand' + side] = arm.hand;
+    // the radius runs from the outside of the elbow to the thumb side of the wrist
+    const lat = side === 'L' ? -1 : 1;
+    const rTop = madd(arm.elbow, out['forearm' + side].x, lat * 0.017);
+    const rEnd = madd(arm.wrist, arm.hand.x, lat * 0.013);
+    out['radius' + side] = { ...frame(rTop, sub(rEnd, rTop), out['forearm' + side].z), len: len(sub(rEnd, rTop)) };
+    // clavicle from the sternum to the shoulder
+    const cOrigin = add(sp.sternum, mul(sp.thorax.x, sgn * 0.02));
+    const cl = sub(arm.shoulder, cOrigin);
+    out['clav' + side] = { ...frame(cOrigin, cl, sp.thorax.z), len: len(cl) };
+    out['grip' + side] = arm.grip;
+  }
+  return out;
+}
+
+return { add, sub, mul, dot, cross, len, norm, lerp, madd, fwdOf, leftOf, quatFromFrame, BODY, MOVES, Dance, boneFrames };
+})();
+
+// ---- skeleton.js ----
+const __skeleton = (() => {
+// Procedural anatomical skeletons. Every bone is modelled in its own frame from
+// the motion engine: origin at the joint it hangs from, +y toward the next joint,
+// +z to the front. Left-side parts are built once and mirrored for the right.
+
+
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const clamp01 = x => Math.max(0, Math.min(1, x));
+
+// Faint mottling baked into vertex colours so the bone doesn't look like plastic
+function weather(geo, seed = 1) {
+  const pos = geo.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const n = Math.sin(x * 131 + seed) * Math.sin(y * 97 + seed * 2.1) * Math.sin(z * 113 + seed * 3.7)
+      + 0.5 * Math.sin(x * 37 - y * 41 + z * 29 + seed);
+    const c = 0.93 + n * 0.035;
+    col[i * 3] = c; col[i * 3 + 1] = c * 0.975; col[i * 3 + 2] = c * 0.93;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return geo;
+}
+
+// A bone turned on a lathe from a radius profile [[t, r], ...] along +y
+function lathe(L, profile, segs = 18, scale = [1, 1]) {
+  const curve = new THREE.SplineCurve(profile.map(([t, r]) => new THREE.Vector2(r, t * L)));
+  const pts = curve.getPoints(Math.max(18, profile.length * 6)).map(p => new THREE.Vector2(Math.max(0.0005, p.x), p.y));
+  const g = new THREE.LatheGeometry(pts, segs);
+  g.scale(scale[0], 1, scale[1]);
+  return weather(g, L * 13);
+}
+
+// A lathe bone laid from point a to point b
+function between(a, b, profile, segs = 16, scale = [1, 1]) {
+  const A = V3(...a), B = V3(...b), d = B.clone().sub(A);
+  const g = lathe(d.length(), profile, segs, scale);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.normalize()));
+  g.translate(A.x, A.y, A.z);
+  return g;
+}
+
+function ball(r, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, segs = 14) {
+  const g = new THREE.SphereGeometry(r, segs, Math.max(8, segs * 0.7 | 0));
+  g.scale(sx, sy, sz); g.translate(x, y, z);
+  return weather(g, r * 97 + x * 31 + y * 17);
+}
+
+function tube(points, r, segs = 24, radial = 7, closed = false) {
+  const curve = new THREE.CatmullRomCurve3(points.map(p => V3(...p)), closed);
+  return weather(new THREE.TubeGeometry(curve, segs, r, radial, closed), points.length + r * 300);
+}
+
+function cyl(rTop, rBot, h, x, y, z, rx = 0, rz = 0, segs = 10) {
+  const g = new THREE.CylinderGeometry(rTop, rBot, h, segs);
+  g.rotateX(rx); g.rotateZ(rz); g.translate(x, y, z);
+  return weather(g, h * 71 + x + y * 3);
+}
+
+// A thin sheet of bone stretched between two curves
+function loft(lower, upper, nu = 16, nv = 8, bulge = () => [0, 0, 0]) {
+  const cl = new THREE.CatmullRomCurve3(lower.map(p => V3(...p)));
+  const cu = new THREE.CatmullRomCurve3(upper.map(p => V3(...p)));
+  const pos = [], idx = [];
+  for (let i = 0; i <= nu; i++) {
+    const u = i / nu, a = cl.getPoint(u), b = cu.getPoint(u);
+    for (let j = 0; j <= nv; j++) {
+      const v = j / nv, bl = bulge(u, v);
+      pos.push(a.x + (b.x - a.x) * v + bl[0], a.y + (b.y - a.y) * v + bl[1], a.z + (b.z - a.z) * v + bl[2]);
+    }
+  }
+  for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+    const a = i * (nv + 1) + j, b = a + nv + 1;
+    idx.push(a, b, a + 1, b, b + 1, a + 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return weather(g, nu + nv);
+}
+
+const merge = list => mergeGeometries(list.map(g => (g.index ? g.toNonIndexed() : g)).map(g => {
+  for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'color'].includes(k)) g.deleteAttribute(k);
+  if (!g.attributes.color) weather(g);
+  return g;
+}));
+
+// Mirror a left-side geometry into its right-side twin (flip x, keep the winding outward)
+function mirror(geo) {
+  const g = (geo.index ? geo.toNonIndexed() : geo.clone());
+  g.scale(-1, 1, 1);
+  for (const at of Object.values(g.attributes)) {
+    const n = at.itemSize, a = at.array;
+    for (let i = 0; i < at.count; i += 3) for (let k = 0; k < n; k++) {
+      const t = a[(i + 1) * n + k]; a[(i + 1) * n + k] = a[(i + 2) * n + k]; a[(i + 2) * n + k] = t;
+    }
+  }
+  return g;
+}
+
+// ---------- skull ----------
+// Head frame: origin on top of the atlas, so the face hangs forward and the jaw below.
+function skull(s) {
+  const cr = new THREE.SphereGeometry(1, 52, 38);
+  const p = cr.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    if (y < -0.35) y = -0.35 + (y + 0.35) * 0.5;                // flatter base
+    if (z > 0.15 && y < 0.3) x *= 1 - 0.12 * (z - 0.15);       // temples narrow toward the face
+    const zs = z < 0 ? 0.1 : 0.092 - 0.01 * Math.max(0, y);      // forehead slopes back, occiput fuller
+    p.setXYZ(i, x * 0.07, y * 0.078 + 0.06, z * zs - 0.012);
+  }
+  cr.computeVertexNormals();
+  const parts = [weather(cr, 3)];
+  // upper jaw, cheekbones, brow, nose bridge
+  parts.push(ball(1, 0, -0.004, 0.056, 0.034, 0.027, 0.03, 20));
+  parts.push(tube([[-0.054, 0.054, 0.068], [-0.03, 0.061, 0.083], [0, 0.057, 0.087], [0.03, 0.061, 0.083], [0.054, 0.054, 0.068]], 0.0055, 24, 7));
+  parts.push(tube([[0, 0.05, 0.084], [0, 0.036, 0.088], [0, 0.026, 0.091]], 0.0042, 8, 6));
+  for (const sx of [-1, 1]) {
+    parts.push(ball(1, sx * 0.05, 0.022, 0.062, 0.012, 0.009, 0.011));
+    parts.push(tube([[sx * 0.054, 0.02, 0.058], [sx * 0.062, 0.017, 0.03], [sx * 0.065, 0.018, 0.002]], 0.0045, 12, 6));
+    parts.push(ball(1, sx * 0.055, -0.006, -0.012, 0.007, 0.012, 0.008)); // mastoid
+    // orbit rim: a ring whose outer side sits further back
+    const rim = [];
+    for (let k = 0; k < 20; k++) {
+      const a = k / 20 * Math.PI * 2, c = Math.cos(a);
+      rim.push([sx * (0.031 + 0.0195 * c), 0.04 + 0.0175 * Math.sin(a), 0.083 - 0.012 * Math.max(0, c)]);
+    }
+    parts.push(tube(rim, 0.0045, 40, 6, true));
+  }
+  // teeth on two arches, the lower set just behind the upper
+  for (const [y, r, zc] of [[-0.031, 0.026, 0.06], [-0.041, 0.024, 0.058]]) {
+    for (let i = 0; i < 16; i++) {
+      const a = -1.25 + 2.5 * i / 15;
+      const front = Math.abs(a) < 0.45;
+      const g = new THREE.BoxGeometry(front ? 0.0062 : 0.0075, 0.009, front ? 0.0042 : 0.0075, 1, 1, 1);
+      g.rotateY(a); g.translate(Math.sin(a) * r, y, zc + Math.cos(a) * r);
+      parts.push(weather(g, i));
+    }
+    const arch = [];
+    for (let i = 0; i <= 12; i++) { const a = -1.3 + 2.6 * i / 12; arch.push([Math.sin(a) * (r + 0.001), y + (y > -0.035 ? 0.009 : -0.009), zc + Math.cos(a) * (r + 0.001) - 0.001]); }
+    parts.push(tube(arch, 0.0068, 24, 7));
+  }
+  // lower jaw: up the rami to the joints in front of the ears, round the chin
+  const jaw = [[0.052, 0.0, 0.006], [0.05, -0.03, 0.002], [0.047, -0.056, 0.004], [0.04, -0.062, 0.035], [0.025, -0.066, 0.064], [0, -0.07, 0.08]];
+  parts.push(tube([...jaw, ...jaw.slice(0, -1).reverse().map(([x, y, z]) => [-x, y, z])], 0.0085, 60, 8));
+  parts.push(ball(1, 0, -0.068, 0.079, 0.015, 0.01, 0.008));
+  for (const sx of [-1, 1]) parts.push(tube([[sx * 0.046, -0.04, 0.012], [sx * 0.045, -0.02, 0.022], [sx * 0.046, -0.004, 0.03]], 0.005, 8, 6));
+  const bone = merge(parts);
+  bone.scale(s, s, s);
+  // dark cavities: eye sockets and the nose opening
+  const dark = merge([
+    ball(1, -0.031, 0.04, 0.073, 0.017, 0.0155, 0.008, 18), ball(1, 0.031, 0.04, 0.073, 0.017, 0.0155, 0.008, 18),
+    ball(1, 0, 0.008, 0.079, 0.0105, 0.015, 0.008, 14),
+  ]);
+  dark.scale(s, s, s);
+  return { bone, dark };
+}
+
+// ---------- spine ----------
+function spine(L, n, r0, r1, kind) {
+  const bone = [], disc = [];
+  for (let i = 0; i < n; i++) {
+    const u = i / Math.max(1, n - 1);
+    // the vertebrae get bigger toward the bottom of each segment
+    const r = r1 + (r0 - r1) * u;
+    const y = L * (n - i - 0.5) / n;
+    const h = L / n * 0.7;
+    const body = cyl(r, r * 1.04, h, 0, y, 0.004, 0, 0, 14);
+    body.scale(1, 1, 0.82);
+    bone.push(body);
+    disc.push(cyl(r * 0.96, r * 0.96, L / n * 0.3, 0, y - L / n * 0.5, 0.004 * 0.82, 0, 0, 14));
+    // the arch behind the body around the spinal cord
+    const arch = new THREE.TorusGeometry(r * 0.62, r * 0.18, 6, 12, Math.PI);
+    arch.rotateX(-Math.PI / 2); arch.translate(0, y, -r * 0.62);
+    bone.push(weather(arch, i));
+    // spinous process pointing back (and down in the chest), transverse processes out
+    const drop = kind === 't' ? 0.9 : kind === 'l' ? 0.1 : 0.35;
+    const len = kind === 'l' ? r * 1.5 : kind === 't' ? r * 2.0 : r * 1.5;
+    const dir = [0, -Math.sin(drop), -Math.cos(drop)], st = [0, y, -r * 1.2];
+    bone.push(between(st, [st[0] + dir[0] * len, st[1] + dir[1] * len, st[2] + dir[2] * len], [[0, r * 0.3], [0.7, r * 0.22], [1, r * 0.14]], 8, [0.6, 1]));
+    const w = kind === 'l' ? r * 2.3 : kind === 't' ? r * 2.0 : r * 1.7;
+    bone.push(cyl(r * 0.14, r * 0.2, w * 2, 0, y + (kind === 't' ? r * 0.2 : 0), -r * 0.75, 0, Math.PI / 2, 8));
+  }
+  return { bone, disc };
+}
+
+// ---------- ribcage, sternum, shoulder blades ----------
+function thoraxGeo(b, female) {
+  const s = b.thorax / 0.26, wk = female ? 0.93 : 1;
+  const bones = [], cart = [];
+  const W = [0.052, 0.072, 0.088, 0.1, 0.11, 0.118, 0.123, 0.126, 0.126, 0.122, 0.112, 0.1];
+  const DROP = [0.03, 0.042, 0.052, 0.062, 0.072, 0.08, 0.088, 0.096, 0.1, 0.098, 0.07, 0.055];
+  const zst = y => 0.065 + 0.067 * clamp01((0.235 - y) / 0.16);
+  const ends = [];
+  for (let i = 0; i < 12; i++) {
+    const yv = 0.244 - i * 0.0193, w = W[i], drop = DROP[i];
+    const floating = i >= 10, falseRib = i >= 7 && !floating;
+    const zb = -0.03 - 0.008 * Math.sin(Math.PI * i / 11);
+    const yf = yv - drop;
+    let dz, phiEnd;
+    if (floating) { dz = 0.085; phiEnd = i === 10 ? 0.64 * Math.PI : 0.5 * Math.PI; }
+    else {
+      const xend = falseRib ? 0.062 + (i - 7) * 0.017 : 0.027 + i * 0.0055;
+      const zf = zst(yf) - 0.012 - (falseRib ? 0.012 : 0);
+      const c = Math.sqrt(Math.max(0, 1 - (xend / w) ** 2));
+      dz = (zf - zb) / (1 + c);
+      phiEnd = Math.PI - Math.asin(Math.min(1, xend / w));
+    }
+    const zc = zb + dz, phi0 = 0.42;
+    const pts = [[0.011, yv + 0.003, -0.006], [0.026, yv + 0.006, -0.024]];
+    for (let k = 0; k <= 10; k++) {
+      const phi = phi0 + (phiEnd - phi0) * k / 10;
+      pts.push([w * Math.sin(phi), yv + 0.006 - drop * Math.pow(k / 10, 1.35), zc - dz * Math.cos(phi)]);
+    }
+    bones.push(tube(pts, i < 2 ? 0.0062 : 0.0054, 30, 7));
+    const end = pts[pts.length - 1];
+    ends.push(end);
+    if (floating) { bones.push(ball(0.0058, ...end)); continue; }
+    if (!falseRib) {
+      const ys = yf + 0.004 + i * 0.0045;
+      cart.push(tube([end, [(end[0] + 0.013) / 2, (end[1] + ys) / 2 - 0.004, zst(ys) - 0.006], [0.013, ys, zst(ys)]], 0.0048, 10, 6));
+    } else {
+      // false ribs join the cartilage above them, making the arch under the chest
+      const to = i === 7 ? [0.016, 0.088, zst(0.088) - 0.002] : ends[i - 1];
+      cart.push(tube([end, [(end[0] + to[0]) / 2 - 0.004, (end[1] + to[1]) / 2 - 0.003, (end[2] + to[2]) / 2 + 0.004], to], 0.0046, 10, 6));
+    }
+  }
+  // sternum: manubrium, body and xiphoid on a line that leans forward going down
+  const st = lathe(0.17, [[0, 0.003], [0.08, 0.007], [0.15, 0.009], [0.2, 0.013], [0.55, 0.0145], [0.68, 0.012], [0.74, 0.019], [0.9, 0.024], [0.97, 0.02], [1, 0.006]], 14);
+  st.scale(1, 1, 0.38);
+  const sp = st.attributes.position;
+  for (let i = 0; i < sp.count; i++) { const y = sp.getY(i) + 0.064; sp.setY(i, y); sp.setZ(i, sp.getZ(i) + zst(y)); }
+  st.computeVertexNormals();
+  const half = merge(bones), halfCart = merge(cart);
+  const g = merge([half, mirror(half), st]), gc = merge([halfCart, mirror(halfCart)]);
+  g.scale(s * wk, s, s); gc.scale(s * wk, s, s);
+  // shoulder blades sit on the back of the ribs, the socket meeting the arm bone
+  const J = [b.shoulderW, b.thorax - 0.035, 0.045];
+  const S = [0.056 * s, J[1] + 0.022 * s, -0.05 * s], I = [0.086 * s, J[1] - 0.135 * s, -0.05 * s];
+  const Lt = [J[0] - 0.04, J[1] - 0.012, -0.012];
+  const sc = [];
+  sc.push(loft([S, [0.064 * s, J[1] - 0.06 * s, -0.056 * s], I], [Lt, [0.12 * s, J[1] - 0.075 * s, -0.035 * s], I], 12, 6, (u, v) => [0, 0, -0.006 * Math.sin(Math.PI * v) * Math.sin(Math.PI * u)]));
+  sc.push(tube([S, [0.064 * s, J[1] - 0.06 * s, -0.056 * s], I], 0.0045, 16, 6));
+  sc.push(tube([I, [0.12 * s, J[1] - 0.075 * s, -0.035 * s], Lt, [J[0] - 0.026, J[1], 0.03]], 0.0062, 18, 6));
+  sc.push(tube([S, [(S[0] + Lt[0]) / 2, J[1] + 0.012, -0.035], [J[0] - 0.032, J[1] + 0.012, 0.0]], 0.0035, 12, 6));
+  // spine of the scapula rising to the acromion over the shoulder
+  sc.push(tube([[0.06 * s, J[1] - 0.025 * s, -0.056 * s], [0.11 * s, J[1] + 0.005, -0.052 * s], [J[0] - 0.02, J[1] + 0.026, -0.02], [J[0] - 0.002, J[1] + 0.03, 0.022]], 0.0058, 20, 7));
+  sc.push(ball(1, J[0] - 0.002, J[1] + 0.03, 0.026, 0.014, 0.005, 0.016));
+  sc.push(ball(1, J[0] - 0.026, J[1], 0.032, 0.009, 0.017, 0.013)); // glenoid
+  sc.push(tube([[J[0] - 0.04, J[1] + 0.02, 0.0], [J[0] - 0.042, J[1] + 0.018, 0.03], [J[0] - 0.034, J[1] + 0.01, 0.058]], 0.005, 10, 6)); // coracoid
+  const scap = merge(sc);
+  return { bone: merge([g, scap, mirror(scap)]), cartilage: gc };
+}
+
+// ---------- pelvis ----------
+function pelvisGeo(b, female) {
+  const sx = b.hipW / 0.088 * (female ? 1.04 : 1), sy = female ? 0.9 : 1;
+  const half = [];
+  const crest = [[0.112, 0.07, 0.052], [0.135, 0.092, 0.022], [0.138, 0.105, -0.02], [0.115, 0.104, -0.058], [0.075, 0.093, -0.08], [0.045, 0.075, -0.085]];
+  const base = [[0.098, 0.022, 0.045], [0.094, 0.028, 0.012], [0.088, 0.03, -0.02], [0.075, 0.032, -0.045], [0.058, 0.04, -0.06], [0.04, 0.05, -0.068]];
+  // the iliac wing bows outward between its crest and the hip socket
+  half.push(loft(base, crest, 22, 8, (u, v) => [0.012 * Math.sin(Math.PI * v) * Math.sin(Math.PI * Math.min(1, u * 1.15)), 0, 0]));
+  half.push(tube(crest, 0.0068, 30, 7));
+  half.push(tube([[0.112, 0.07, 0.052], [0.106, 0.045, 0.05], [0.098, 0.022, 0.045]], 0.0062, 10, 6));
+  half.push(tube([[0.04, 0.05, -0.068], [0.06, 0.035, -0.06], [0.072, 0.012, -0.04]], 0.006, 10, 6));
+  half.push(ball(1, 0.073, 0.012, 0.0, 0.026, 0.034, 0.03));
+  // socket round the head of the thigh bone (placed so it lands on the joint after scaling)
+  const cup = new THREE.TorusGeometry(0.025, 0.0085, 8, 22);
+  cup.rotateY(Math.PI / 2); cup.translate(0.088 - 0.012 / sx, 0, 0.002);
+  half.push(weather(cup, 3));
+  // pubic and ischial rami round the obturator opening
+  half.push(tube([[0.07, -0.012, 0.028], [0.045, -0.026, 0.05], [0.012, -0.035, 0.058], [0.012, -0.056, 0.052], [0.035, -0.075, 0.03], [0.055, -0.088, -0.005], [0.07, -0.07, -0.025], [0.078, -0.03, -0.02]], 0.0085, 40, 8, true));
+  half.push(ball(1, 0.056, -0.088, -0.01, 0.017, 0.014, 0.022));
+  half.push(ball(1, 0.01, -0.045, 0.056, 0.009, 0.018, 0.01));
+  half.push(ball(1, 0.067, -0.05, -0.04, 0.006, 0.01, 0.006)); // ischial spine
+  const left = merge(half);
+  // sacrum in five fused pieces, then the tailbone
+  const mid = [];
+  for (const [y, z, rx, ry, rz] of [[0.06, -0.058, 0.05, 0.014, 0.026], [0.036, -0.066, 0.043, 0.013, 0.022], [0.014, -0.073, 0.034, 0.012, 0.018], [-0.006, -0.079, 0.026, 0.011, 0.015], [-0.024, -0.082, 0.018, 0.01, 0.012]]) mid.push(ball(1, 0, y, z, rx, ry, rz, 16));
+  mid.push(ball(1, 0, 0.05, -0.062, 0.058, 0.018, 0.02));
+  for (const [y, z, r] of [[-0.04, -0.081, 0.006], [-0.051, -0.077, 0.005], [-0.06, -0.071, 0.004]]) mid.push(ball(r, 0, y, z));
+  const g = merge([left, mirror(left), merge(mid)]);
+  g.scale(sx, sy, 1);
+  return g;
+}
+
+// ---------- legs ----------
+function femurGeo(b) {
+  const L = b.thigh;
+  // thigh frame: +x is the dancer's right, so the outside of the left leg is -x
+  return merge([
+    ball(0.024, 0, 0, 0, 1, 1, 1, 18),
+    between([0, 0, 0], [-0.042, 0.026, 0], [[0, 0.015], [0.5, 0.0135], [1, 0.017]], 12),
+    ball(1, -0.05, 0.008, -0.006, 0.014, 0.024, 0.017),
+    ball(1, -0.016, 0.052, -0.012, 0.009, 0.01, 0.009),
+    between([-0.042, 0.022, 0], [-0.004, L - 0.03, -0.004], [[0, 0.017], [0.1, 0.0145], [0.5, 0.0128], [0.85, 0.015], [1, 0.022]], 16, [1.1, 1]),
+    ball(1, 0.02, L - 0.018, -0.006, 0.019, 0.022, 0.027),
+    ball(1, -0.022, L - 0.018, -0.006, 0.019, 0.021, 0.026),
+    ball(1, 0, L - 0.03, 0.014, 0.017, 0.016, 0.012),
+  ]);
+}
+
+function shinGeo(b) {
+  const S = b.shin;
+  return merge([
+    between([0.004, 0.006, -0.002], [0.006, S - 0.012, 0.004], [[0, 0.03], [0.04, 0.031], [0.1, 0.022], [0.25, 0.016], [0.6, 0.0135], [0.88, 0.0145], [1, 0.02]], 16, [1.25, 0.95]),
+    ball(0.008, 0.004, 0.05, 0.022),
+    ball(1, 0.019, S - 0.004, 0.002, 0.008, 0.014, 0.009),
+    ball(0.0095, -0.027, 0.024, -0.012),
+    between([-0.027, 0.026, -0.012], [-0.031, S - 0.002, -0.006], [[0, 0.0085], [0.06, 0.0075], [0.2, 0.006], [0.8, 0.0058], [0.95, 0.0085], [1, 0.007]], 10),
+    ball(1, -0.031, S, -0.006, 0.008, 0.016, 0.009),
+    ball(1, 0, -0.014, 0.043, 0.021, 0.024, 0.009, 16), // kneecap
+  ]);
+}
+
+function footGeo(b) {
+  const s = b.ball / 0.15, sy = b.ankleH / 0.078, h = 0.078;
+  const parts = [
+    ball(1, 0, -0.008, 0.008, 0.017, 0.013, 0.024),
+    ball(1, 0.004, -0.03, -0.022, 0.017, 0.02, 0.025),
+    ball(1, 0.006, -h + 0.022, -0.05, 0.016, 0.02, 0.022),
+    ball(1, -0.012, -0.022, 0.042, 0.014, 0.012, 0.011),
+    ball(1, 0.016, -0.042, 0.035, 0.012, 0.013, 0.017),
+  ];
+  for (const x of [-0.02, -0.007, 0.005]) parts.push(ball(1, x, -0.034, 0.064, 0.0075, 0.012, 0.012));
+  // metatarsals fan out to the ball of the foot; the big toe is on the inside (-x)
+  const rays = [-0.024, -0.009, 0.004, 0.016, 0.027];
+  rays.forEach((x, i) => {
+    const r = i === 0 ? 0.0072 : 0.0047;
+    const from = [x * 0.72, -0.036 - i * 0.003, i === 4 ? 0.05 : 0.07];
+    const to = [x, -h + 0.013, 0.15 - 0.007];
+    parts.push(tube([from, [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2 + 0.003, (from[2] + to[2]) / 2], to], r, 10, 6));
+    parts.push(ball(r * 1.3, ...to));
+  });
+  const g = merge(parts);
+  g.scale(s, sy, s);
+  return g;
+}
+
+function toesGeo(b) {
+  const s = b.ball / 0.15;
+  const rays = [-0.024, -0.009, 0.004, 0.016, 0.027];
+  const lens = [0.05, 0.041, 0.036, 0.031, 0.027];
+  const parts = [];
+  rays.forEach((x, i) => {
+    const r = i === 0 ? 0.0064 : 0.0042;
+    parts.push(tube([[x, 0.011, 0.003], [x * 1.05, 0.0095, lens[i] * 0.55], [x * 1.09, 0.006, lens[i]]], r, 8, 6));
+    parts.push(ball(r * 0.95, x * 1.09, 0.006, lens[i]));
+  });
+  const g = merge(parts);
+  g.scale(s, s, s);
+  return g;
+}
+
+// ---------- arms ----------
+function humerusGeo(b) {
+  const U = b.upperArm;
+  // arm frame: +x is the dancer's right in the rest pose, so the inside of the left arm is +x
+  return merge([
+    ball(0.023, 0.004, -0.003, -0.002, 1, 1, 1, 18),
+    ball(0.011, -0.018, 0.012, 0.004),
+    between([-0.004, 0.015, 0], [0, U - 0.022, 0], [[0, 0.016], [0.1, 0.0125], [0.5, 0.011], [0.8, 0.012], [0.95, 0.017], [1, 0.02]], 16, [1.25, 0.85]),
+    cyl(0.011, 0.011, 0.042, 0, U - 0.008, 0.004, 0, Math.PI / 2, 14),
+    ball(1, 0.027, U - 0.016, -0.002, 0.008, 0.01, 0.008),
+    ball(0.007, -0.022, U - 0.016, 0),
+  ]);
+}
+
+function ulnaGeo(b) {
+  const F = b.forearm;
+  return merge([
+    ball(1, 0.008, -0.012, -0.012, 0.01, 0.014, 0.011),
+    between([0.008, -0.004, -0.008], [0.012, F - 0.004, -0.002], [[0, 0.012], [0.08, 0.011], [0.2, 0.0085], [0.7, 0.0065], [0.95, 0.007], [1, 0.006]], 12),
+    ball(0.0068, 0.013, F - 0.004, -0.002),
+  ]);
+}
+
+// The radius is drawn unit length and stretched from the elbow to the thumb side
+// of the wrist each frame, so it crosses over the ulna as the forearm turns.
+function radiusGeo() {
+  return merge([
+    lathe(1, [[0, 0.004], [0.01, 0.0105], [0.035, 0.0105], [0.06, 0.0068], [0.12, 0.0082], [0.4, 0.0075], [0.85, 0.0095], [0.96, 0.0125], [1, 0.006]], 12),
+  ]);
+}
+
+function clavicleGeo() {
+  // unit length along +y; -x is up for the left side
+  return tube([[0, 0, 0], [0.002, 0.3, 0.012], [-0.006, 0.72, -0.008], [-0.018, 1, -0.004]], 0.0064, 16, 7);
+}
+
+// Hand frame: +y toward the fingers, +z out of the palm; the left thumb is on -x
+function handParts(b, left) {
+  const s = b.palm / 0.092, m = left ? 1 : -1;
+  const palm = [];
+  for (const [y, xs] of [[0.008, [-0.014, -0.005, 0.004, 0.012]], [0.022, [-0.013, -0.004, 0.005, 0.013]]]) {
+    for (const x of xs) palm.push(ball(0.0058 * s, x * s, y * s, -0.002));
+  }
+  const knuckles = [[-0.022, 0.088], [-0.007, 0.09], [0.007, 0.086], [0.02, 0.079]];
+  knuckles.forEach(([x, y]) => {
+    palm.push(tube([[x * 0.45 * s, 0.03 * s, -0.002], [x * 0.8 * s, y * 0.6 * s, -0.003], [x * s, y * s, 0]], 0.0042 * s, 8, 6));
+    palm.push(ball(0.0056 * s, x * s, y * s, 0));
+  });
+  palm.push(tube([[-0.014 * s, 0.022 * s, 0.004], [-0.022 * s, 0.038 * s, 0.009], [-0.03 * s, 0.052 * s, 0.014]], 0.0048 * s, 8, 6));
+  let geo = merge(palm);
+  if (!left) geo = mirror(geo);
+  const spread = [0.06, 0, -0.05, -0.1];
+  const fingers = knuckles.map(([x, y], i) => ({ base: [x * s * m, y * s, 0], lens: b.finger.map(l => l * [1, 1.1, 1.02, 0.82][i]), r: 0.0044 * s * [1, 1.04, 0.98, 0.88][i], spread: spread[i] * m }));
+  fingers.unshift({ base: [-0.03 * s * m, 0.052 * s, 0.014], lens: b.thumb.slice(1), r: 0.0052 * s, thumb: true, spread: 0.55 * m });
+  return { geo, fingers };
+}
+
+// ---------- assembling a skeleton ----------
+function buildSkeleton(body, mats) {
+  const female = body.name === 'follower';
+  const group = new THREE.Group();
+  const nodes = {};
+  const mesh = (geo, mat = mats.bone) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; return m; };
+  const add = (name, geo, unit = false) => {
+    const o = new THREE.Group();
+    o.matrixAutoUpdate = false;
+    o.add(mesh(geo));
+    o.userData.unit = unit;
+    group.add(o);
+    nodes[name] = o;
+    return o;
+  };
+  const sk = skull(body.head / 0.2);
+  add('head', sk.bone).add(mesh(sk.dark, mats.dark));
+  const neck = spine(body.neck, 7, 0.0095, 0.0115, 'c');
+  add('neck', merge(neck.bone)).add(mesh(merge(neck.disc), mats.cartilage));
+  const lum = spine(body.lumbar, 5, 0.019, 0.023, 'l');
+  add('lumbar', merge(lum.bone)).add(mesh(merge(lum.disc), mats.cartilage));
+  const th = thoraxGeo(body, female);
+  const tsp = spine(body.thorax, 12, 0.0115 * body.thorax / 0.26, 0.0168 * body.thorax / 0.26, 't');
+  const thorax = add('thorax', merge([th.bone, ...tsp.bone]));
+  thorax.add(mesh(merge([th.cartilage, ...tsp.disc]), mats.cartilage));
+  add('pelvis', pelvisGeo(body, female));
+  const femur = femurGeo(body), tibia = shinGeo(body), foot = footGeo(body), toes = toesGeo(body);
+  const hum = humerusGeo(body), ulna = ulnaGeo(body), rad = radiusGeo(), clav = clavicleGeo();
+  nodes.fingers = {};
+  for (const side of ['L', 'R']) {
+    const left = side === 'L';
+    const pick = g => (left ? g : mirror(g));
+    add('thigh' + side, pick(femur));
+    add('shin' + side, pick(tibia));
+    add('foot' + side, pick(foot));
+    add('toes' + side, pick(toes));
+    add('upperArm' + side, pick(hum));
+    add('forearm' + side, pick(ulna));
+    add('radius' + side, rad, true);
+    add('clav' + side, pick(clav), true);
+    const hp = handParts(body, left);
+    const hand = add('hand' + side, hp.geo);
+    // finger chains: each bone is a group that bends about its own x axis
+    nodes.fingers[side] = hp.fingers.map(f => {
+      let parent = hand;
+      const segs = [];
+      f.lens.forEach((len, j) => {
+        const g = new THREE.Group();
+        if (j === 0) { g.position.set(...f.base); g.rotation.z = f.spread; } else g.position.set(0, f.lens[j - 1], 0);
+        const r = f.r * (1 - j * 0.16);
+        g.add(mesh(lathe(len, [[0, r * 0.75], [0.12, r * 1.12], [0.5, r * 0.82], [0.88, r * 0.98], [1, r * 0.55]], 8)));
+        parent.add(g);
+        segs.push(g);
+        parent = g;
+      });
+      return { segs, thumb: !!f.thumb };
+    });
+  }
+  return { group, nodes };
+}
+
+// Places every bone from the motion engine's frames, and curls the fingers
+const _m = new THREE.Matrix4(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
+function poseSkeleton(sk, frames) {
+  for (const [name, node] of Object.entries(sk.nodes)) {
+    if (name === 'fingers') continue;
+    const f = frames[name];
+    if (!f) continue;
+    _x.set(...f.x); _y.set(...f.y); _z.set(...f.z);
+    if (node.userData.unit) _y.multiplyScalar(f.len);
+    _m.makeBasis(_x, _y, _z);
+    _m.setPosition(f.o[0], f.o[1], f.o[2]);
+    node.matrix.copy(_m);
+    node.matrixWorldNeedsUpdate = true;
+  }
+  for (const side of ['L', 'R']) {
+    const g = frames['grip' + side] || 0;
+    sk.nodes.fingers[side].forEach((f, i) => {
+      f.segs.forEach((seg, j) => {
+        const relaxed = f.thumb ? [0.15, 0.22][j] : [0.28, 0.38, 0.26][j] + i * 0.05;
+        const held = f.thumb ? [0.45, 0.55][j] : [0.95, 1.15, 0.75][j];
+        seg.rotation.x = relaxed + (held - relaxed) * g;
+      });
+    });
+  }
+}
+
+return { buildSkeleton, poseSkeleton };
+})();
+
+// ---- cloth.js ----
+const __cloth = (() => {
+// Cloth: Verlet particles held together by the garment's own seams. Stretch
+// constraints run along every edge of the mesh and bending constraints across
+// each pair of neighbouring triangles. The waistband rides on the pelvis; the rest
+// falls under gravity, drags through the air and slides off the bones it touches.
+
+const GRAVITY = -9.81;
+
+// local pelvis coordinates (x left, y up, z forward) to world
+function toWorld(f, lx, ly, lz, out, k) {
+  out[k] = f.o[0] + f.x[0] * lx + f.y[0] * ly + f.z[0] * lz;
+  out[k + 1] = f.o[1] + f.x[1] * lx + f.y[1] * ly + f.z[1] * lz;
+  out[k + 2] = f.o[2] + f.x[2] * lx + f.y[2] * ly + f.z[2] * lz;
+}
+
+class Cloth {
+  constructor(mesh, opts = {}) {
+    const { rest, tris, pins } = mesh;
+    this.mesh = mesh;
+    this.n = rest.length / 3;
+    this.pos = new Float32Array(rest.length);
+    this.prev = new Float32Array(rest.length);
+    this.inv = new Float32Array(this.n).fill(1);
+    this.pins = Int32Array.from(pins);
+    for (const i of pins) this.inv[i] = 0;
+    this.pinFrom = new Float32Array(pins.length * 3);
+    this.pinTo = new Float32Array(pins.length * 3);
+    this.substeps = opts.substeps || 8;
+    this.iterations = opts.iterations || 3;
+    this.drag = opts.drag ?? 1.4;          // per second
+    this.friction = opts.friction ?? 0.25;
+    this.colFrom = null; this.colTo = null;
+
+    // every mesh edge is a seam that resists stretching; the far corners of two
+    // triangles sharing an edge resist folding (a softer constraint)
+    const edges = new Map();
+    for (let t = 0; t < tris.length; t += 3) {
+      for (let e = 0; e < 3; e++) {
+        const a = tris[t + e], b = tris[t + (e + 1) % 3], c = tris[t + (e + 2) % 3];
+        const k = a < b ? a * 65536 + b : b * 65536 + a;
+        if (!edges.has(k)) edges.set(k, { a, b, opp: [] });
+        edges.get(k).opp.push(c);
+      }
+    }
+    const cons = [];
+    for (const { a, b, opp } of edges.values()) {
+      cons.push([a, b, opts.stretch ?? 1]);
+      if (opp.length === 2) cons.push([opp[0], opp[1], opts.bend ?? 0.22]);
+    }
+    const live = cons.filter(([a, b]) => this.inv[a] + this.inv[b] > 0);
+    this.cA = Int32Array.from(live, c => c[0]);
+    this.cB = Int32Array.from(live, c => c[1]);
+    this.cK = Float32Array.from(live, c => c[2]);
+    this.cR = new Float32Array(live.length);
+    for (let i = 0; i < live.length; i++) {
+      const a = this.cA[i] * 3, b = this.cB[i] * 3;
+      this.cR[i] = Math.hypot(rest[a] - rest[b], rest[a + 1] - rest[b + 1], rest[a + 2] - rest[b + 2]) * (opts.slack ?? 1);
+    }
+  }
+
+  setPins(frame, out) {
+    const r = this.mesh.rest;
+    for (let j = 0; j < this.pins.length; j++) { const i = this.pins[j] * 3; toWorld(frame, r[i], r[i + 1], r[i + 2], out, j * 3); }
+  }
+
+  // Put the garment on: rest shape around the pelvis, at rest
+  place(frame) {
+    const r = this.mesh.rest;
+    for (let i = 0; i < this.n; i++) toWorld(frame, r[i * 3], r[i * 3 + 1], r[i * 3 + 2], this.pos, i * 3);
+    this.prev.set(this.pos);
+    this.setPins(frame, this.pinTo);
+    this.pinFrom.set(this.pinTo);
+    this.colFrom = this.colTo = null;
+  }
+
+  // colliders: Float32Array of capsules [ax, ay, az, bx, by, bz, r] * m, same layout every frame
+  step(dt, frame, colliders) {
+    if (dt <= 0) return;
+    this.pinFrom.set(this.pinTo);
+    this.setPins(frame, this.pinTo);
+    this.colFrom = this.colTo && this.colTo.length === colliders.length ? this.colTo : colliders;
+    this.colTo = colliders.slice();
+    const N = this.substeps, h = dt / N, damp = Math.exp(-this.drag * h), g = GRAVITY * h * h;
+    const pos = this.pos, prev = this.prev, inv = this.inv, n = this.n;
+    const cA = this.cA, cB = this.cB, cK = this.cK, cR = this.cR, nc = cA.length;
+    const pins = this.pins, pf = this.pinFrom, pt = this.pinTo;
+    for (let s = 1; s <= N; s++) {
+      const u = s / N;
+      for (let i = 0; i < n; i++) {
+        if (!inv[i]) continue;
+        const k = i * 3;
+        const x = pos[k], y = pos[k + 1], z = pos[k + 2];
+        pos[k] = x + (x - prev[k]) * damp;
+        pos[k + 1] = y + (y - prev[k + 1]) * damp + g;
+        pos[k + 2] = z + (z - prev[k + 2]) * damp;
+        prev[k] = x; prev[k + 1] = y; prev[k + 2] = z;
+      }
+      for (let j = 0; j < pins.length; j++) {
+        const k = pins[j] * 3, q = j * 3;
+        for (let c = 0; c < 3; c++) { prev[k + c] = pos[k + c]; pos[k + c] = pf[q + c] + (pt[q + c] - pf[q + c]) * u; }
+      }
+      for (let it = 0; it < this.iterations; it++) {
+        for (let c = 0; c < nc; c++) {
+          const a = cA[c], b = cB[c], ia = a * 3, ib = b * 3;
+          const dx = pos[ib] - pos[ia], dy = pos[ib + 1] - pos[ia + 1], dz = pos[ib + 2] - pos[ia + 2];
+          const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (d < 1e-9) continue;
+          const wa = inv[a], wb = inv[b], w = wa + wb;
+          const f = (d - cR[c]) / (d * w) * cK[c];
+          pos[ia] += dx * f * wa; pos[ia + 1] += dy * f * wa; pos[ia + 2] += dz * f * wa;
+          pos[ib] -= dx * f * wb; pos[ib + 1] -= dy * f * wb; pos[ib + 2] -= dz * f * wb;
+        }
+      }
+      this.collide(u);
+    }
+  }
+
+  collide(u) {
+    const pos = this.pos, prev = this.prev, inv = this.inv, n = this.n;
+    const A = this.colFrom, B = this.colTo, m = B.length / 7, fr = this.friction;
+    // capsules at this substep with their bounds; only those near the cloth are kept
+    if (!this.caps || this.caps.length < m * 14) this.caps = new Float32Array(m * 14);
+    const caps = this.caps;
+    let lo0 = Infinity, lo1 = Infinity, lo2 = Infinity, hi0 = -Infinity, hi1 = -Infinity, hi2 = -Infinity;
+    for (let i = 0; i < n; i++) {
+      const x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2];
+      if (x < lo0) lo0 = x; if (x > hi0) hi0 = x; if (y < lo1) lo1 = y; if (y > hi1) hi1 = y; if (z < lo2) lo2 = z; if (z > hi2) hi2 = z;
+    }
+    let live = 0;
+    for (let c = 0; c < m; c++) {
+      const o = c * 7;
+      const ax = A[o] + (B[o] - A[o]) * u, ay = A[o + 1] + (B[o + 1] - A[o + 1]) * u, az = A[o + 2] + (B[o + 2] - A[o + 2]) * u;
+      const bx = A[o + 3] + (B[o + 3] - A[o + 3]) * u, by = A[o + 4] + (B[o + 4] - A[o + 4]) * u, bz = A[o + 5] + (B[o + 5] - A[o + 5]) * u;
+      const r = B[o + 6];
+      const x0 = Math.min(ax, bx) - r, x1 = Math.max(ax, bx) + r, y0 = Math.min(ay, by) - r, y1 = Math.max(ay, by) + r, z0 = Math.min(az, bz) - r, z1 = Math.max(az, bz) + r;
+      if (x1 < lo0 || x0 > hi0 || y1 < lo1 || y0 > hi1 || z1 < lo2 || z0 > hi2) continue;
+      const q = live * 14, ex = bx - ax, ey = by - ay, ez = bz - az, ee = ex * ex + ey * ey + ez * ez;
+      caps[q] = ax; caps[q + 1] = ay; caps[q + 2] = az; caps[q + 3] = ex; caps[q + 4] = ey; caps[q + 5] = ez; caps[q + 6] = r;
+      caps[q + 7] = ee > 1e-12 ? 1 / ee : 0;
+      caps[q + 8] = x0; caps[q + 9] = x1; caps[q + 10] = y0; caps[q + 11] = y1; caps[q + 12] = z0; caps[q + 13] = z1;
+      live++;
+    }
+    for (let i = 0; i < n; i++) {
+      if (!inv[i]) continue;
+      const k = i * 3;
+      let px = pos[k], py = pos[k + 1], pz = pos[k + 2];
+      let hit = false;
+      for (let c = 0; c < live; c++) {
+        const o = c * 14;
+        if (px < caps[o + 8] || px > caps[o + 9] || py < caps[o + 10] || py > caps[o + 11] || pz < caps[o + 12] || pz > caps[o + 13]) continue;
+        const r = caps[o + 6];
+        const ax = caps[o], ay = caps[o + 1], az = caps[o + 2];
+        const ex = caps[o + 3], ey = caps[o + 4], ez = caps[o + 5];
+        const wx = px - ax, wy = py - ay, wz = pz - az;
+        let t = (wx * ex + wy * ey + wz * ez) * caps[o + 7];
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const qx = ax + ex * t, qy = ay + ey * t, qz = az + ez * t;
+        const dx = px - qx, dy = py - qy, dz = pz - qz;
+        const dd = dx * dx + dy * dy + dz * dz;
+        if (dd >= r * r) continue;
+        const d = Math.sqrt(dd) || 1e-6;
+        const s = r / d;
+        px = qx + dx * s; py = qy + dy * s; pz = qz + dz * s;
+        hit = true;
+      }
+      if (py < 0.004) { py = 0.004; hit = true; }
+      if (hit) {
+        pos[k] = px; pos[k + 1] = py; pos[k + 2] = pz;
+        // friction: lose some of the motion relative to what it touched
+        prev[k] += (px - prev[k]) * fr; prev[k + 1] += (py - prev[k + 1]) * fr; prev[k + 2] += (pz - prev[k + 2]) * fr;
+      }
+    }
+  }
+}
+
+// A flared skirt. Rows run from the waistband (pinned on the hip bones) to the
+// hem; the rest shape is a fluted cone, so there's fabric to swing out in spins.
+function skirtMesh({ around = 56, rows = 11, waistY = 0.078, a = 0.152, b = 0.112, zc = -0.008, length = 0.42, spread = 0.18, flutes = 8, depth = 0.026 } = {}) {
+  const rest = [], uv = [], tris = [], pins = [];
+  for (let j = 0; j < rows; j++) {
+    const u = j / (rows - 1);
+    const A = a + spread * Math.pow(u, 1.12), B = b + spread * Math.pow(u, 1.12);
+    const y = waistY - length * 0.93 * u;
+    const F = depth * Math.pow(u, 1.15);
+    for (let i = 0; i < around; i++) {
+      const th = (i / around) * Math.PI * 2;
+      const nx = Math.sin(th), nz = Math.cos(th);
+      const fl = F * Math.cos(th * flutes);
+      rest.push(A * nx + nx * fl, y, zc + B * nz + nz * fl);
+      uv.push(i / around * 12, u * 4);
+      if (j === 0) pins.push(i);
+    }
+  }
+  for (let j = 0; j < rows - 1; j++) for (let i = 0; i < around; i++) {
+    const a0 = j * around + i, a1 = j * around + (i + 1) % around, b0 = a0 + around, b1 = a1 + around;
+    tris.push(a0, b0, a1, a1, b0, b1);
+  }
+  return { rest: Float32Array.from(rest), uv: Float32Array.from(uv), tris: Uint32Array.from(tris), pins, ring: pins.slice() };
+}
+
+// Shorts: a seat from the waistband down to the crotch, splitting into two legs.
+// The seat's bottom ring is shared: its left half plus the inseam make the top of
+// the left leg, its right half plus the same inseam the top of the right.
+function shortsMesh({ N = 36, R = 4, K = 5, Q = 7, waistY = 0.088, crotchY = -0.078, a0 = 0.15, b0 = 0.108, legX = 0.094, legR = 0.079, hem = 0.215 } = {}) {
+  const rest = [], uv = [], tris = [], pins = [];
+  const pt = (x, y, z, u, v) => { rest.push(x, y, z); uv.push(u, v); return rest.length / 3 - 1; };
+  const zcOf = r => -0.006 - 0.014 * (r / R);
+  for (let r = 0; r <= R; r++) {
+    const f = r / R;
+    const A = a0 + 0.012 * Math.sin(Math.PI * f * 0.8), B = b0 + 0.022 * f;
+    const y = waistY + (crotchY - waistY) * f;
+    for (let j = 0; j < N; j++) {
+      const th = (j / N) * Math.PI * 2;
+      const id = pt(A * Math.sin(th), y, zcOf(r) + B * Math.cos(th), j / N * 8, f * 1.5);
+      if (r === 0) pins.push(id);
+    }
+  }
+  for (let r = 0; r < R; r++) for (let j = 0; j < N; j++) {
+    const a = r * N + j, b = r * N + (j + 1) % N;
+    tris.push(a, a + N, b, b, a + N, b + N);
+  }
+  const Bc = b0 + 0.022, zc = zcOf(R);
+  const inseam = [];
+  for (let k = 0; k < K; k++) {
+    const t = (k + 1) / (K + 1);
+    const z = zc + Bc * 0.72 - Bc * 1.44 * t;
+    inseam.push(pt(0, crotchY - 0.014 * Math.sin(Math.PI * t), z, 4, 1.5));
+  }
+  const bottom = j => R * N + (j % N);
+  const legs = [];
+  for (const sgn of [1, -1]) {
+    const top = [];
+    if (sgn > 0) { for (let j = 0; j <= N / 2; j++) top.push(bottom(j)); for (let k = K - 1; k >= 0; k--) top.push(inseam[k]); }
+    else { for (let j = N / 2; j <= N; j++) top.push(bottom(j)); for (let k = 0; k < K; k++) top.push(inseam[k]); }
+    const M = top.length, cx = sgn * legX;
+    const ang = top.map(i => Math.atan2(rest[i * 3] - cx, rest[i * 3 + 2] - zc));
+    let prevRing = top;
+    for (let q = 1; q <= Q; q++) {
+      const w = Math.min(1, q / 2.5), y = crotchY - hem * q / Q;
+      const ring = top.map((i, m) => {
+        const x0 = rest[i * 3], z0 = rest[i * 3 + 2];
+        const x1 = cx + legR * Math.sin(ang[m]), z1 = zc + legR * Math.cos(ang[m]);
+        return pt(x0 + (x1 - x0) * w, y, z0 + (z1 - z0) * w, m / M * 6, 1.5 + q / Q * 2);
+      });
+      for (let m = 0; m < M; m++) {
+        const a = prevRing[m], b = prevRing[(m + 1) % M], c = ring[m], d = ring[(m + 1) % M];
+        tris.push(a, c, b, b, c, d);
+      }
+      prevRing = ring;
+    }
+    legs.push(prevRing);
+  }
+  return { rest: Float32Array.from(rest), uv: Float32Array.from(uv), tris: Uint32Array.from(tris), pins, ring: pins.slice(), hems: legs };
+}
+
+return { Cloth, skirtMesh, shortsMesh };
+})();
+
+// ---- music.js ----
+const __music = (() => {
+// The band: son clave, bongo bell, conga tumbao, bongo martillo, güiro, a tumbao
+// bass and a piano montuno, all from the site's samples and scheduled a little
+// ahead on the Web Audio clock. The dance takes its beat from the same clock.
+
+// I - IV - V - IV, one chord a bar: [root, third, fifth] as pitch classes
+const PROG = [[0, 4, 7], [5, 9, 0], [7, 11, 2], [5, 9, 0]];
+const PIANO = ['C4', 'Cs4', 'D4', 'Ds4', 'E4', 'F4', 'Fs4', 'G4', 'Gs4', 'A4', 'As4', 'B4'];
+const BASS = { 36: 'bassC2', 41: 'bassF2', 43: 'bassG2' };
+const CLAVE = [2, 4, 8, 11, 14];                      // 2-3 son clave over 16 eighths
+const MONTUNO = [0, 2, 3, 5, 7, 8, 10, 11, 13, 15];   // piano hits over the same two bars
+
+class Band {
+  constructor(base = '/samples/') {
+    this.base = base;
+    this.bpm = 180;
+    this.ctx = null;
+    this.buf = {};
+    this.running = false;
+    this.loaded = false;
+  }
+
+  async load(onProgress = () => {}) {
+    const files = {
+      clave: 'clave/Clave.wav', bell: 'cowbell/Cowbell.wav', congaHi: 'conga/conga-high.wav', congaLo: 'conga/conga-low.wav',
+      bongoHi: 'bongo/Bongo-high.wav', bongoLo: 'bongo/Bongo-low.wav', guiro: 'guiro/guiro.wav',
+      bassC2: 'bass/C2.wav', bassF2: 'bass/F2.wav', bassG2: 'bass/G2.wav',
+    };
+    for (const n of PIANO) files['p' + n] = `piano/${n}.mp3`;
+    const ctx = this.ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    // mix: instruments -> bus -> compressor -> master, with a little room on a send
+    this.master = ctx.createGain(); this.master.gain.value = 0;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.18;
+    this.bus = ctx.createGain(); this.bus.gain.value = 0.9;
+    this.bus.connect(comp); comp.connect(this.master); this.master.connect(ctx.destination);
+    const room = ctx.createConvolver();
+    const len = Math.floor(ctx.sampleRate * 1.3), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    room.buffer = ir;
+    this.send = ctx.createGain(); this.send.gain.value = 0.16;
+    this.send.connect(room); room.connect(comp);
+    let done = 0;
+    const names = Object.keys(files);
+    await Promise.all(names.map(async name => {
+      const res = await fetch(this.base + files[name]);
+      if (!res.ok) throw new Error(`Couldn't load ${files[name]}`);
+      const data = await res.arrayBuffer();
+      const buffer = await new Promise((ok, fail) => ctx.decodeAudioData(data, ok, fail));
+      // start each sound at its attack, not at any silence before it
+      const ch = buffer.getChannelData(0);
+      let peak = 0;
+      for (let i = 0; i < ch.length; i++) peak = Math.max(peak, Math.abs(ch[i]));
+      let on = 0;
+      while (on < ch.length && Math.abs(ch[on]) < peak * 0.04) on++;
+      this.buf[name] = { buffer, offset: Math.max(0, on / buffer.sampleRate - 0.002) };
+      onProgress(++done / names.length);
+    }));
+    this.loaded = true;
+  }
+
+  // ---- the clock ----
+  beatAt(time) { return this.b0 + (time - this.t0) * this.bpm / 60; }
+  timeOf(beat) { return this.t0 + (beat - this.b0) * 60 / this.bpm; }
+  latency() { return (this.ctx.outputLatency || 0) + (this.ctx.baseLatency || 0); }
+  // the beat you're hearing right now
+  beatNow() { return this.beatAt(this.ctx.currentTime - this.latency()); }
+
+  // Start playing so that `beat` is heard now
+  start(beat) {
+    const ctx = this.ctx, lead = 0.05;
+    // the first note sounds `lead` from now; by the time it's heard the dance has
+    // moved on by lead + latency, so that's the beat it belongs to
+    this.t0 = ctx.currentTime + lead;
+    this.b0 = beat + (lead + this.latency()) * this.bpm / 60;
+    this.next = Math.ceil(this.b0 * 2);
+    this.running = true;
+    const g = this.master.gain;
+    g.cancelScheduledValues(ctx.currentTime);
+    g.setValueAtTime(g.value, ctx.currentTime);
+    g.linearRampToValueAtTime(this.volume ?? 0.85, ctx.currentTime + 0.25);
+    clearInterval(this.timer);
+    this.timer = setInterval(() => this.tick(), 25);
+    this.tick();
+  }
+
+  stop() {
+    if (!this.running) return;
+    this.running = false;
+    clearInterval(this.timer);
+    const ctx = this.ctx, g = this.master.gain;
+    g.cancelScheduledValues(ctx.currentTime);
+    g.setValueAtTime(g.value, ctx.currentTime);
+    g.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+    // let what's already scheduled ring out under the fade, then silence it
+    for (const s of this.live || []) try { s.stop(ctx.currentTime + 0.35); } catch {}
+    this.live = [];
+  }
+
+  setTempo(bpm) {
+    if (this.running) { const now = this.ctx.currentTime; this.b0 = this.beatAt(now); this.t0 = now; }
+    this.bpm = bpm;
+  }
+
+  tick() {
+    if (!this.running) return;
+    const horizon = this.ctx.currentTime + 0.14;
+    while (this.timeOf(this.next / 2) < horizon) {
+      this.schedule(this.next, Math.max(this.ctx.currentTime, this.timeOf(this.next / 2)));
+      this.next++;
+    }
+  }
+
+  play(name, time, { gain = 1, rate = 1, dur = 0, wet = true } = {}) {
+    const b = this.buf[name];
+    if (!b) return;
+    const ctx = this.ctx, src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = b.buffer;
+    src.playbackRate.value = rate;
+    // a touch of human feel: small changes in timing and touch
+    const t = time + (Math.random() - 0.5) * 0.006;
+    g.gain.value = gain * (0.92 + Math.random() * 0.16);
+    src.connect(g); g.connect(this.bus);
+    if (wet) g.connect(this.send);
+    src.start(t, b.offset);
+    if (dur) {
+      g.gain.setValueAtTime(g.gain.value, t + dur);
+      g.gain.linearRampToValueAtTime(0, t + dur + 0.07);
+      src.stop(t + dur + 0.08);
+    }
+    this.live = (this.live || []).filter(s => s.t > ctx.currentTime - 2);
+    src.t = t;
+    this.live.push(src);
+  }
+
+  bass(note, time, eighths) {
+    const near = Object.keys(BASS).map(Number).reduce((a, b) => (Math.abs(b - note) < Math.abs(a - note) ? b : a));
+    this.play(BASS[near], time, { gain: 0.95, rate: Math.pow(2, (note - near) / 12), dur: eighths * 30 / this.bpm - 0.03, wet: false });
+  }
+
+  piano(notes, time, gain) {
+    for (const m of notes) this.play('p' + PIANO[(m - 60) % 12], time, { gain, rate: m >= 72 ? 2 : 1, dur: 0.2 });
+  }
+
+  // Everything that sounds on one eighth note
+  schedule(step, time) {
+    const bar = Math.floor(step / 8), pos = ((step % 8) + 8) % 8, p16 = ((step % 16) + 16) % 16;
+    const chord = PROG[((bar % 4) + 4) % 4], next = PROG[(((bar + 1) % 4) + 4) % 4];
+    if (CLAVE.includes(p16)) this.play('clave', time, { gain: 0.36 });
+    // bongo bell on the beats, the low mouth on 1 and 3
+    if (pos % 2 === 0) this.play('bell', time, { gain: pos === 0 ? 0.36 : pos === 4 ? 0.3 : 0.22, rate: pos % 4 === 0 ? 0.93 : 1.03 });
+    // conga tumbao: heel-toe, slap on 2, open tones on 4 and the and of 4
+    const [cn, cg, cr] = [['congaLo', 0.14, 0.9], ['congaHi', 0.1, 1], ['congaHi', 0.6, 1.12], ['congaHi', 0.1, 1], ['congaLo', 0.14, 0.9], ['congaHi', 0.1, 1], ['congaLo', 0.62, 1], ['congaLo', 0.56, 1.02]][pos];
+    this.play(cn, time, { gain: cg, rate: cr });
+    // bongos underneath, quietly
+    this.play('bongoHi', time, { gain: [0.2, 0.1, 0.15, 0.1, 0.2, 0.1, 0.14, 0.08][pos], dur: 0.18 });
+    if (pos === 7) this.play('bongoLo', time, { gain: 0.16 });
+    // güiro: long scrape on the beat, short on the and
+    this.play('guiro', time, { gain: pos % 2 ? 0.07 : 0.12, dur: pos % 2 ? 0.05 : 0.14, rate: pos % 2 ? 1.12 : 1 });
+    // bass tumbao: the fifth on the and of 2, the next chord's root on 4, held over the bar line
+    if (pos === 3) this.bass(chord[2] === 7 ? 43 : 36 + chord[2], time, 3);
+    if (pos === 6) this.bass(36 + next[0], time, 5);
+    // piano montuno in octaves, changing chord on the and of 4
+    const hit = MONTUNO.indexOf(p16);
+    if (hit >= 0) {
+      const [r, t, f] = pos === 7 ? next : chord;
+      const low = pc => 60 + pc, high = pc => 72 + pc;
+      const notes = hit % 2 === 0 ? [low(r), t > r ? low(t) : high(t), high(r)] : [low(f), high(f)];
+      this.piano(notes, time, pos % 2 ? 0.17 : 0.13);
+    }
+  }
+}
+
+return { Band };
+})();
+
+// ---- app.js ----
+const __app = (() => {
+// The stage: two skeletons on a wooden floor, the leader in shorts and the
+// follower in a skirt, dancing On1 to the band. Moves you pick wait for the next 1.
+
+
+
+const { Dance, MOVES, boneFrames } = __motion;
+const { buildSkeleton, poseSkeleton } = __skeleton;
+const { Cloth, skirtMesh, shortsMesh } = __cloth;
+const { Band } = __music;
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+
+const MENU = [
+  { key: 'basic', label: 'Basic', hint: 'Forward on 1, back on 5. Hold still on 4 and 8.' },
+  { key: 'crossBody', label: 'Cross Body Lead', hint: 'He opens the slot on 3; she walks past him on 5–6 and turns to face him on 7.' },
+  { key: 'insideTurn', label: 'Inside Turn', hint: 'His left hand goes up on 5; she turns to her left, toward him, on 5–6.' },
+  { key: 'outsideTurn', label: 'Outside Turn', hint: 'His left hand goes up on 5; she turns to her right, away from him, on 5–6.' },
+  { key: 'hammerlock', label: 'Hammerlock', hint: 'She turns in on 5 with her right arm wrapped behind her back, then he unwinds her on 13.' },
+];
+
+// ---------- renderer, scene, lights ----------
+const canvas = $('stage');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+} catch (e) {
+  $('start').querySelector('p').textContent = 'This browser can’t show 3D graphics (WebGL is off).';
+  throw e;
+}
+const phone = Math.min(innerWidth, innerHeight) < 600;
+renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.75 : 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+const BG = 0x0d0a0b;
+scene.background = new THREE.Color(BG);
+scene.fog = new THREE.Fog(BG, 4.5, 11);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 60);
+camera.position.set(3.0, 1.5, 4.5);
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 0.95, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 1.0;
+controls.maxDistance = 9;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.autoRotateSpeed = 0.55;
+
+const key = new THREE.DirectionalLight(0xffe0bd, 2.4);
+key.position.set(2.5, 5.5, 3);
+key.castShadow = true;
+key.shadow.mapSize.set(phone ? 1024 : 2048, phone ? 1024 : 2048);
+Object.assign(key.shadow.camera, { left: -1.8, right: 1.8, top: 1.8, bottom: -1.8, near: 1, far: 14 });
+key.shadow.bias = -0.0003;
+key.shadow.normalBias = 0.015;
+scene.add(key, key.target);
+const rim = new THREE.DirectionalLight(0x9db4ff, 1.4);
+rim.position.set(-3.5, 3, -4);
+scene.add(rim);
+scene.add(new THREE.HemisphereLight(0xfff0e0, 0x1c140f, 0.35));
+
+// ---------- the dance floor ----------
+function woodTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 1024;
+  const g = c.getContext('2d');
+  const planks = 8, w = c.width / planks;
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < planks; i++) {
+    let y = -rnd() * 400;
+    while (y < c.height) {
+      const len = 260 + rnd() * 380;
+      const hue = 22 + rnd() * 9, light = 19 + rnd() * 8;
+      g.fillStyle = `hsl(${hue}, 40%, ${light}%)`;
+      g.fillRect(i * w, y, w, len);
+      // grain
+      for (let k = 0; k < 26; k++) {
+        const x = i * w + rnd() * w;
+        g.strokeStyle = `hsla(${hue - 4}, 45%, ${light - 8 - rnd() * 6}%, ${0.15 + rnd() * 0.25})`;
+        g.lineWidth = 0.6 + rnd() * 1.4;
+        g.beginPath();
+        g.moveTo(x, y);
+        for (let s = 0; s <= len; s += 20) g.lineTo(x + Math.sin((s + k * 37) / (40 + rnd() * 30)) * 3, y + s);
+        g.stroke();
+      }
+      g.fillStyle = 'rgba(20,10,5,0.75)';
+      g.fillRect(i * w, y + len - 2, w, 2);
+      y += len;
+    }
+    g.fillStyle = 'rgba(15,8,4,0.8)';
+    g.fillRect(i * w, 0, 2, c.height);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(30, 30);
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
+}
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ map: woodTexture(), roughness: 0.55, metalness: 0, envMapIntensity: 0.18 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+// a warm pool of light under the dancers
+const pool = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), new THREE.MeshBasicMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  map: (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gr.addColorStop(0, 'rgba(255,186,120,0.1)'); gr.addColorStop(0.6, 'rgba(255,150,90,0.035)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })(),
+}));
+pool.rotation.x = -Math.PI / 2;
+pool.position.y = 0.002;
+scene.add(pool);
+
+// ---------- the dancers ----------
+const mats = {
+  bone: new THREE.MeshStandardMaterial({ color: 0xeee2c8, roughness: 0.52, metalness: 0, vertexColors: true, side: THREE.DoubleSide, envMapIntensity: 0.6 }),
+  cartilage: new THREE.MeshStandardMaterial({ color: 0xbfcac6, roughness: 0.3, metalness: 0, vertexColors: true, envMapIntensity: 0.7 }),
+  dark: new THREE.MeshStandardMaterial({ color: 0x140d0a, roughness: 0.95, metalness: 0 }),
+};
+const dance = new Dance();
+for (const k of (params.get('moves') || '').split(',')) if (MOVES[k]) dance.queue.push(k);
+const lead = buildSkeleton(dance.bodies.leader, mats);
+const follow = buildSkeleton(dance.bodies.follower, mats);
+scene.add(lead.group, follow.group);
+
+function fabric(color, sheen) {
+  return new THREE.MeshPhysicalMaterial({ color, roughness: 0.78, metalness: 0, sheen: 1, sheenRoughness: 0.5, sheenColor: new THREE.Color(sheen), side: THREE.DoubleSide, envMapIntensity: 0.5 });
+}
+function garment(meshData, material, opts) {
+  const cloth = new Cloth(meshData, opts);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(cloth.pos, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('uv', new THREE.BufferAttribute(meshData.uv, 2));
+  geo.setIndex(new THREE.BufferAttribute(meshData.tris, 1));
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.castShadow = mesh.receiveShadow = true;
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  // the waistband: a firmer band round the pinned ring
+  const r = meshData.rest, pts = meshData.ring.map(i => new THREE.Vector3(r[i * 3], r[i * 3 + 1] - 0.006, r[i * 3 + 2]));
+  const band = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 96, 0.0085, 8, true), material);
+  band.castShadow = true;
+  band.matrixAutoUpdate = false;
+  scene.add(band);
+  return { cloth, geo, band };
+}
+const skirt = garment(skirtMesh(), fabric(0xa3132d, 0xff7a88), { stretch: 1, bend: 0.3, drag: 2.2, substeps: phone ? 5 : 7, iterations: 3 });
+const shorts = garment(shortsMesh(), fabric(0x22314a, 0x7d93c0), { stretch: 1, bend: 0.3, drag: 2.4, substeps: phone ? 5 : 6, iterations: 2 });
+
+// bones and limbs the cloth can't pass through
+function colliders(me, fr, own, out) {
+  const at = (f, x, y, z) => [f.o[0] + f.x[0] * x + f.y[0] * y + f.z[0] * z, f.o[1] + f.x[1] * x + f.y[1] * y + f.z[1] * z, f.o[2] + f.x[2] * x + f.y[2] * y + f.z[2] * z];
+  const cap = (a, b, r) => out.push(a[0], a[1], a[2], b[0], b[1], b[2], r);
+  if (own) {
+    const P = fr.pelvis, w = me.body.hipW / 0.088 * (me.role === 'follower' ? 1.04 : 1);
+    for (const s of [1, -1]) {
+      cap(at(P, s * 0.112 * w, 0.07, 0.05), at(P, s * 0.137 * w, 0.1, -0.02), 0.02);
+      cap(at(P, s * 0.137 * w, 0.1, -0.02), at(P, s * 0.06 * w, 0.088, -0.082), 0.02);
+      const T = fr['thigh' + (s > 0 ? 'L' : 'R')], lat = s > 0 ? -1 : 1;
+      const tp = at(T, lat * 0.05, 0.01, -0.004);
+      cap(tp, tp, 0.032);
+    }
+    cap(at(P, 0, 0.05, -0.066), at(P, 0, -0.03, -0.086), 0.03);
+    cap(at(P, -0.03, -0.045, 0.06), at(P, 0.03, -0.045, 0.06), 0.022);
+    cap(at(fr.lumbar, 0, 0, 0), at(fr.lumbar, 0, me.body.lumbar, 0), 0.032);
+  }
+  for (const s of ['L', 'R']) {
+    const leg = me.legs[s];
+    cap(leg.hip, leg.knee, 0.03);
+    const kn = at(fr['shin' + s], 0, -0.01, 0.02);
+    cap(kn, kn, 0.04);
+    cap(leg.knee, leg.ankle, 0.027);
+  }
+}
+const _bm = new THREE.Matrix4();
+function frameMatrix(f) {
+  return _bm.set(f.x[0], f.y[0], f.z[0], f.o[0], f.x[1], f.y[1], f.z[1], f.o[1], f.x[2], f.y[2], f.z[2], f.o[2], 0, 0, 0, 1);
+}
+
+// ---------- clock: the band's when it's playing, otherwise our own ----------
+const band = new Band(params.get('samples') || '/samples/');
+const clock = { beat: 0, speed: 1 };
+let bpm = Number(params.get('bpm')) || 180;
+band.bpm = bpm;
+let musicOn = false;
+
+function advance(dt) {
+  const before = clock.beat;
+  if (band.running && clock.speed === 1) clock.beat = Math.max(before, band.beatNow());
+  else clock.beat += dt * bpm / 60 * clock.speed;
+  return clock.beat - before;
+}
+
+// ---------- UI ----------
+const movesEl = $('moves');
+MENU.forEach((m, i) => {
+  const b = document.createElement('button');
+  b.className = 'move';
+  b.dataset.key = m.key;
+  b.innerHTML = `<span class="name">${m.label}</span><span class="meta">${MOVES[m.key].counts} counts · ${i + 1}</span>`;
+  b.addEventListener('click', () => queueMove(m.key));
+  movesEl.appendChild(b);
+});
+function queueMove(k) {
+  if (dance.queue.length >= 4) dance.queue.shift();
+  dance.queue.push(k);
+  renderQueue();
+}
+function renderQueue() {
+  const q = dance.queue.map(k => MOVES[k].name);
+  $('queue').innerHTML = q.length ? `Next: ${q.map(n => `<b>${n}</b>`).join(' → ')} <button id="clearq" aria-label="Clear the queue">✕</button>` : autoLead ? 'He’s leading — pick a move to take over' : 'Pick a move — it starts on the next 1';
+  const c = $('clearq');
+  if (c) c.onclick = () => { dance.queue.length = 0; renderQueue(); };
+}
+const countEl = $('count');
+for (let i = 1; i <= 8; i++) {
+  const s = document.createElement('span');
+  s.textContent = i % 4 === 0 ? '·' : i;
+  if (i % 4 === 0) s.className = 'pause';
+  countEl.appendChild(s);
+}
+let shownCount = 0, shownMove = '', shownKey = '';
+function updateHud(out) {
+  if (out.count !== shownCount) {
+    countEl.children[shownCount - 1]?.classList.remove('on');
+    countEl.children[out.count - 1].classList.add('on');
+    shownCount = out.count;
+  }
+  if (out.move !== shownMove || out.moveKey !== shownKey) {
+    shownMove = out.move; shownKey = out.moveKey;
+    $('moveName').textContent = out.move;
+    $('hint').textContent = MENU.find(m => m.key === out.moveKey)?.hint || '';
+    for (const b of movesEl.children) b.classList.toggle('active', b.dataset.key === out.moveKey);
+    renderQueue();
+  }
+  if (MOVES[out.moveKey].counts === 16) $('half').textContent = out.k > 9 ? '2nd eight' : '1st eight';
+  else $('half').textContent = '';
+}
+
+// a leader with ideas of his own, when you want to just watch
+let autoLead = params.has('auto');
+let lastAuto = 'basic';
+function autoPick() {
+  if (!autoLead || dance.queue.length) return;
+  const pool = ['crossBody', 'crossBody', 'insideTurn', 'outsideTurn', 'hammerlock', 'basic'].filter(k => k !== lastAuto);
+  lastAuto = pool[Math.floor(Math.random() * pool.length)];
+  dance.queue.push(lastAuto);
+}
+
+$('auto').addEventListener('click', () => { autoLead = !autoLead; $('auto').setAttribute('aria-pressed', autoLead); renderQueue(); });
+$('auto').setAttribute('aria-pressed', autoLead);
+$('slow').addEventListener('click', () => setSlow(clock.speed === 1));
+function setSlow(on) {
+  clock.speed = on ? 0.3 : 1;
+  $('slow').setAttribute('aria-pressed', on);
+  if (on) band.stop();
+  else if (musicOn) band.start(clock.beat);
+}
+$('music').addEventListener('click', () => {
+  musicOn = !musicOn;
+  $('music').setAttribute('aria-pressed', musicOn);
+  if (musicOn && clock.speed === 1) band.start(clock.beat); else band.stop();
+});
+const tempo = $('tempo');
+tempo.value = bpm;
+$('bpm').textContent = bpm;
+tempo.addEventListener('input', () => {
+  bpm = Number(tempo.value);
+  $('bpm').textContent = bpm;
+  band.setTempo(bpm);
+});
+
+// cameras: a slow orbit, free (drag), side-on to the slot, from above
+const VIEWS = ['Orbit', 'Side', 'Above', 'Free'];
+let view = params.get('view') || 'Orbit', flying = 0;
+function setView(v) {
+  view = v;
+  $('view').textContent = v;
+  controls.autoRotate = v === 'Orbit';
+  flying = v === 'Side' || v === 'Above' ? 1 : 0;
+}
+$('view').addEventListener('click', () => setView(VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length]));
+controls.addEventListener('start', () => { if (view !== 'Free' && !flying) setView('Free'); else if (flying) { flying = 0; setView('Free'); } });
+setView(view);
+if (params.get('cam')) { const [x, y, z] = params.get('cam').split(',').map(Number); camera.position.set(x, y, z); }
+
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= MENU.length) queueMove(MENU[n - 1].key);
+  else if (e.key === ' ') { e.preventDefault(); $('music').click(); }
+  else if (e.key === 's' || e.key === 'S') $('slow').click();
+  else if (e.key === 'c' || e.key === 'C') $('view').click();
+  else if (e.key === 'a' || e.key === 'A') $('auto').click();
+});
+
+// ---------- start: the music needs a tap ----------
+const startEl = $('start'), startBtn = $('go');
+band.load(p => { $('progress').style.width = `${Math.round(p * 100)}%`; })
+  .then(() => { startBtn.disabled = false; startBtn.textContent = 'Start the music'; $('loading').textContent = 'Congas, bongos, bell, güiro, bass and piano — ready.'; })
+  .catch(err => { $('loading').textContent = `The music didn’t load (${err.message}). You can still watch.`; startBtn.disabled = false; startBtn.textContent = 'Watch without music'; });
+startBtn.addEventListener('click', async () => {
+  startEl.classList.add('gone');
+  if (!band.loaded) return;
+  await band.ctx.resume();
+  musicOn = true;
+  $('music').setAttribute('aria-pressed', true);
+  if (clock.speed === 1) band.start(clock.beat);
+});
+$('silent').addEventListener('click', () => startEl.classList.add('gone'));
+if (params.has('nostart')) startEl.classList.add('gone');
+
+// ---------- the loop ----------
+const center = new THREE.Vector3(0, 0.95, 0), lastCenter = new THREE.Vector3(0, 0.95, 0);
+const colL = [], colF = [];
+let last = performance.now(), placed = false, frames = 0;
+const fixed = params.get('t');           // ?t=beat freezes the dance at a beat (for stills)
+
+function step(now) {
+  const real = Math.max(0, Math.min(0.1, (now - last) / 1000));
+  last = now;
+  band.tick();
+  autoPick();
+  let dBeat;
+  if (fixed !== null) {
+    const target = Number(fixed);
+    // run up to the requested beat in small steps so springs and cloth settle
+    if (!placed) { clock.beat = Math.max(0, target - 4); }
+    dBeat = Math.min(1 / 60 * bpm / 60, target - clock.beat);
+    clock.beat += dBeat;
+  } else dBeat = advance(real);
+  const secs = dBeat * 60 / bpm;
+  const out = dance.update(clock.beat, Math.max(1e-4, secs));
+  const fl = boneFrames(out.leader), ff = boneFrames(out.follower);
+  poseSkeleton(lead, fl);
+  poseSkeleton(follow, ff);
+
+  // clothes
+  colL.length = 0; colF.length = 0;
+  colliders(out.leader, fl, true, colL); colliders(out.follower, ff, false, colL);
+  colliders(out.follower, ff, true, colF); colliders(out.leader, fl, false, colF);
+  if (!placed) {
+    skirt.cloth.place(ff.pelvis); shorts.cloth.place(fl.pelvis);
+    // let them settle onto the bones before anyone sees them
+    for (let i = 0; i < 90; i++) { skirt.cloth.step(1 / 60, ff.pelvis, Float32Array.from(colF)); shorts.cloth.step(1 / 60, fl.pelvis, Float32Array.from(colL)); }
+    placed = true;
+  }
+  const simDt = Math.min(secs, 1 / 30);
+  skirt.cloth.step(simDt, ff.pelvis, Float32Array.from(colF));
+  shorts.cloth.step(simDt, fl.pelvis, Float32Array.from(colL));
+  for (const g of [skirt, shorts]) { g.geo.attributes.position.needsUpdate = true; g.geo.computeVertexNormals(); }
+  skirt.band.matrix.copy(frameMatrix(ff.pelvis)); skirt.band.matrixWorldNeedsUpdate = true;
+  shorts.band.matrix.copy(frameMatrix(fl.pelvis)); shorts.band.matrixWorldNeedsUpdate = true;
+
+  // camera follows the couple
+  const L = out.leader.pelvis, F = out.follower.pelvis;
+  center.set((L[0] + F[0]) / 2, 0.92, (L[2] + F[2]) / 2);
+  const delta = center.clone().sub(lastCenter).multiplyScalar(0.06);
+  lastCenter.add(delta);
+  controls.target.add(delta);
+  camera.position.add(delta);
+  if (flying) {
+    const axis = new THREE.Vector3(F[0] - L[0], 0, F[2] - L[2]).normalize();
+    const side = new THREE.Vector3(axis.z, 0, -axis.x);
+    const want = view === 'Side' ? lastCenter.clone().addScaledVector(side, 4.3).add(new THREE.Vector3(0, 0.35, 0)) : lastCenter.clone().add(new THREE.Vector3(0.01, 5.2, 0.6));
+    camera.position.lerp(want, 0.05);
+    if (camera.position.distanceTo(want) < 0.02) flying = 0;
+  }
+  key.position.set(lastCenter.x + 2.5, 5.5, lastCenter.z + 3);
+  key.target.position.copy(lastCenter);
+  pool.position.set(lastCenter.x, 0.002, lastCenter.z);
+  controls.update();
+
+  updateHud(out);
+  renderer.render(scene, camera);
+  frames++;
+  requestAnimationFrame(step);
+}
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight;
+  // pull back on tall narrow screens so both dancers fit
+  camera.fov = camera.aspect < 0.8 ? 50 : 32;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+renderQueue();
+requestAnimationFrame(step);
+window.__salsa = { dance, clock, band, renderer, get frames() { return frames; }, queueMove, setView, setSlow };
+
+return {  };
+})();
+</script>
+</body>
+</html>

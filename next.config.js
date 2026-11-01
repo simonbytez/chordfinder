@@ -5,6 +5,7 @@ module.exports = {
       // Self-contained pages in public/, served without the .html.
       { source: '/republic-of-rome', destination: '/republic-of-rome.html' },
       { source: '/tim-keller', destination: '/tim-keller.html' },
+      { source: '/salsa-bones', destination: '/salsa-bones.html' },
     ];
   },
   async redirects() {

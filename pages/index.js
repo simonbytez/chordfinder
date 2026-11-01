@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Frets, Congas, Counts, Keys, Steps, Board, Meeple, Reel, Temple, Notebook } from '../src/home/components/Covers';
+import { Frets, Congas, Counts, Keys, Steps, Bones, Board, Meeple, Reel, Temple, Notebook } from '../src/home/components/Covers';
 import styles from '../styles/Home.module.css';
 
 // Everything on the site, as cards. Add a product here to give it a card.
@@ -14,6 +14,8 @@ const PRODUCTS = [
     blurb: 'Tap a phrase on the piano. It plays it back, climbing a half step at a time and back down.' },
   { href: '/harp', name: 'Salsa Moves', kind: 'music', tag: 'Music', color: '#e5488a', Cover: Counts,
     blurb: 'Shuffles up a partner pattern, count by count, from the holds, turns and positions you pick.' },
+  { href: '/salsa-bones', file: true, name: 'Salsa Bones', kind: 'music', tag: 'Music', color: '#3b1f33', Cover: Bones,
+    blurb: 'Two skeletons dance salsa On1 to a live band. Call the moves and watch every joint, from the hips to the fingers.' },
   { href: '/drumtoolz', name: 'Drum Toolz', kind: 'music', tag: 'Music', color: '#3e63dd', Cover: Steps,
     blurb: 'Write, save, share and generate rhythm patterns to practice.' },
   { href: '/realmsend', name: "Realm's End", kind: 'games', tag: 'Game', color: '#1f3b33', Cover: Board,
