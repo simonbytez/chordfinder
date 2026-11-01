@@ -15,7 +15,7 @@ const PRODUCTS = [
   { href: '/harp', name: 'Salsa Moves', kind: 'music', tag: 'Music', color: '#e5488a', Cover: Counts,
     blurb: 'Shuffles up a partner pattern, count by count, from the holds, turns and positions you pick.' },
   { href: '/salsa-bones', file: true, name: 'Salsa Bones', kind: 'music', tag: 'Music', color: '#3b1f33', Cover: Bones,
-    blurb: 'Two skeletons dance salsa On1 to a live band. Call the moves and watch every joint, from the hips to the fingers.' },
+    blurb: 'Two skeletons, him in a suit and her in a skirt, dance salsa On1 to a live band. Call the moves; the basic and cross body lead are captured from real dancers.' },
   { href: '/drumtoolz', name: 'Drum Toolz', kind: 'music', tag: 'Music', color: '#3e63dd', Cover: Steps,
     blurb: 'Write, save, share and generate rhythm patterns to practice.' },
   { href: '/realmsend', name: "Realm's End", kind: 'games', tag: 'Game', color: '#1f3b33', Cover: Board,

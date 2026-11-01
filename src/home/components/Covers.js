@@ -181,10 +181,14 @@ export function Bones() {
   const ribs = (x, y) => [0, 1, 2].map(i => <path key={i} d={`M${x - 9 + i} ${y + i * 6} Q${x} ${y + 4 + i * 6} ${x + 9 - i} ${y + i * 6}`} {...bone} strokeWidth="3" />);
   return <Canvas>
     {[...Array(15).keys()].map(i => <circle key={i} cx={20 + i * 20} cy="172" r="2.5" fill={GOLD} opacity={i % 2 ? 0.35 : 0.8} />)}
-    {/* him: shorts, left hand raised to hers */}
-    <path d="M104 96 L136 96 L139 126 L123 126 L120 112 L117 126 L101 126 Z" fill={INK} />
+    {/* him: a suit, left hand raised to hers */}
     <path d="M120 52 L120 98 M111 132 L106 149 L98 164 M129 132 L136 149 L144 163 M110 60 L99 79 L108 94 M130 60 L146 44 L160 28" {...bone} />
-    {ribs(120, 62)}
+    <path d="M114 100 L111 132 L106 149 L102 157 M126 100 L129 132 L136 149 L140 156" stroke={INK} strokeWidth="13" strokeLinejoin="round" fill="none" />
+    <path d="M106 55 L134 55 L139 108 L101 108 Z" fill={INK} />
+    <path d="M115 55 L125 55 L120 82 Z" fill={CREAM} />
+    <path d="M120 58 L117.5 66 L120 81 L122.5 66 Z" fill="#e5484d" />
+    <path d="M110 59 L100 78 L105 89 M130 59 L145 45 L154 35" stroke={INK} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <path d="M103.5 86 L106 91 M152 37 L155.5 33" stroke={CREAM} strokeWidth="9" strokeLinecap="butt" fill="none" />
     <circle cx="120" cy="40" r="11" fill={CREAM} />
     <circle cx="124.5" cy="38" r="2.6" fill={INK} /><circle cx="117" cy="38" r="2.6" fill={INK} />
     {/* her: skirt flaring as she turns */}
