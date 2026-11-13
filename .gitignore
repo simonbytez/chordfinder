@@ -33,3 +33,9 @@ yarn-error.log*
 # vercel
 .vercel
 .history
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# LumenPulse's embedded local database (PGlite)
+/.data/

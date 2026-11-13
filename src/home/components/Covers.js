@@ -157,6 +157,22 @@ export function Reel() {
   </Canvas>;
 }
 
+// A flashlight throwing its beam, with a pulse running through the hotspot
+export function Beam() {
+  return <Canvas>
+    <path d="M120 74 L320 14 L320 166 L120 106 Z" fill={GOLD} opacity=".22" />
+    <path d="M120 82 L320 52 L320 128 L120 98 Z" fill={GOLD} opacity=".45" />
+    <ellipse cx="258" cy="90" rx="30" ry="42" fill={CREAM} opacity=".5" />
+    <path d="M150 90 H198 L208 64 L222 116 L232 80 L238 92 H300" fill="none" stroke={INK} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+    <rect x="24" y="83" width="12" height="14" rx="3" fill={CREAM} opacity=".8" />
+    <rect x="34" y="80" width="60" height="20" rx="4" fill={CREAM} />
+    {[44, 52, 60, 68].map(x => <line key={x} x1={x} y1="82" x2={x} y2="98" stroke={INK} strokeWidth="2" opacity=".3" />)}
+    <circle cx="82" cy="80" r="3.5" fill={GOLD} />
+    <path d="M92 80 L116 72 L116 108 L92 100 Z" fill={CREAM} />
+    <rect x="114" y="70" width="8" height="40" rx="2" fill={GOLD} />
+  </Canvas>;
+}
+
 // A temple under a low sun
 export function Temple() {
   return <Canvas>

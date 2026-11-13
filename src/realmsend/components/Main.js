@@ -16,10 +16,10 @@ import { useEffect } from 'react';
 
 const { useState } = React;
 
-const GameBoard = require('./GameBoard');
-const ControlPanel = require('./ControlPanel');
-const MovementPanel = require('./MovementPanel');
-const IntelLogPanel = require('./IntelLogPanel');
+import GameBoard from './GameBoard';
+import ControlPanel from './ControlPanel';
+import MovementPanel from './MovementPanel';
+import IntelLogPanel from './IntelLogPanel';
 
 const PIECE_TYPES = ['wall', 'flag', 'brute', 'scout', 'jammer', 'listener', 'pawn'];
 
@@ -838,4 +838,4 @@ function App({playerNumber,
   );
 }
 
-module.exports = App;
+export default App;

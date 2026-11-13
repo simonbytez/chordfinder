@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Frets, Congas, Counts, Keys, Steps, Bones, Board, Meeple, Reel, Temple, Notebook } from '../src/home/components/Covers';
+import { Frets, Congas, Counts, Keys, Steps, Bones, Board, Meeple, Reel, Beam, Temple, Notebook } from '../src/home/components/Covers';
 import styles from '../styles/Home.module.css';
 
 // Everything on the site, as cards. Add a product here to give it a card.
@@ -22,6 +22,8 @@ const PRODUCTS = [
     blurb: "Two-player strategy where you can't see the other side. Scout, plant listening devices and jammers, and hunt for their flag." },
   { href: '/tutor', name: 'Tabletop Tutor', kind: 'games', tag: 'Game tool', color: '#26285f', Cover: Meeple,
     blurb: "Drop in any board game's rulebook and Claude sets up the game and teaches it by playing, move by move, on a real board. Ask it anything and keep notes." },
+  { href: '/flashlights', app: true, name: 'LumenPulse', kind: 'gear', tag: 'Flashlights', color: '#16233b', Cover: Beam,
+    blurb: 'New flashlight releases, restocks and price drops from enthusiast stores, plus a spec database to filter by emitter, tint and battery. Alerts go to your phone.' },
   { href: '/movies', name: 'Reel', kind: 'family', tag: 'For Luke', color: '#6b1626', Cover: Reel,
     blurb: 'Luke’s own movie library. Drop in a movie and it’s ready to stream, with its poster, cast and a spot on the right shelf.' },
   { href: '/republic-of-rome', file: true, name: 'Republic of Rome', kind: 'family', tag: 'For Ammon', color: '#5b3a8c', Cover: Temple,
@@ -30,9 +32,10 @@ const PRODUCTS = [
     blurb: "Search Tim Keller's sermons, tie them to lessons and keep notes." },
 ];
 // Products marked `file` are static pages in public/ (see the rewrites in
-// next.config.js). They get a plain link, since next/link only knows pages/.
+// next.config.js), and `app` ones live in app/ on the App Router. Both get a
+// plain link, since next/link here only knows pages/.
 
-const KINDS = [['all', 'All'], ['music', 'Music'], ['games', 'Games'], ['family', 'Family']];
+const KINDS = [['all', 'All'], ['music', 'Music'], ['games', 'Games'], ['gear', 'Gear'], ['family', 'Family']];
 const KIND_KEY = 'boomcat:kind';
 
 export default function Home() {
@@ -81,8 +84,8 @@ export default function Home() {
     </div>
 
     <ul className={styles.grid}>
-      {shown.map(({ href, file, name, tag, color, Cover, blurb }, i) => {
-        const card = <a className={styles.card} href={href}>
+      {shown.map(({ href, file, app, name, tag, color, Cover, blurb }, i) => {
+        const inside = <>
           <div className={styles.cover} style={{ background: color }}><Cover /></div>
           <div className={styles.body}>
             <h2 className={styles.name}>{name}</h2>
@@ -92,10 +95,12 @@ export default function Home() {
               <svg className={styles.arrow} viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
             </div>
           </div>
-        </a>;
+        </>;
         // Keyed on the filter too, so the cards deal in again when it changes
         return <li key={kind + href} className={styles.item} style={{ animationDelay: `${i * 40}ms` }}>
-          {file ? card : <Link href={href}>{card}</Link>}
+          {file || app
+            ? <a className={styles.card} href={href}>{inside}</a>
+            : <Link className={styles.card} href={href}>{inside}</Link>}
         </li>;
       })}
     </ul>

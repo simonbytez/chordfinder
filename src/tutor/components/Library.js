@@ -140,7 +140,7 @@ export default function Library({ onOpen }) {
   return <div className={s.library}>
     <header className={s.libTop}>
       <span className={s.brand}><span className={s.brandMark}><Dices size={18} /></span>Tabletop Tutor</span>
-      <Link href="/"><a className={s.libBack}>boomcat</a></Link>
+      <Link href="/" className={s.libBack}>boomcat</Link>
     </header>
 
     <div className={s.libHero}>

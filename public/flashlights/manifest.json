@@ -1,0 +1,24 @@
+{
+  "name": "LumenPulse: Flashlight Drops & Specs",
+  "short_name": "LumenPulse",
+  "description": "Parametric flashlight discovery, multi-store release tracking and instant restock alerts for flashlight enthusiasts.",
+  "id": "/flashlights",
+  "start_url": "/flashlights?source=pwa",
+  "scope": "/flashlights",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#090D16",
+  "theme_color": "#090D16",
+  "categories": ["shopping", "lifestyle", "utilities"],
+  "icons": [
+    { "src": "/flashlights/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/flashlights/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/flashlights/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Fresh Drops", "short_name": "Drops", "url": "/flashlights?source=shortcut", "icons": [{ "src": "/flashlights/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Deep Vault", "short_name": "Vault", "url": "/flashlights?mode=vault&source=shortcut", "icons": [{ "src": "/flashlights/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "BeamAlerts", "short_name": "Alerts", "url": "/flashlights/alerts?source=shortcut", "icons": [{ "src": "/flashlights/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

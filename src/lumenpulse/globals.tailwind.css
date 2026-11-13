@@ -1,0 +1,148 @@
+/*
+ * LumenPulse styles. Only app/flashlights/layout.tsx imports this, so Tailwind
+ * never reaches the rest of boomcat. The *.tailwind.css name is what the
+ * turbopack rule in next.config.js keys on.
+ */
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@source ".";
+@source "../../app/flashlights";
+
+/* LumenPulse is dark-only: a tactical night palette with warm amber + high-CRI neutral white accents. */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-amber: var(--amber);
+  --color-cri: var(--cri);
+  --color-panel: var(--panel);
+  --color-success: var(--success);
+  --color-sky: var(--sky);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: dark;
+  --background: #090d16;
+  --foreground: #e6e9ef;
+  --card: #0e1420;
+  --card-foreground: #e6e9ef;
+  --panel: #0b111c;
+  --popover: #101726;
+  --popover-foreground: #e6e9ef;
+  --primary: #f59e0b;
+  --primary-foreground: #1a1203;
+  --secondary: #151d2c;
+  --secondary-foreground: #e2e8f0;
+  --muted: #131a28;
+  --muted-foreground: #8b95a8;
+  --accent: #1a2335;
+  --accent-foreground: #f1f5f9;
+  --destructive: #f87171;
+  --border: #1e2738;
+  --input: #263149;
+  --ring: #f59e0b;
+  --amber: #f59e0b;
+  --cri: #f4f1ea;
+  --success: #34d399;
+  --sky: #93b4ff;
+  --radius: 0.7rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    background: var(--background);
+  }
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(1200px 500px at 15% -10%, rgb(245 158 11 / 0.07), transparent 60%),
+      radial-gradient(900px 420px at 110% 0%, rgb(147 180 255 / 0.05), transparent 60%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: rgb(245 158 11 / 0.35);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #263149 transparent;
+  }
+  .glow-amber {
+    box-shadow: 0 0 0 1px rgb(245 158 11 / 0.35), 0 0 24px -4px rgb(245 158 11 / 0.45);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes beam-sweep {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(220%) skewX(-18deg);
+  }
+}
+.beam-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent);
+  animation: beam-sweep 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes grail-pop {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgb(245 158 11 / 0.6);
+  }
+  60% {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 14px rgb(245 158 11 / 0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.grail-pop {
+  animation: grail-pop 0.7s ease-out;
+}

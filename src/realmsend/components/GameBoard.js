@@ -62,4 +62,4 @@ function GameBoard({
   );
 }
 
-module.exports = GameBoard;
+export default GameBoard;

@@ -60,7 +60,7 @@ export const getPattern = state => {
     for(let timing of tcos) {
       let val = {id: timing.id, start: timing.start, end: timing.end, choices: {}};
       for(let categoryId in timing.options) {
-        const {enabled: categoryEnabled, options, optional} = timing.options[categoryId];
+        let {enabled: categoryEnabled, options, optional} = timing.options[categoryId];
         options = options.filter(option => option.enabled && categoryEnabled);
 
         if(options.length == 0 || (optional && Math.random() < 0.5)) { continue };
