@@ -31,7 +31,7 @@ export function llmProvider(): "gemini" | "openai" | null {
   return null;
 }
 
-async function callGemini(input: ExtractionInput): Promise<unknown> {
+async function callGemini(input: ExtractionInput, timeoutMs: number): Promise<unknown> {
   const model = process.env.LUMENPULSE_GEMINI_MODEL || "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
   const body = (withSchema: boolean) => ({
@@ -43,6 +43,8 @@ async function callGemini(input: ExtractionInput): Promise<unknown> {
       ...(withSchema ? { responseJsonSchema: EXTRACTION_JSON_SCHEMA } : {}),
     },
   });
+  // One timer for both attempts, so the retry can't double the time allowed.
+  const signal = AbortSignal.timeout(timeoutMs);
   const post = (withSchema: boolean) =>
     fetch(url, {
       method: "POST",
@@ -55,7 +57,7 @@ async function callGemini(input: ExtractionInput): Promise<unknown> {
               contents: [{ role: "user", parts: [{ text: `${userPrompt(input)}\n\nReturn JSON matching this JSON Schema:\n${JSON.stringify(EXTRACTION_JSON_SCHEMA)}` }] }],
             },
       ),
-      signal: AbortSignal.timeout(45_000),
+      signal,
     });
 
   let res = await post(true);
@@ -67,7 +69,7 @@ async function callGemini(input: ExtractionInput): Promise<unknown> {
   return JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
 }
 
-async function callOpenAI(input: ExtractionInput): Promise<unknown> {
+async function callOpenAI(input: ExtractionInput, timeoutMs: number): Promise<unknown> {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
@@ -79,7 +81,7 @@ async function callOpenAI(input: ExtractionInput): Promise<unknown> {
       ],
       response_format: { type: "json_schema", json_schema: { name: "flashlight_specs", strict: true, schema: EXTRACTION_JSON_SCHEMA } },
     }),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`OpenAI ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = (await res.json()) as { choices?: { message?: { content?: string; refusal?: string } }[] };
@@ -88,10 +90,13 @@ async function callOpenAI(input: ExtractionInput): Promise<unknown> {
   return JSON.parse(msg?.content ?? "{}");
 }
 
-/** Structured extraction via the configured provider, validated with Zod. Throws on any failure. */
-export async function extractWithLlm(input: ExtractionInput): Promise<ExtractedSpecs> {
+/**
+ * Structured extraction via the configured provider, validated with Zod. Throws on any failure.
+ * `timeoutMs` caps each request; serverless runs pass what is left of their time budget.
+ */
+export async function extractWithLlm(input: ExtractionInput, timeoutMs = 30_000): Promise<ExtractedSpecs> {
   const provider = llmProvider();
   if (!provider) throw new Error("No LLM API key configured");
-  const raw = provider === "gemini" ? await callGemini(input) : await callOpenAI(input);
+  const raw = provider === "gemini" ? await callGemini(input, timeoutMs) : await callOpenAI(input, timeoutMs);
   return ExtractedSpecsSchema.parse(raw);
 }

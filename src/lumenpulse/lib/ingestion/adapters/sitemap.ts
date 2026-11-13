@@ -78,8 +78,8 @@ export class SitemapAdapter {
   }
 
   /** Fetch one page; returns null when it isn't a product page. */
-  async fetchPage(url: string): Promise<RawProduct | null> {
-    const res = await politeFetch(url, { accept: "text/html,application/xhtml+xml" });
+  async fetchPage(url: string, timeoutMs?: number): Promise<RawProduct | null> {
+    const res = await politeFetch(url, { accept: "text/html,application/xhtml+xml", timeoutMs });
     const html = await res.text();
     const ld = jsonLdProduct(html);
     const ogType = metaContent(html, "og:type") ?? "";

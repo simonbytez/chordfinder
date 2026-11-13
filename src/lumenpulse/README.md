@@ -43,12 +43,15 @@ Imports use the `@lp/*` alias for `src/lumenpulse/*` (see `tsconfig.json`).
 ## How ingestion behaves
 
 - **A source's first sync is a silent backfill.** Products become catalog entries without firing alerts; events start on the next sync.
+- **Sitemap stores backfill in chunks.** Each sync fetches up to 15 product pages it has never seen and records each one as soon as it is fetched. While pages remain, the store is due again 5 minutes later instead of after its 3–6 hour poll interval, so the cron works through the backlog one chunk per call. Every chunk counts as backfill, so none of it fires alerts. Admin shows "backfill · N pages left" until it finishes. Pages that return 404/410 count as done, and a chunk that makes no progress puts the store back on its normal interval.
 - **The LLM only runs for brand-new products**, at most `LUMENPULSE_LLM_MAX_EXTRACTIONS_PER_RUN` per run. The regex parser fills any gaps, and does all the extraction when no key is set or the LLM call fails.
 - **Each alert match is unique per (rule, event)**, and events are marked processed only after dispatch, so re-running a cron never sends a notification twice.
 
 ## Cron (zero-cost)
 
 All three endpoints accept GET or POST with `Authorization: Bearer $CRON_SECRET`. Each call only processes sources that are due, so calling more often than needed is harmless.
+
+Vercel Hobby stops a function after 60 seconds, so each call works on a time budget. It starts no new store after 10 s, stops fetching pages and calling the LLM at about 45 s, and leaves whatever it didn't reach due for the next call. A store's first sync took up to 33 s when measured, so slow stores get a call to themselves, and a big sitemap backlog takes a few calls to finish.
 
 ```
 https://boomcat.me/api/flashlights/cron/ingest-stores      ?source=<id> &force=1 &max=<sources per call, default 3>
@@ -58,9 +61,9 @@ https://boomcat.me/api/flashlights/cron/send-digests       daily, or Fridays for
 
 Vercel Cron on the Hobby plan only runs once a day, so use an outside scheduler:
 
-**cron-job.org:** create one job per endpoint every 20 minutes, with an `Authorization: Bearer …` header.
+**cron-job.org:** create one job per endpoint every 10 minutes, with an `Authorization: Bearer …` header. (11 stores polled every 1–3 hours need about six syncs an hour, and a call usually covers one or two.)
 
-**Cloudflare Workers Cron** (`wrangler.toml`: `[triggers] crons = ["*/20 * * * *"]`):
+**Cloudflare Workers Cron** (`wrangler.toml`: `[triggers] crons = ["*/10 * * * *"]`):
 
 ```js
 export default {
@@ -75,7 +78,7 @@ export default {
 **Supabase `pg_cron` + `pg_net`:**
 
 ```sql
-select cron.schedule('lumenpulse-stores', '*/20 * * * *', $$
+select cron.schedule('lumenpulse-stores', '*/10 * * * *', $$
   select net.http_get('https://boomcat.me/api/flashlights/cron/ingest-stores',
     headers := jsonb_build_object('Authorization', 'Bearer YOUR_CRON_SECRET'));
 $$);

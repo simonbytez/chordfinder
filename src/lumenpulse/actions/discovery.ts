@@ -6,6 +6,7 @@ import { getDb } from "@lp/db";
 import { sources } from "@lp/db/schema";
 import { processPendingEvents } from "@lp/lib/alerts/matcher";
 import { syncSource } from "@lp/lib/ingestion/engine";
+import { RUN_BUDGET_MS, START_SOURCE_BEFORE_MS } from "@lp/lib/ingestion/run";
 
 const MIN_REFRESH_MS = 10 * 60_000;
 
@@ -19,13 +20,17 @@ export async function refreshRadar(): Promise<{ refreshed: string[]; skipped: st
   const refreshed: string[] = [];
   const skipped: string[] = [];
   const errors: string[] = [];
+  const started = Date.now();
+  const deadline = started + RUN_BUDGET_MS;
   for (const src of list) {
     if (src.status === "paused") continue;
+    // Same time budget as the cron runs; sources not reached keep their old poll time.
+    if (refreshed.length + errors.length && Date.now() - started > START_SOURCE_BEFORE_MS) break;
     if (src.lastPolledAt && Date.now() - src.lastPolledAt.getTime() < MIN_REFRESH_MS) {
       skipped.push(src.name);
       continue;
     }
-    const r = await syncSource(src.id, { force: true });
+    const r = await syncSource(src.id, { force: true, deadline });
     if (r.ok) refreshed.push(src.name);
     else errors.push(`${src.name}: ${r.error}`);
   }

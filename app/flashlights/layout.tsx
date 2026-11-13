@@ -11,6 +11,10 @@ import { Toaster } from "@lp/components/ui/sonner";
 import { TooltipProvider } from "@lp/components/ui/tooltip";
 import "@lp/globals.tailwind.css";
 
+// Server actions run inside the page's function, and Vercel Hobby's default limit is 10 s.
+// "Run sync now", radar refresh and test notifications can take longer; 60 s is the plan's cap.
+export const maxDuration = 60;
+
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 

@@ -3,7 +3,8 @@ import { sendDueDigests } from "@lp/lib/alerts/digest";
 import { processPendingEvents } from "@lp/lib/alerts/matcher";
 import { checkCronAuth } from "@lp/lib/cron-auth";
 
-export const maxDuration = 120;
+// Vercel Hobby caps functions at 60 s.
+export const maxDuration = 60;
 
 /**
  * Send due email digests (daily, or Fridays for weekly).  Safe to call hourly:

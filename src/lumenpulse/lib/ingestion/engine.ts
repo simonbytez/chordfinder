@@ -9,7 +9,7 @@ import { ShopifyAdapter } from "./adapters/shopify";
 import { SitemapAdapter } from "./adapters/sitemap";
 import { brandFromTitle, classifyProduct, deriveModelName, matchLight, normalizeBrand, type LightRef } from "./classify";
 import { extractSpecs } from "./extract";
-import { jitter } from "./http";
+import { HttpError, jitter } from "./http";
 import type { RawProduct } from "./types";
 
 const LLM_BUDGET = () => Number(process.env.LUMENPULSE_LLM_MAX_EXTRACTIONS_PER_RUN ?? 20);
@@ -50,21 +50,44 @@ function normUrl(u: string): string {
 }
 
 /**
+ * A source is due once its poll interval has passed. A store that is still
+ * working through a sitemap backlog is due again 5 minutes after its last chunk,
+ * so a backfill runs one chunk per cron call instead of one per poll interval.
+ * A store in error falls back to its normal interval.
+ */
+export const sourceIsDue = sql`(
+  ${s.sources.lastPolledAt} IS NULL
+  OR ${s.sources.lastPolledAt} <= now() - make_interval(mins => ${s.sources.pollIntervalMins})
+  OR (${s.sources.status} = 'active'
+      AND COALESCE((${s.sources.lastRunStats} ->> 'backlog')::int, 0) > 0
+      AND ${s.sources.lastPolledAt} <= now() - interval '5 minutes')
+)`;
+
+/**
  * Atomically claim a source for this run by bumping last_polled_at, but only if
  * it is due (or forced). Overlapping cron invocations therefore never process
  * the same source twice → cron endpoints are idempotent.
  */
 async function claimSource(db: Database, id: string, force: boolean): Promise<Source | null> {
-  const due = sql`(${s.sources.lastPolledAt} IS NULL OR ${s.sources.lastPolledAt} <= now() - make_interval(mins => ${s.sources.pollIntervalMins}))`;
   const rows = await db
     .update(s.sources)
     .set({ lastPolledAt: new Date() })
-    .where(and(eq(s.sources.id, id), force ? undefined : and(due, not(eq(s.sources.status, "paused")))))
+    .where(and(eq(s.sources.id, id), force ? undefined : and(sourceIsDue, not(eq(s.sources.status, "paused")))))
     .returning();
   return rows[0] ?? null;
 }
 
-export async function syncSource(sourceId: string, opts: { force?: boolean } = {}): Promise<SyncOutcome> {
+/** Milliseconds left before `deadline` (a Date.now() timestamp); Infinity when there is none. */
+const timeLeft = (deadline?: number) => (deadline === undefined ? Infinity : deadline - Date.now());
+/** An LLM call is only started with this much budget left, and is cut off before the deadline. */
+const LLM_MIN_LEFT_MS = 12_000;
+
+/**
+ * `deadline` bounds the slow parts (sitemap page fetches, LLM calls). Product
+ * writes are never cut short: a half-processed product list could lose items
+ * or replay a store's backfill as new-release alerts.
+ */
+export async function syncSource(sourceId: string, opts: { force?: boolean; deadline?: number } = {}): Promise<SyncOutcome> {
   const db = await getDb();
   const [current] = await db.select().from(s.sources).where(eq(s.sources.id, sourceId)).limit(1);
   if (!current) return { sourceId, name: sourceId, ok: false, error: "Unknown source" };
@@ -73,14 +96,16 @@ export async function syncSource(sourceId: string, opts: { force?: boolean } = {
   if (!src) return { sourceId, name: current.name, ok: true, skipped: current.status === "paused" ? "paused" : "not due yet" };
 
   const started = Date.now();
-  const stats = emptyStats(current.lastRunStats === null);
+  // Backfill (no alerts) on the first sync, and for every chunk of a sitemap backlog,
+  // including the last one: those pages are old catalog, not new releases.
+  const stats = emptyStats(current.lastRunStats === null || (current.lastRunStats.backlog ?? 0) > 0);
   try {
     if (src.adapterType === "shopify_json") {
       const products = await new ShopifyAdapter(src).fetchProducts();
       stats.fetched = products.length;
-      await processProducts(db, src, products, stats);
+      await processProducts(db, src, products, stats, opts.deadline);
     } else if (src.adapterType === "sitemap_xml") {
-      await runSitemap(db, src, stats);
+      await runSitemap(db, src, stats, opts.deadline);
     } else {
       await runCommunity(db, src, stats);
     }
@@ -134,7 +159,7 @@ function nextHistory(prev: PricePoint[], p: RawProduct, now: Date): PricePoint[]
   return [...prev, { t: now.toISOString(), p: p.priceUsd, s: p.inStock }].slice(-HISTORY_CAP);
 }
 
-export async function processProducts(db: Database, src: Source, products: RawProduct[], stats: RunStats) {
+export async function processProducts(db: Database, src: Source, products: RawProduct[], stats: RunStats, deadline?: number) {
   const lights = await loadLightRefs(db);
   const existing = await db.select().from(s.vendorListings).where(eq(s.vendorListings.sourceId, src.id));
   const byExternal = new Map(existing.map((l) => [l.externalProductId, l]));
@@ -168,7 +193,8 @@ export async function processProducts(db: Database, src: Source, products: RawPr
       continue;
     }
 
-    // 3) Brand-new product → spec extraction (LLM if available, regex fallback).
+    // 3) Brand-new product → spec extraction (LLM if available and time allows, regex fallback).
+    const left = timeLeft(deadline);
     const ext = await extractSpecs(
       {
         brand,
@@ -178,7 +204,7 @@ export async function processProducts(db: Database, src: Source, products: RawPr
         variantTitles: p.variants.map((v) => v.title).filter((t) => t && t !== "Default Title"),
         descriptionText: p.descriptionText,
       },
-      { allowLlm: llmBudget > 0 },
+      { allowLlm: llmBudget > 0 && left > LLM_MIN_LEFT_MS, timeoutMs: Math.min(30_000, left - 5_000) },
     );
     if (ext.method === "llm") {
       llmBudget--;
@@ -339,7 +365,7 @@ async function updateListing(db: Database, src: Source, l: VendorListing, p: Raw
 // Sitemap sources
 // ---------------------------------------------------------------------------
 
-async function runSitemap(db: Database, src: Source, stats: RunStats) {
+async function runSitemap(db: Database, src: Source, stats: RunStats, deadline?: number) {
   const adapter = new SitemapAdapter(src);
   const entries = await adapter.collectUrls();
   stats.fetched = entries.length;
@@ -366,24 +392,35 @@ async function runSitemap(db: Database, src: Source, stats: RunStats) {
 
   const products: RawProduct[] = [];
   let pageErrors = 0;
+  let newlySeen = 0;
+  const markSeen = async (url: string, isProduct: boolean) => {
+    await db
+      .insert(s.crawlSeenUrls)
+      .values({ sourceId: src.id, url, isProduct })
+      .onConflictDoUpdate({ target: [s.crawlSeenUrls.sourceId, s.crawlSeenUrls.url], set: { isProduct, checkedAt: new Date() } });
+    newlySeen++;
+  };
   const targets = [...fresh.map((e) => ({ url: e.loc, isNew: true })), ...recheck.map((l) => ({ url: l.productUrl, isNew: false }))];
   for (const [i, t] of targets.entries()) {
+    // Out of time: unfetched new URLs stay unseen, so the next chunk fetches them.
+    if (timeLeft(deadline) < 5_000) break;
     if (i > 0) await jitter(700, 1100);
     try {
-      const p = await adapter.fetchPage(t.url);
-      if (t.isNew) {
-        await db
-          .insert(s.crawlSeenUrls)
-          .values({ sourceId: src.id, url: t.url, isProduct: !!p })
-          .onConflictDoUpdate({ target: [s.crawlSeenUrls.sourceId, s.crawlSeenUrls.url], set: { isProduct: !!p, checkedAt: new Date() } });
-      }
+      const p = await adapter.fetchPage(t.url, Math.min(20_000, timeLeft(deadline) - 2_000));
+      if (t.isNew) await markSeen(t.url, !!p);
       if (p) products.push(p);
-    } catch {
+    } catch (err) {
+      // A page that is gone will never load; count it as seen so the backlog can finish.
+      // Other errors (timeouts, 5xx) leave it unseen for a later retry.
+      if (t.isNew && err instanceof HttpError && (err.status === 404 || err.status === 410)) await markSeen(t.url, false);
       pageErrors++;
       if (pageErrors >= 5) throw new Error(`Aborting after ${pageErrors} page errors (last: ${t.url})`);
     }
   }
-  await processProducts(db, src, products, stats);
+  // Pages still to fetch. A chunk that made no progress drops the store back to its
+  // normal interval, so a few permanently failing URLs can't keep it on the fast schedule.
+  stats.backlog = newlySeen > 0 ? unseen.length - newlySeen : 0;
+  await processProducts(db, src, products, stats, deadline);
 }
 
 // ---------------------------------------------------------------------------

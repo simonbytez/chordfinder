@@ -35,6 +35,7 @@ type SourceRow = {
     llmExtractions: number;
     durationMs: number;
     bootstrap: boolean;
+    backlog?: number;
   } | null;
   listingCount: number;
   verifiedCount: number;
@@ -158,7 +159,11 @@ function SourceTable({ sources }: { sources: SourceRow[] }) {
                 {s.lastRunStats ? (
                   <span title={JSON.stringify(s.lastRunStats, null, 1)}>
                     {s.lastRunStats.fetched} seen · +{s.lastRunStats.newLights} lights · {s.lastRunStats.events} ev
-                    {s.lastRunStats.bootstrap && <span className="ml-1 text-sky">backfill</span>}
+                    {s.lastRunStats.bootstrap && (
+                      <span className="ml-1 text-sky">
+                        backfill{s.lastRunStats.backlog ? ` · ${s.lastRunStats.backlog} pages left` : ""}
+                      </span>
+                    )}
                     <br />
                     {s.lastRunStats.skippedAccessories} skipped · {(s.lastRunStats.durationMs / 1000).toFixed(1)}s
                     {s.lastRunStats.llmExtractions > 0 && ` · ${s.lastRunStats.llmExtractions} LLM`}

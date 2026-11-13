@@ -10,11 +10,11 @@ export type ExtractionResult = { specs: ExtractedSpecs; method: "llm" | "regex";
  * budget remains; always backfills gaps from the deterministic parser, and falls
  * back to it entirely if the LLM call or validation fails.
  */
-export async function extractSpecs(input: ExtractionInput, opts: { allowLlm: boolean }): Promise<ExtractionResult> {
+export async function extractSpecs(input: ExtractionInput, opts: { allowLlm: boolean; timeoutMs?: number }): Promise<ExtractionResult> {
   const regex = parseSpecsHeuristically(input);
   if (!opts.allowLlm || !llmProvider()) return { specs: finalize(regex), method: "regex" };
   try {
-    const llm = await extractWithLlm(input);
+    const llm = await extractWithLlm(input, opts.timeoutMs);
     const merged: ExtractedSpecs = {
       ...llm,
       brand: llm.brand || regex.brand,

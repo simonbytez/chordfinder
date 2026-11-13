@@ -42,11 +42,14 @@ export async function politeFetch(
     });
     if ((res.status === 429 || res.status === 503) && attempt < retries) {
       const retryAfter = Number(res.headers.get("retry-after"));
-      const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 30) * 1000 : 4000 * (attempt + 1);
-      await res.body?.cancel();
-      await sleep(wait);
-      attempt++;
-      continue;
+      const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 4000 * (attempt + 1);
+      // A long Retry-After would outlast a 60 s serverless run, so give up and let the next poll try.
+      if (wait <= 10_000) {
+        await res.body?.cancel();
+        await sleep(wait);
+        attempt++;
+        continue;
+      }
     }
     if (!res.ok) {
       const challenged = res.headers.get("cf-mitigated") === "challenge" || res.headers.get("server")?.includes("cloudflare");
