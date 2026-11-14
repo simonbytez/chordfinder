@@ -1,4 +1,5 @@
 import type { Source } from "@lp/db/schema";
+import { isAddonVariant } from "../classify";
 import { stripHtml } from "../html";
 import { HttpError, jitter, politeFetch } from "../http";
 import type { RawProduct } from "../types";
@@ -67,8 +68,11 @@ export class ShopifyAdapter {
       available: v.available !== false,
       compareAtPrice: toNum(v.compare_at_price),
     }));
-    const available = variants.filter((v) => v.available && v.price !== null);
-    const priced = variants.filter((v) => v.price !== null);
+    // Price and stock come from the variants that are the light, not add-ons sold alongside it.
+    const lightVariants = variants.filter((v) => !isAddonVariant(v.title));
+    const pricing = lightVariants.length ? lightVariants : variants;
+    const available = pricing.filter((v) => v.available && v.price !== null);
+    const priced = pricing.filter((v) => v.price !== null);
     const pool = available.length ? available : priced;
     const priceUsd = pool.length ? Math.min(...pool.map((v) => v.price!)) : null;
     const tags = Array.isArray(p.tags)

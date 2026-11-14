@@ -16,7 +16,8 @@ export function FloodThrowBar({ light, className }: { light: Pick<LightDTO, "max
         {ft && (
           <div
             className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-amber shadow-[0_0_10px_rgb(245_158_11/0.8)]"
-            style={{ left: `${ft.pos * 100}%` }}
+            // Rounded: browsers shorten long percentages, which React then reports as a hydration mismatch.
+            style={{ left: `${(ft.pos * 100).toFixed(2)}%` }}
           />
         )}
       </div>

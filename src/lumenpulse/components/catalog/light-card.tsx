@@ -20,6 +20,22 @@ function stockLabel(l: ListingDTO): { text: string; className: string } {
   return l.inStock ? { text: "in stock", className: "text-success" } : { text: "sold out", className: "text-destructive" };
 }
 
+/** How good a listing is to show for its store: verified, then in stock, then priced. */
+const rank = (l: ListingDTO) => (l.lastCheckedAt ? 4 : 0) + (l.inStock ? 2 : 0) + (l.priceUsd !== null ? 1 : 0);
+
+/**
+ * One row per store. A store that sells several versions (brass, titanium, 2-channel…) shows its
+ * best listing and how many options it has, instead of a row for each.
+ */
+function byStore(listings: ListingDTO[]): { best: ListingDTO; options: number }[] {
+  const groups = new Map<string, ListingDTO[]>();
+  for (const l of listings) groups.set(l.sourceId, [...(groups.get(l.sourceId) ?? []), l]);
+  const better = (a: ListingDTO, b: ListingDTO) => rank(b) - rank(a) || (a.priceUsd ?? Infinity) - (b.priceUsd ?? Infinity);
+  return [...groups.values()]
+    .map((ls) => ({ best: [...ls].sort(better)[0], options: ls.length }))
+    .sort((a, b) => better(a.best, b.best));
+}
+
 /** The best price (with the old price struck through after a drop), then each store's trend, stock and price. */
 function PriceDetails({ light, onMore }: { light: LightDTO; onMore: () => void }) {
   if (!light.listings.length) return <span className="text-xs text-muted-foreground">No listings yet</span>;
@@ -28,8 +44,9 @@ function PriceDetails({ light, onMore }: { light: LightDTO; onMore: () => void }
   // Only when the drop landed on the price shown, since the event doesn't say which store it came from.
   const drop =
     bp && ev?.type === "price_drop" && ev.oldPrice !== null && ev.newPrice === bp.price && ev.oldPrice > bp.price ? ev.oldPrice : null;
-  const rows = light.listings.slice(0, MAX_STORE_ROWS);
-  const more = light.listings.length - rows.length;
+  const stores = byStore(light.listings);
+  const rows = stores.slice(0, MAX_STORE_ROWS);
+  const more = stores.length - rows.length;
   return (
     <div className="space-y-1.5">
       {bp && (
@@ -51,25 +68,31 @@ function PriceDetails({ light, onMore }: { light: LightDTO; onMore: () => void }
         </div>
       )}
       <ul className="divide-y divide-border/60 rounded-lg border border-border/60 text-xs">
-        {rows.map((l) => {
+        {rows.map(({ best: l, options }) => {
           const stock = stockLabel(l);
           return (
-            <li key={l.id}>
+            <li key={l.sourceId}>
               <a
                 href={l.productUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="group/store flex items-center gap-2 px-2.5 py-1.5 transition-colors hover:bg-secondary/40"
-                title={`${l.title ?? l.sourceName}: open at ${l.sourceName}`}
+                title={`${l.title ?? l.sourceName}: open at ${l.sourceName}${options > 1 ? ` (${options} options there; all in the detail view)` : ""}`}
               >
                 <span className="flex min-w-0 flex-1 items-center gap-1 group-hover/store:text-amber">
                   <span className="truncate">{l.sourceName}</span>
+                  {options > 1 && <span className="shrink-0 font-mono text-[10px] text-muted-foreground">×{options}</span>}
                   <ExternalLink className="size-3 shrink-0 text-muted-foreground group-hover/store:text-amber" />
                 </span>
-                <PriceSparkline points={l.priceHistory} className="h-4 w-10 shrink-0" />
+                {options === 1 && <PriceSparkline points={l.priceHistory} className="h-4 w-10 shrink-0" />}
                 <span className={cn("shrink-0", stock.className)}>{stock.text}</span>
-                {l.priceUsd !== null && <span className="shrink-0 text-right font-mono text-foreground">{fmtPrice(l.priceUsd)}</span>}
+                {l.priceUsd !== null && (
+                  <span className="shrink-0 text-right font-mono text-foreground">
+                    {options > 1 && <span className="font-sans text-muted-foreground">from </span>}
+                    {fmtPrice(l.priceUsd)}
+                  </span>
+                )}
               </a>
             </li>
           );
