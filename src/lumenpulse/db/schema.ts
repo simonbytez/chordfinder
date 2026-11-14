@@ -72,6 +72,8 @@ export type RunStats = {
   bootstrap: boolean;
   /** Sitemap pages still waiting to be fetched. While above 0 the store is due again within minutes. */
   backlog?: number;
+  /** Listings removed because the classifier now rejects their product (see dropRejectedListing). */
+  removedListings?: number;
 };
 export type DeliveryResult = { channel: string; ok: boolean; detail: string };
 

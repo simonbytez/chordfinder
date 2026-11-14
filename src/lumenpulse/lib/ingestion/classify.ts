@@ -19,7 +19,10 @@ const ACCESSORY_WORDS =
  * "Flashlight with Battery Sapphire Lens Bundle" is still a light.
  */
 const PART_WORDS =
-  /\b(replacement|removal tools?|3d[- ]printed|holsters?|pocket clips?|lanyards?|extension (tubes?|kits?)|short tubes?|tail ?caps?|bezels?|mcpcbs?|(bare|raw|smd) (leds?|emitters?)|led emitters?|emitters? only|led drivers?|driver boards?|(re-?)?flashing kits?|programmers?|spacers?|washers?|gaskets?|buttons?|glow rings?|diffus(ers?|ing)|filters?|optics?|reflectors?|head ?bands?|head ?straps?|crystal lens(es)?|crystal len|glass lens(es)?|lens(es)? only|pills?|parts)\b/i;
+  /\b(replacement|removal tools?|3d[- ]printed|holsters?|pocket clips?|lanyards?|extension (tubes?|kits?)|short tubes?|tail ?caps?|bezels?|mcpcbs?|(bare|raw|smd) (leds?|emitters?)|led emitters?|emitters? only|led drivers?|driver boards?|(re-?)?flashing kits?|programmers?|spacers?|washers?|gaskets?|buttons?|glow rings?|diffus(ers?|ing)|filters?|optics?|reflectors?|head ?bands?|head ?straps?|crystal lens(es)?|crystal len|glass lens(es)?|lens(es)? only|pills?|parts|tripods?|(mounting|universal|replacement|spare|deep carry) clips?|body (kits?|tubes?))\b/i;
+
+/** "Tripod for 21700 Flashlights": what follows "for" is what it fits, not what it is. */
+const FOR_CLAUSE = /\s(for|fits?|compatible with)\s.*$/i;
 
 /** "with battery", "w/ holster", "+ diffuser": the rest of the title after these names extras, not the product. */
 const WITH_CLAUSE = /\s(with|w\/|incl(uding|udes)?)\s.*$/i;
@@ -67,7 +70,7 @@ export function classifyProduct(p: RawProduct): { keep: boolean; reason?: string
   const tags = p.tags.join(" ");
   const titleSansBundle = title.replace(BUNDLE_PHRASES, " ").replace(WITH_CLAUSE, "");
   const accessoryHit = ACCESSORY_WORDS.test(titleSansBundle);
-  const lightHit = LIGHT_WORDS.test(titleSansBundle);
+  const lightHit = LIGHT_WORDS.test(titleSansBundle.replace(FOR_CLAUSE, ""));
   if (accessoryHit && !lightHit) return { keep: false, reason: "accessory keywords" };
   if (!lightHit && /\baccessor(y|ies)\b/i.test(tags) && !/\bflashlights?\b/i.test(tags)) return { keep: false, reason: "accessory tag" };
   return { keep: true };

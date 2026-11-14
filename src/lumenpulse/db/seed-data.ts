@@ -34,9 +34,19 @@ export type SeedSource = {
 
 export const SEED_SOURCES: SeedSource[] = [
   // Shopify storefronts (products.json)
-  { id: "wurkkos", name: "Wurkkos", baseUrl: "https://wurkkos.com", adapterType: "shopify_json", pollIntervalMins: 60, status: "active" },
+  // Wurkkos blocks crawlers with a Cloudflare challenge; resume it in admin if they allowlist LumenPulse.
+  {
+    id: "wurkkos",
+    name: "Wurkkos",
+    baseUrl: "https://wurkkos.com",
+    adapterType: "shopify_json",
+    pollIntervalMins: 60,
+    status: "paused",
+    errorLog: "Paused: wurkkos.com blocks crawlers (Cloudflare 403). Resume if Wurkkos allowlists the LumenPulse user agent.",
+  },
   { id: "sofirn", name: "Sofirn", baseUrl: "https://us.sofirnlight.com", adapterType: "shopify_json", pollIntervalMins: 60, status: "active" },
-  { id: "fireflylite", name: "FireflyLite", baseUrl: "https://www.fireflylite.com", adapterType: "shopify_json", pollIntervalMins: 120, status: "active" },
+  // FireflyLite's current store; the old fireflylite.com returns 403.
+  { id: "fireflylite", name: "FireflyLite", baseUrl: "https://www.firefly-outdoor.com", adapterType: "shopify_json", pollIntervalMins: 120, status: "active" },
   { id: "killzone", name: "Killzone Flashlights", baseUrl: "https://www.killzoneflashlights.com", adapterType: "shopify_json", pollIntervalMins: 120, status: "active" },
   { id: "nealsgadgets", name: "Neal's Gadgets", baseUrl: "https://www.nealsgadgets.com", adapterType: "shopify_json", pollIntervalMins: 120, status: "active" },
   { id: "jlhawaii808", name: "Jackson Lee (JLHawaii808)", baseUrl: "https://jlhawaii808.com", adapterType: "shopify_json", pollIntervalMins: 120, status: "active" },

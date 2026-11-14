@@ -127,6 +127,24 @@ export async function syncSource(sourceId: string, opts: { force?: boolean; dead
 // Store products → listings / lights / events
 // ---------------------------------------------------------------------------
 
+/**
+ * A product listed by an earlier crawl that the classifier now rejects (its rules got stricter):
+ * drop the listing. Drop the light too when the crawler created it and nothing else refers to it,
+ * so seed and hand-entered lights, and anything someone owns, wants or watches, always stay.
+ */
+async function dropRejectedListing(db: Database, listing: VendorListing) {
+  await db.delete(s.vendorListings).where(eq(s.vendorListings.id, listing.id));
+  const id = listing.flashlightId;
+  const [light] = await db.select({ specSource: s.flashlights.specSource }).from(s.flashlights).where(eq(s.flashlights.id, id)).limit(1);
+  if (!light || (light.specSource !== "regex" && light.specSource !== "llm")) return;
+  const refs = await Promise.all([
+    db.select({ id: s.vendorListings.id }).from(s.vendorListings).where(eq(s.vendorListings.flashlightId, id)).limit(1),
+    db.select({ id: s.userCollections.flashlightId }).from(s.userCollections).where(eq(s.userCollections.flashlightId, id)).limit(1),
+    db.select({ id: s.alertRules.id }).from(s.alertRules).where(eq(s.alertRules.watchFlashlightId, id)).limit(1),
+  ]);
+  if (refs.every((r) => r.length === 0)) await db.delete(s.flashlights).where(eq(s.flashlights.id, id));
+}
+
 async function loadLightRefs(db: Database): Promise<LightRef[]> {
   return db.select({ id: s.flashlights.id, brand: s.flashlights.brand, modelName: s.flashlights.modelName }).from(s.flashlights);
 }
@@ -171,6 +189,11 @@ export async function processProducts(db: Database, src: Source, products: RawPr
     const cls = classifyProduct(p);
     if (!cls.keep) {
       stats.skippedAccessories++;
+      const listed = byExternal.get(p.externalId) ?? byUrl.get(normUrl(p.url));
+      if (listed && !listed.externalProductId.startsWith("seed:")) {
+        await dropRejectedListing(db, listed);
+        stats.removedListings = (stats.removedListings ?? 0) + 1;
+      }
       continue;
     }
     stats.candidates++;

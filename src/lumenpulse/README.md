@@ -44,6 +44,7 @@ Imports use the `@lp/*` alias for `src/lumenpulse/*` (see `tsconfig.json`).
 
 - **A source's first sync is a silent backfill.** Products become catalog entries without firing alerts; events start on the next sync.
 - **Sitemap stores backfill in chunks.** Each sync fetches up to 15 product pages it has never seen and records each one as soon as it is fetched. While pages remain, the store is due again 5 minutes later instead of after its 3–6 hour poll interval, so the cron works through the backlog one chunk per call. Every chunk counts as backfill, so none of it fires alerts. Admin shows "backfill · N pages left" until it finishes. Pages that return 404/410 count as done, and a chunk that makes no progress puts the store back on its normal interval.
+- **Stricter rules clean up after themselves.** When a product that an earlier crawl listed is now rejected as a part or accessory, the next sync of that store removes its listing. It also removes the light, but only if the crawler created it and nothing else lists, owns, wants or watches it.
 - **The LLM only runs for brand-new products**, at most `LUMENPULSE_LLM_MAX_EXTRACTIONS_PER_RUN` per run. The regex parser fills any gaps, and does all the extraction when no key is set or the LLM call fails.
 - **Each alert match is unique per (rule, event)**, and events are marked processed only after dispatch, so re-running a cron never sends a notification twice.
 
@@ -112,8 +113,8 @@ $$);
 - **The crawler always identifies itself honestly** (`LumenPulse/1.0 (+https://boomcat.me/flashlights; …)`). It honors `Retry-After` and never tries to bypass bot protection. When this was built (Nov 2026), the starter sources behaved like this:
   - Sofirn (US), Killzone, Neal's Gadgets and JLHawaii808 served `products.json`.
   - Acebeam, Olight, Hank (intl-outdoor), Zebralight and Malkoff served sitemaps.
-  - **Wurkkos** answered with a Cloudflare challenge (403) and shows as an error in admin.
-  - **FireflyLite** was unreachable from the test network.
+  - **Wurkkos** answers crawlers with a Cloudflare challenge (403), so it ships paused. Its three starter lights keep their seed listings. Resume it in admin if Wurkkos allowlists the `LumenPulse` user agent.
+  - **FireflyLite** moved its store to `firefly-outdoor.com` (the old `fireflylite.com` returns 403). Migration `0001_store_moves` points existing databases there. Neal's Gadgets also carries many FireflyLite lights.
   - **Convoy** has no crawlable storefront (it sells through AliExpress), so it ships paused; Neal's Gadgets covers Convoy lights.
   - **Reddit** rate-limits unauthenticated RSS clients (429/403). The radar retries on its next poll.
 - **iOS Web Push** works only after *Share → Add to Home Screen* (iOS 16.4+). The in-app banner walks users through it.
