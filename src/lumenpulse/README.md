@@ -59,7 +59,11 @@ https://boomcat.me/api/flashlights/cron/ingest-community
 https://boomcat.me/api/flashlights/cron/send-digests       daily, or Fridays for weekly; call hourly
 ```
 
-Vercel Cron on the Hobby plan only runs once a day, so use an outside scheduler:
+Vercel Cron on the Hobby plan only runs once a day, so an outside scheduler calls them.
+
+**GitHub Actions (what boomcat.me uses):** [`.github/workflows/lumenpulse-cron.yml`](../../.github/workflows/lumenpulse-cron.yml) runs every 10 minutes. It calls `ingest-stores` up to four times while stores are due, then `ingest-community` and `send-digests`. It needs the repository secret `CRON_SECRET`, set to the same value as in Vercel. Run it by hand from the repo's **Actions** tab (**LumenPulse cron → Run workflow**). GitHub sometimes starts scheduled runs late, and it pauses schedules in a public repo after 60 days without commits; re-enable it from the same tab. A run fails, and GitHub emails you, only when the secret is missing or doesn't match.
+
+Other schedulers work the same way:
 
 **cron-job.org:** create one job per endpoint every 10 minutes, with an `Authorization: Bearer …` header. (11 stores polled every 1–3 hours need about six syncs an hour, and a call usually covers one or two.)
 

@@ -1,0 +1,45 @@
+# LumenPulse's scheduler: crawls the stores and community feeds and sends alert digests on boomcat.me.
+# Vercel Cron only runs once a day on the Hobby plan, and Actions minutes are free for public repos.
+#
+# Needs the repository secret CRON_SECRET, set to the same value as CRON_SECRET in the Vercel project.
+# Every endpoint only does what is due, so a late or skipped run just shifts work to the next one.
+name: LumenPulse cron
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: lumenpulse-cron
+  cancel-in-progress: false
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Call the cron endpoints
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BASE: https://boomcat.me/api/flashlights/cron
+        run: |
+          call() {
+            code=$(curl -sS -o out.json -w '%{http_code}' --max-time 75 -H "Authorization: Bearer $CRON_SECRET" "$BASE/$1") || code=000
+            echo "$1: HTTP $code $(head -c 600 out.json)"
+            case "$code" in
+              200) ;;
+              401|503) echo "::error::$1 refused the call. The repo secret CRON_SECRET must be set and match CRON_SECRET in Vercel."; exit 1 ;;
+              *) echo "::warning::$1 returned HTTP $code; the next run retries." ;;
+            esac
+          }
+          # Each store call syncs up to 3 stores within Vercel's 60 s limit. Keep calling while stores
+          # are due, so first syncs and sitemap backfills (due again every 5 minutes) move along.
+          for i in 1 2 3 4; do
+            call ingest-stores
+            [ "$code" = 200 ] && jq -e '[.ran[] | select(.skipped == null)] | length > 0' out.json > /dev/null || break
+          done
+          call ingest-community
+          call send-digests
