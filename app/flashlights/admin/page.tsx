@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { AdminPanel } from "@lp/components/admin/admin-panel";
 import { PageSkeleton } from "@lp/components/skeletons";
-import { ephemeralDb, usingPostgres } from "@lp/db";
+import { usingPostgres } from "@lp/db";
 import { appUrl } from "@lp/lib/env";
 import { llmProvider } from "@lp/lib/ingestion/extract/llm";
 import { getAdminLightIndex, getLightBySlug, getRecentEvents, getSourcesWithStats } from "@lp/lib/queries";
@@ -34,11 +34,7 @@ async function AdminBody({ searchParams }: { searchParams: PageProps<"/flashligh
       lights={lights}
       editing={editing}
       env={{
-        database: usingPostgres()
-          ? "PostgreSQL"
-          : ephemeralDb()
-            ? "Temporary PGlite in /tmp: resets on every cold start. Set LUMENPULSE_DATABASE_URL to keep data."
-            : "Embedded PGlite (.data/lumenpulse)",
+        database: usingPostgres() ? "PostgreSQL" : "Embedded PGlite (.data/lumenpulse)",
         llm: llmProvider() ?? "none (regex parser)",
         cronSecret: !!process.env.CRON_SECRET,
         adminPassword: !!process.env.LUMENPULSE_ADMIN_PASSWORD,

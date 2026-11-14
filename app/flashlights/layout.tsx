@@ -9,6 +9,7 @@ import { PwaClient } from "@lp/components/pwa/pwa-client";
 import { SiteHeader } from "@lp/components/site-header";
 import { Toaster } from "@lp/components/ui/sonner";
 import { TooltipProvider } from "@lp/components/ui/tooltip";
+import { databaseMissing } from "@lp/db";
 import "@lp/globals.tailwind.css";
 
 // Server actions run inside the page's function, and Vercel Hobby's default limit is 10 s.
@@ -44,6 +45,19 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+/** Shown on Vercel until a Postgres database is connected, in place of pages that would fail. */
+function DatabaseMissing() {
+  return (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="text-xl font-semibold">LumenPulse isn&apos;t connected to a database yet</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        In the Vercel project, open Storage, create a Neon Postgres database and connect it, then redeploy. The catalog fills itself on the
+        first visit.
+      </p>
+    </div>
+  );
+}
+
 export default function RootLayout({ children }: LayoutProps<"/flashlights">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}>
@@ -53,7 +67,7 @@ export default function RootLayout({ children }: LayoutProps<"/flashlights">) {
             <CompareProvider>
               <DrawerProvider>
                 <SiteHeader />
-                <main className="flex-1 pb-24">{children}</main>
+                <main className="flex-1 pb-24">{databaseMissing() ? <DatabaseMissing /> : children}</main>
                 <CompareTray />
                 <DetailDrawer />
                 <PwaClient />

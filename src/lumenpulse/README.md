@@ -10,7 +10,7 @@ It is the one boomcat app on the **App Router**. The other apps stay on the Page
 npm run dev        # then open http://localhost:3000/flashlights
 ```
 
-No database setup is needed locally. Without `LUMENPULSE_DATABASE_URL` it runs on **embedded PGlite** (real PostgreSQL 18 compiled to WASM) stored in `.data/lumenpulse`. On the first request it applies the SQL migrations and seeds 14 sources plus 26 hand-checked lights.
+No database setup is needed locally. Without a Postgres URL (`LUMENPULSE_DATABASE_URL`, `DATABASE_URL` or `POSTGRES_URL`) it runs on **embedded PGlite** (real PostgreSQL 18 compiled to WASM) stored in `.data/lumenpulse`. On the first request it applies the SQL migrations and seeds 14 sources plus 26 hand-checked lights.
 
 For Web Push locally, `npm run lumenpulse:vapid` writes VAPID keys into `.env.local`. Every variable is documented in [.env.example](.env.example).
 
@@ -86,7 +86,7 @@ $$);
 
 ## Deploying (with the rest of boomcat on Vercel)
 
-1. **Database.** Create a Postgres database (for example Neon from the Vercel Marketplace, using the env prefix `LUMENPULSE`, or a Supabase pooled URL on port 6543) and set `LUMENPULSE_DATABASE_URL`. Without it, the deployed app runs on a throwaway PGlite in `/tmp` that resets on every cold start, and `/flashlights/admin` warns about it.
+1. **Database (required).** In the Vercel project, open **Storage**, create a **Neon** Postgres database and connect it to the project. That sets `DATABASE_URL`, which LumenPulse picks up. To use another Postgres (such as a Supabase pooled URL on port 6543), set `LUMENPULSE_DATABASE_URL`, which takes priority. Until one is connected, every LumenPulse page shows a "not connected to a database" notice. Embedded PGlite doesn't run on Vercel: setting it up needs about 800 MB, more than a Hobby function can spare next to Next.js, and `/tmp` would lose its data on every cold start anyway.
 2. Migrations run automatically on first use (`LUMENPULSE_AUTO_MIGRATE`). Seeding happens when the catalog is empty. You can also run `npm run lumenpulse:db:migrate` against the URL.
 3. Set `CRON_SECRET`, `LUMENPULSE_ADMIN_PASSWORD` and the three `LUMENPULSE_VAPID_*` keys. Optionally set `GEMINI_API_KEY` (or `OPENAI_API_KEY`) and `RESEND_API_KEY` + `LUMENPULSE_EMAIL_FROM`.
 4. Point a cron at the endpoints above.
