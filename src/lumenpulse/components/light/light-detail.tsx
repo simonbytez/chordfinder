@@ -13,28 +13,14 @@ import {
   RELEASE_STATUS_LABELS,
 } from "@lp/lib/constants";
 import { candelaFromThrow, effectiveThrow, fmtCandela, fmtInt, fmtPrice, kelvinToCss } from "@lp/lib/specs";
-import type { LightDTO, PricePointDTO } from "@lp/lib/types";
+import type { LightDTO } from "@lp/lib/types";
 import { cn } from "@lp/lib/utils";
 import { RelativeTime } from "../relative-time";
 import { BeamArt } from "./beam-art";
 import { CollectionButtons } from "./collection-buttons";
 import { FloodThrowBar } from "./flood-throw-bar";
+import { PriceSparkline } from "./price-sparkline";
 import { ReleaseBadge } from "./release-badge";
-
-function Sparkline({ points }: { points: PricePointDTO[] }) {
-  const pts = points.filter((p) => p.p !== null);
-  if (pts.length < 2) return null;
-  const prices = pts.map((p) => p.p!);
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
-  const span = max - min || 1;
-  const d = pts.map((p, i) => `${(i / (pts.length - 1)) * 100},${22 - ((p.p! - min) / span) * 20}`).join(" ");
-  return (
-    <svg viewBox="0 0 100 24" className="h-5 w-20" preserveAspectRatio="none" aria-label={`Price history ${fmtPrice(min)}–${fmtPrice(max)}`}>
-      <polyline points={d} fill="none" stroke="var(--amber)" strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-}
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -183,7 +169,7 @@ export function LightDetail({ light, hideOwned, mentions }: { light: LightDTO; h
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Sparkline points={l.priceHistory} />
+                <PriceSparkline points={l.priceHistory} />
                 <div className="text-right">
                   <div className="font-mono text-sm">{l.priceUsd !== null ? fmtPrice(l.priceUsd) : "—"}</div>
                   <div className={cn("text-[11px]", l.lastCheckedAt ? (l.inStock ? "text-success" : "text-destructive") : "text-muted-foreground")}>

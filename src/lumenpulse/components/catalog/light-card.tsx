@@ -2,45 +2,85 @@
 
 import { ExternalLink } from "lucide-react";
 import { effectiveThrow, fmtInt, fmtPrice } from "@lp/lib/specs";
-import type { LightDTO } from "@lp/lib/types";
+import type { LightDTO, ListingDTO } from "@lp/lib/types";
 import { cn } from "@lp/lib/utils";
 import { BeamArt } from "../light/beam-art";
 import { CollectionButtons } from "../light/collection-buttons";
 import { useDrawer } from "../light/drawer-provider";
 import { FloodThrowBar } from "../light/flood-throw-bar";
+import { PriceSparkline } from "../light/price-sparkline";
 import { ReleaseBadge } from "../light/release-badge";
 import { SpecPills } from "../light/spec-pills";
 
-function PriceLine({ light }: { light: LightDTO }) {
+/** Store rows shown on a card; the rest are one click away in the detail drawer. */
+const MAX_STORE_ROWS = 3;
+
+function stockLabel(l: ListingDTO): { text: string; className: string } {
+  if (!l.lastCheckedAt) return { text: l.priceUsd !== null ? "est." : "check site", className: "text-muted-foreground" };
+  return l.inStock ? { text: "in stock", className: "text-success" } : { text: "sold out", className: "text-destructive" };
+}
+
+/** The best price (with the old price struck through after a drop), then each store's trend, stock and price. */
+function PriceDetails({ light, onMore }: { light: LightDTO; onMore: () => void }) {
+  if (!light.listings.length) return <span className="text-xs text-muted-foreground">No listings yet</span>;
   const bp = light.bestPrice;
-  if (!bp) {
-    const first = light.listings[0];
-    return first ? (
-      <a href={first.productUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-amber">
-        Check price at {first.sourceName} <ExternalLink className="size-3" />
-      </a>
-    ) : (
-      <span className="text-xs text-muted-foreground">No listings yet</span>
-    );
-  }
+  const ev = light.latestEvent;
+  // Only when the drop landed on the price shown, since the event doesn't say which store it came from.
+  const drop =
+    bp && ev?.type === "price_drop" && ev.oldPrice !== null && ev.newPrice === bp.price && ev.oldPrice > bp.price ? ev.oldPrice : null;
+  const rows = light.listings.slice(0, MAX_STORE_ROWS);
+  const more = light.listings.length - rows.length;
   return (
-    <a
-      href={bp.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-      className="group/price flex items-baseline gap-1.5 text-xs"
-      title={bp.verified ? `Lowest verified ${bp.inStock ? "in-stock " : ""}price` : "Estimated price; not yet verified by a crawler"}
-    >
-      <span className={cn("font-mono text-base font-semibold", bp.verified ? "text-foreground" : "text-muted-foreground")}>
-        {bp.verified ? "" : "≈"}
-        {fmtPrice(bp.price)}
-      </span>
-      <span className="text-muted-foreground group-hover/price:text-amber">
-        {bp.sourceName}
-        {bp.verified ? (bp.inStock ? <span className="text-success"> · in stock</span> : <span className="text-destructive"> · sold out</span>) : " · est."}
-      </span>
-    </a>
+    <div className="space-y-1.5">
+      {bp && (
+        <div
+          className="flex items-baseline gap-2"
+          title={bp.verified ? `Lowest verified ${bp.inStock ? "in-stock " : ""}price, at ${bp.sourceName}` : "Estimated price; not yet verified by a crawler"}
+        >
+          <span className={cn("font-mono text-base font-semibold", bp.verified ? "text-foreground" : "text-muted-foreground")}>
+            {bp.verified ? "" : "≈"}
+            {fmtPrice(bp.price)}
+          </span>
+          {drop !== null && (
+            <>
+              <s className="font-mono text-xs text-muted-foreground">{fmtPrice(drop)}</s>
+              <span className="text-xs font-semibold text-amber">−{Math.round((1 - bp.price / drop) * 100)}%</span>
+            </>
+          )}
+          <span className="text-xs text-muted-foreground">{bp.verified ? (bp.inStock ? "lowest in stock" : "lowest, sold out") : "estimate"}</span>
+        </div>
+      )}
+      <ul className="divide-y divide-border/60 rounded-lg border border-border/60 text-xs">
+        {rows.map((l) => {
+          const stock = stockLabel(l);
+          return (
+            <li key={l.id}>
+              <a
+                href={l.productUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="group/store flex items-center gap-2 px-2.5 py-1.5 transition-colors hover:bg-secondary/40"
+                title={`${l.title ?? l.sourceName}: open at ${l.sourceName}`}
+              >
+                <span className="flex min-w-0 flex-1 items-center gap-1 group-hover/store:text-amber">
+                  <span className="truncate">{l.sourceName}</span>
+                  <ExternalLink className="size-3 shrink-0 text-muted-foreground group-hover/store:text-amber" />
+                </span>
+                <PriceSparkline points={l.priceHistory} className="h-4 w-10 shrink-0" />
+                <span className={cn("shrink-0", stock.className)}>{stock.text}</span>
+                {l.priceUsd !== null && <span className="shrink-0 text-right font-mono text-foreground">{fmtPrice(l.priceUsd)}</span>}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      {more > 0 && (
+        <button type="button" onClick={onMore} className="text-xs text-muted-foreground hover:text-amber">
+          +{more} more {more === 1 ? "store" : "stores"}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -96,7 +136,7 @@ export function LightCard({ light, hideOwned }: { light: LightDTO; hideOwned?: b
         </div>
         <FloodThrowBar light={light} />
         <div className="mt-auto space-y-2.5 pt-1">
-          <PriceLine light={light} />
+          <PriceDetails light={light} onMore={open} />
           <CollectionButtons light={light} hideOwned={hideOwned} />
         </div>
       </div>
