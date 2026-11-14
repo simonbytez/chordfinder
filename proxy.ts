@@ -22,18 +22,13 @@ function basicAuthOk(header: string | null, password: string): boolean {
 
 /**
  * 1. /flashlights/admin is behind HTTP Basic auth when LUMENPULSE_ADMIN_PASSWORD is set.
- *    Without it, admin is open locally but locked on Vercel, so the live site never ships it public.
  * 2. Every visitor gets an anonymous device id cookie (lp_uid) that owns their
  *    collection, alert rules and push subscriptions. It is also injected into
  *    the forwarded request so the very first render can read it.
  */
 export function proxy(req: NextRequest) {
   const password = process.env.LUMENPULSE_ADMIN_PASSWORD;
-  const isAdmin = req.nextUrl.pathname.startsWith("/flashlights/admin");
-  if (isAdmin && !password && process.env.VERCEL) {
-    return new NextResponse("Admin is disabled until LUMENPULSE_ADMIN_PASSWORD is set in Vercel.", { status: 503 });
-  }
-  if (isAdmin && password && !basicAuthOk(req.headers.get("authorization"), password)) {
+  if (password && req.nextUrl.pathname.startsWith("/flashlights/admin") && !basicAuthOk(req.headers.get("authorization"), password)) {
     return new NextResponse("Admin authentication required", {
       status: 401,
       headers: { "WWW-Authenticate": 'Basic realm="LumenPulse admin", charset="UTF-8"' },

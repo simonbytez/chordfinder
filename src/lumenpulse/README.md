@@ -88,7 +88,7 @@ $$);
 
 1. **Database (required).** In the Vercel project, open **Storage**, create a **Neon** Postgres database and connect it to the project. That sets `DATABASE_URL`, which LumenPulse picks up. To use another Postgres (such as a Supabase pooled URL on port 6543), set `LUMENPULSE_DATABASE_URL`, which takes priority. Until one is connected, every LumenPulse page shows a "not connected to a database" notice. Embedded PGlite doesn't run on Vercel: setting it up needs about 800 MB, more than a Hobby function can spare next to Next.js, and `/tmp` would lose its data on every cold start anyway.
 2. Migrations run automatically on first use (`LUMENPULSE_AUTO_MIGRATE`). Seeding happens when the catalog is empty. You can also run `npm run lumenpulse:db:migrate` against the URL.
-3. Set `CRON_SECRET`, `LUMENPULSE_ADMIN_PASSWORD` and the three `LUMENPULSE_VAPID_*` keys. Optionally set `GEMINI_API_KEY` (or `OPENAI_API_KEY`) and `RESEND_API_KEY` + `LUMENPULSE_EMAIL_FROM`.
+3. Set `CRON_SECRET` and the three `LUMENPULSE_VAPID_*` keys. Optionally set `LUMENPULSE_ADMIN_PASSWORD` to put `/flashlights/admin` behind a password (without it, admin is open to anyone with the URL), `GEMINI_API_KEY` (or `OPENAI_API_KEY`), and `RESEND_API_KEY` + `LUMENPULSE_EMAIL_FROM`.
 4. Point a cron at the endpoints above.
 
 ## Scripts
