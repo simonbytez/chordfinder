@@ -228,3 +228,36 @@ export function Notebook() {
     <path d="M196 44 L196 170 L203 162 L210 170 L210 43" fill="#c8402f" />
   </Canvas>;
 }
+
+// A snare transcription sheet scrolling by, with beamed rudiments and crossed sticks
+export function Scroll() {
+  const xs = [118, 144, 170, 196];
+  return <Canvas>
+    {/* Stacked background card hinting at swipe/grid feed */}
+    <rect x="86" y="18" width="136" height="148" rx="8" transform="rotate(-5 154 92)" fill={CREAM} opacity=".28" />
+    <rect x="92" y="20" width="136" height="144" rx="8" fill={CREAM} stroke={INK} strokeWidth="3" />
+    {/* Title bar */}
+    <rect x="122" y="34" width="76" height="7" rx="3.5" fill={INK} opacity=".8" />
+    {/* Two 5-line percussion staves */}
+    {[62, 114].map(base => <g key={base}>
+      {[0, 6, 12, 18, 24].map(dy => <line key={dy} x1="104" y1={base + dy} x2="216" y2={base + dy} stroke={INK} strokeWidth="1.4" opacity=".4" />)}
+      <rect x="108" y={base + 6} width="2.5" height="12" fill={INK} />
+      <rect x="113" y={base + 6} width="2.5" height="12" fill={INK} />
+    </g>)}
+    {/* Beamed 16th snare notes on top staff */}
+    <line x1="123" y1="53" x2="201" y2="53" stroke={INK} strokeWidth="3.5" />
+    <line x1="123" y1="58.5" x2="201" y2="58.5" stroke={INK} strokeWidth="2.8" />
+    {xs.map((x, i) => <g key={x}>
+      <line x1={x + 5} y1="74" x2={x + 5} y2="53" stroke={INK} strokeWidth="2" />
+      <ellipse cx={x} cy="74" rx="6" ry="4.2" transform={`rotate(-20 ${x} 74)`} fill={INK} />
+      {i % 2 === 0 && <path d={`M${x - 4} 44 L${x + 5} 47 L${x - 4} 50`} fill="none" stroke="#d97706" strokeWidth="2.2" strokeLinecap="round" />}
+    </g>)}
+    {/* Crossed drumsticks on lower right */}
+    <g transform="translate(232 126)">
+      <line x1="-26" y1="22" x2="28" y2="-24" stroke={GOLD} strokeWidth="6" strokeLinecap="round" />
+      <circle cx="30" cy="-26" r="4" fill={CREAM} />
+      <line x1="-26" y1="-24" x2="28" y2="22" stroke={INK} strokeWidth="6" strokeLinecap="round" />
+      <circle cx="30" cy="24" r="4" fill={GOLD} />
+    </g>
+  </Canvas>;
+}

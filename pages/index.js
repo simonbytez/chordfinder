@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Frets, Congas, Counts, Keys, Steps, Bones, Board, Meeple, Reel, Beam, Temple, Notebook } from '../src/home/components/Covers';
+import { Frets, Congas, Counts, Keys, Steps, Scroll, Bones, Board, Meeple, Reel, Beam, Temple, Notebook } from '../src/home/components/Covers';
 import styles from '../styles/Home.module.css';
 
 // Everything on the site, as cards. Add a product here to give it a card.
@@ -18,6 +18,8 @@ const PRODUCTS = [
     blurb: 'Two skeletons, him in a suit and her in a skirt, dance salsa On1 to a live band. Call the moves; the basic and cross body lead are captured from real dancers.' },
   { href: '/drumtoolz', name: 'Drum Toolz', kind: 'music', tag: 'Music', color: '#3e63dd', Cover: Steps,
     blurb: 'Write, save, share and generate rhythm patterns to practice.' },
+  { href: '/drumscroll', app: true, name: 'DrumScroll', kind: 'music', tag: 'Music', color: '#b45309', Cover: Scroll,
+    blurb: 'Free DCI, WGI and jazz/funk drum transcriptions from around the web. Browse as a gallery grid or swipe vertically like Reels.' },
   { href: '/realmsend', name: "Realm's End", kind: 'games', tag: 'Game', color: '#1f3b33', Cover: Board,
     blurb: "Two-player strategy where you can't see the other side. Scout, plant listening devices and jammers, and hunt for their flag." },
   { href: '/tutor', name: 'Tabletop Tutor', kind: 'games', tag: 'Game tool', color: '#26285f', Cover: Meeple,

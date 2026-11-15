@@ -1,0 +1,17 @@
+/*
+ * DrumScroll scoped Tailwind v4 stylesheet.
+ * Imported only by app/drumscroll/layout.tsx so styles never leak into other boomcat apps.
+ */
+@import "tailwindcss" source(none);
+@source ".";
+@source "../../app/drumscroll";
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
